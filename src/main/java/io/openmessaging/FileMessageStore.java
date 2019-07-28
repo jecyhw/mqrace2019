@@ -163,7 +163,7 @@ public class FileMessageStore {
         dPrint(sb.toString());
         dPrint("putMinT=" + messageFile.putMinT + " putMaxT=" + messageFile.putMaxT + " putMinA=" + messageFile.putMinA + " putMaxA=" + messageFile.putMaxA);
         dPrint("messageCount=" + messageFile.messageCount + " idAllocator=" + MessageFile.idAllocator.get());
-        dPrint("isTSequence=" + messageFile.isTSequence + "isTEqual" + messageFile.isTEqual + " isByte=" + messageFile.isByte + " maxTInterval=" + messageFile.maxTInterval);
+        dPrint("isTSequence=" + messageFile.isTSequence + " isTEqual" + messageFile.isTEqual + " isByte=" + messageFile.isByte + " maxTInterval=" + messageFile.maxTInterval);
         try {
             dPrint("tFileSize=" + messageFile.tFc.size() + " aFileSize=" + messageFile.aFc.size() + " msgFileSize=" + messageFile.msgFc.size());
         } catch (IOException e) {

@@ -269,7 +269,7 @@ public class MessageFile {
 
         if (prevMessage != null) {
             if (isTSequence && message.getT() < prevMessage.getT()) {
-                print("func=putStat t is not sequence t=" + message.getT() + " prevT=" + prevMessage.getT());
+                print("func=putStat t is not_sequence t=" + message.getT() + " prevT=" + prevMessage.getT());
                 isTSequence = false;
             }
             if (!isTEqual && message.getT() == prevMessage.getT()) {
