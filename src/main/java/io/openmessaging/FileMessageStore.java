@@ -46,6 +46,7 @@ public class FileMessageStore {
             storeDir.mkdirs();
         } else if (storeDir.isFile()) {
             storeDir.delete();
+            storeDir.mkdirs();
         } else {
             for (File file : storeDir.listFiles()) {
                 file.delete();
