@@ -56,8 +56,7 @@ public class MessageFile {
             msgFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw");
             msgFc = msgFile.getChannel();
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            print("MessageFile constructor error");
+            print("MessageFile constructor error " + e.getMessage());
         }
 
     }
@@ -70,8 +69,7 @@ public class MessageFile {
             writeLong(aFc, aBuf, message.getA());
             writeMsg(message.getBody());
         } catch (IOException e) {
-            e.printStackTrace();
-            print("func=put error t=" + message.getT() + " a=" + message.getA() + " msg=" + Utils.bytesToHex(message.getBody()));
+            print("func=put error t=" + message.getT() + " a=" + message.getA() + " msg=" + Utils.bytesToHex(message.getBody()) + " " + e.getMessage());
         }
     }
 
@@ -93,8 +91,7 @@ public class MessageFile {
                 getStat(getItem, (int)(maxPos - minPos), messages.size());
                 return messages;
             } catch (Exception e) {
-                e.printStackTrace();
-                print("func=get error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax);
+                print("func=get error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax + " " + e.getMessage());
                 return Collections.emptyList();
             }
         } else {
@@ -178,8 +175,7 @@ public class MessageFile {
                     getStat(getItem, (int)(maxPos - minPos), count);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
-                print("func=getAvgValue error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax);
+                print("func=getAvgValue error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax + " " + e.getMessage());
             }
         }
         return intervalSum;
@@ -226,9 +222,8 @@ public class MessageFile {
                 pos += read;
             }
         } catch (IOException e) {
-            e.printStackTrace();
             //出现异常返回最大值，最终查找到的message列表就为空
-            print("func=readInBuf error pos=" + pos);
+            print("func=readInBuf error pos=" + pos + " " + e.getMessage());
         }
     }
 
@@ -244,9 +239,8 @@ public class MessageFile {
 
             return t;
         } catch (IOException e) {
-            e.printStackTrace();
             //出现异常返回最大值，最终查找到的message列表就为空
-            print("func=readLong error pos=" + pos);
+            print("func=readLong error pos=" + pos + " " + e.getMessage());
             return Long.MAX_VALUE;
         }
     }
@@ -322,8 +316,7 @@ public class MessageFile {
                 aFc.close();
             }
         } catch (IOException e) {
-            e.printStackTrace();
-            print("func=close error");
+            print("func=close error " + e.getMessage());
         }
     }
 
@@ -337,8 +330,7 @@ public class MessageFile {
             aBuf = null;
             msgBuf = null;
         } catch (IOException e) {
-            e.printStackTrace();
-            print("func=flush error");
+            print("func=flush error " + e.getMessage());
         }
 
     }

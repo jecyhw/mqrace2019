@@ -167,8 +167,7 @@ public class FileMessageStore {
         try {
             dPrint("tFileSize=" + messageFile.tFc.size() + " aFileSize=" + messageFile.aFc.size() + " msgFileSize=" + messageFile.msgFc.size());
         } catch (IOException e) {
-            e.printStackTrace();
-            print("func=firstGet error");
+            print("func=firstGet error " + e.getMessage());
         }
     }
 
