@@ -107,7 +107,6 @@ public class FileMessageStore {
             synchronized (FileMessageStore.class) {
                 if (isFirstGetAvgValue) {
                     isFirstGetAvgValue = false;
-                    print("func=firstGetAvgValue---------------------------------------");
                     printStat(getStat);
                 }
             }

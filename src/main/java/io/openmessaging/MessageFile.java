@@ -90,7 +90,7 @@ public class MessageFile {
                 long[] ts = readLongArray(minPos, maxPos, readBuf, tFc);
 
                 List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
-                getStat(getItem, minPos, maxPos, messages.size());
+                getStat(getItem, (int)(maxPos - minPos), messages.size());
                 return messages;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -102,12 +102,11 @@ public class MessageFile {
         }
     }
 
-    private void getStat(GetItem getItem, long minPos, long maxPos, int actualSize) {
-        int count = (int) (maxPos - minPos);
+    private void getStat(GetItem getItem, int count, int actualCount) {
         synchronized (MessageFile.class) {
             //统计命中的count
             getItem.maxCount = Math.max(getItem.maxCount, count);
-            getItem.maxActualCount = Math.max(getItem.maxActualCount, actualSize);
+            getItem.maxActualCount = Math.max(getItem.maxActualCount, actualCount);
         }
     }
 
@@ -156,7 +155,6 @@ public class MessageFile {
     }
 
     public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
-
         IntervalSum intervalSum = new IntervalSum();
         if (tMin <= tMax && aMin <= aMax) {
             long sum = 0;
@@ -174,14 +172,15 @@ public class MessageFile {
                             count++;
                         }
                     }
-                    getStat(getItem, minPos, maxPos, count);
+                    intervalSum.sum = sum;
+                    intervalSum.count = count;
+
+                    getStat(getItem, (int)(maxPos - minPos), count);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
                 print("func=getAvgValue error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax);
             }
-            intervalSum.sum = sum;
-            intervalSum.count = count;
         }
         return intervalSum;
     }
