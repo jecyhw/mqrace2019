@@ -89,7 +89,7 @@ public class MessageFile {
                 long[] as = readLongArray(minPos, maxPos, readBuf, aFc);
                 long[] ts = readLongArray(minPos, maxPos, readBuf, tFc);
 
-                List<Message> messages = readMsgArray(minPos, maxPos, readBuf, as, ts, aMin, aMax);
+                List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
                 getStat(getItem, minPos, maxPos, messages.size());
                 return messages;
             } catch (Exception e) {
@@ -111,14 +111,14 @@ public class MessageFile {
         }
     }
 
-    private List<Message> readMsgArray(long minPos, long maxPos, ByteBuffer readBuf, long[] as, long[] ts, long aMin, long aMax) {
+    private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, long[] as, long[] ts, long aMin, long aMax) {
         List<Message> messages = new ArrayList<>();
         int i = 0;
         while (minPos < maxPos) {
             int readCount = Math.min((int)(maxPos - minPos), Const.MAX_MSG_CAPACITY) ;
             readBuf.position(0);
             readBuf.limit(readCount * Const.MSG_BYTES);
-            readInBuf(minPos * Const.LONG_BYTES, readBuf, msgFc);
+            readInBuf(minPos * Const.MSG_BYTES, readBuf, msgFc);
 
             readBuf.flip();
             while (readBuf.hasRemaining()) {
@@ -138,21 +138,21 @@ public class MessageFile {
     }
 
     private long[] readLongArray(long minPos, long maxPos, ByteBuffer readBuf, FileChannel fc) {
-        long[] ts = new long[(int)(maxPos - minPos)];
+        long[] arr = new long[(int)(maxPos - minPos)];
         int cnt = 0;
         while (minPos < maxPos) {
-            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY) ;
+            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY);
             readBuf.position(0);
             readBuf.limit(readCount * Const.LONG_BYTES);
             readInBuf(minPos * Const.LONG_BYTES, readBuf, fc);
             readBuf.flip();
 
             while (readBuf.hasRemaining()) {
-                ts[cnt++] = readBuf.getLong();
+                arr[cnt++] = readBuf.getLong();
             }
             minPos += readCount;
         }
-        return ts;
+        return arr;
     }
 
     public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
