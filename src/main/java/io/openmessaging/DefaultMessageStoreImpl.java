@@ -1,15 +1,12 @@
 package io.openmessaging;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
 
 /**
  * 这是一个简单的基于内存的实现，以方便选手理解题意；
  * 实际提交时，请维持包名和类名不变，把方法实现修改为自己的内容；
  */
 public class DefaultMessageStoreImpl extends MessageStore {
-
-    private NavigableMap<Long, List<Message>> msgMap = new TreeMap<Long, List<Message>>();
 
     public DefaultMessageStoreImpl() {
         FileMessageStore.init();
