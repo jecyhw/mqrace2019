@@ -81,6 +81,10 @@ public class MessageFile {
             try {
                 long minPos = lowerBound(tMin, keyBuf);
                 long maxPos = upperBound(tMax, keyBuf);
+                if (minPos >= maxPos) {
+                    return Collections.emptyList();
+                }
+
                 ByteBuffer readBuf = getItem.buf;
                 long[] as = readLongArray(minPos, maxPos, readBuf, aFc);
                 long[] ts = readLongArray(minPos, maxPos, readBuf, tFc);
@@ -161,15 +165,17 @@ public class MessageFile {
             try {
                 long minPos = lowerBound(tMin, tempBuf);
                 long maxPos = upperBound(tMax, tempBuf);
-                ByteBuffer readBuf = getItem.buf;
-                long[] as = readLongArray(minPos, maxPos, readBuf, aFc);
-                for (int i = 0; i < as.length; i++) {
-                    if (as[i] >= aMin && as[i] <= aMax) {
-                        sum += as[i];
-                        count++;
+                if (minPos < maxPos) {
+                    ByteBuffer readBuf = getItem.buf;
+                    long[] as = readLongArray(minPos, maxPos, readBuf, aFc);
+                    for (int i = 0; i < as.length; i++) {
+                        if (as[i] >= aMin && as[i] <= aMax) {
+                            sum += as[i];
+                            count++;
+                        }
                     }
+                    getStat(getItem, minPos, maxPos, count);
                 }
-                getStat(getItem, minPos, maxPos, count);
             } catch (Exception e) {
                 e.printStackTrace();
                 print("func=getAvgValue error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax);
