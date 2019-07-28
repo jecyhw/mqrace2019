@@ -77,8 +77,8 @@ public class MessageFile {
 
     public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
         if (tMin <= tMax && aMin <= aMax) {
-            ByteBuffer keyBuf = ByteBuffer.allocate(Const.LONG_BYTES);
             try {
+                ByteBuffer keyBuf = getItem.keyBuf;
                 long minPos = lowerBound(tMin, keyBuf);
                 long maxPos = upperBound(tMax, keyBuf);
                 if (minPos >= maxPos) {
@@ -161,10 +161,10 @@ public class MessageFile {
         if (tMin <= tMax && aMin <= aMax) {
             long sum = 0;
             int count = 0;
-            ByteBuffer tempBuf = ByteBuffer.allocate(Const.LONG_BYTES);
+            ByteBuffer keyBuf = getItem.keyBuf;
             try {
-                long minPos = lowerBound(tMin, tempBuf);
-                long maxPos = upperBound(tMax, tempBuf);
+                long minPos = lowerBound(tMin, keyBuf);
+                long maxPos = upperBound(tMax, keyBuf);
                 if (minPos < maxPos) {
                     ByteBuffer readBuf = getItem.buf;
                     long[] as = readLongArray(minPos, maxPos, readBuf, aFc);

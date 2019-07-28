@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
  */
 public class GetItem {
     ByteBuffer buf = ByteBuffer.allocateDirect(Const.BUFFER_SIZE);
+    ByteBuffer keyBuf = ByteBuffer.allocate(Const.LONG_BYTES);
     int maxCount = 0;
     int maxActualCount = 0;
 }
