@@ -3,6 +3,7 @@ package io.openmessaging;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -67,6 +68,12 @@ public class FileMessageStore {
         for (MessageFile messageFile : messageFiles) {
             messages.addAll(messageFile.get(aMin, aMax, tMin, tMax, getItem));
         }
+        messages.sort(new Comparator<Message>() {
+            @Override
+            public int compare(Message o1, Message o2) {
+                return Long.compare(o1.getT(), o2.getT());
+            }
+        });
         return messages;
     }
 
