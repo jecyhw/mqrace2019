@@ -11,49 +11,25 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     private NavigableMap<Long, List<Message>> msgMap = new TreeMap<Long, List<Message>>();
 
-    @Override
-    public synchronized void put(Message message) {
-        if (!msgMap.containsKey(message.getT())) {
-            msgMap.put(message.getT(), new ArrayList<Message>());
-        }
+    public DefaultMessageStoreImpl() {
+        FileMessageStore.init();
+    }
 
-        msgMap.get(message.getT()).add(message);
+    @Override
+    public void put(Message message) {
+        FileMessageStore.put(message);
     }
 
 
     @Override
     public synchronized List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        ArrayList<Message> res = new ArrayList<Message>();
-        NavigableMap<Long, List<Message>> subMap = msgMap.subMap(tMin, true, tMax, true);
-        for (Map.Entry<Long, List<Message>> mapEntry : subMap.entrySet()) {
-            List<Message> msgQueue = mapEntry.getValue();
-            for (Message msg : msgQueue) {
-                if (msg.getA() >= aMin && msg.getA() <= aMax) {
-                    res.add(msg);
-                }
-            }
-        }
-
-        return res;
+        return FileMessageStore.get(aMin, aMax, tMin, tMax);
     }
 
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
-        long sum = 0;
-        long count = 0;
-        NavigableMap<Long, List<Message>> subMap = msgMap.subMap(tMin, true, tMax, true);
-        for (Map.Entry<Long, List<Message>> mapEntry : subMap.entrySet()) {
-            List<Message> msgQueue = mapEntry.getValue();
-            for (Message msg : msgQueue) {
-                if (msg.getA() >= aMin && msg.getA() <= aMax) {
-                    sum += msg.getA();
-                    count++;
-                }
-            }
-        }
-
-        return count == 0 ? 0 : sum / count;
+        return FileMessageStore.getAvgValue(aMin, aMax, tMin, tMax);
     }
 
 }
