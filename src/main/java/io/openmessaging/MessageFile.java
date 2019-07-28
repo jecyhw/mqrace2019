@@ -38,8 +38,6 @@ public class MessageFile {
     long putMinA = Long.MAX_VALUE;
     long maxTInterval = Long.MIN_VALUE;
 
-    static long maxGetInterval = Long.MIN_VALUE;
-
     int[] chCount = new int[256];
     boolean isByte = true;
 
@@ -113,9 +111,9 @@ public class MessageFile {
         List<Message> messages = new ArrayList<>();
         int i = 0;
         while (minPos < maxPos) {
-            long readCount = Math.min(maxPos - minPos, Const.MAX_MSG_CAPACITY) ;
+            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_MSG_CAPACITY) ;
             readBuf.position(0);
-            readBuf.limit(Const.MAX_MSG_CAPACITY * Const.MSG_BYTES);
+            readBuf.limit(readCount * Const.MSG_BYTES);
             readInBuf(minPos * Const.LONG_BYTES, readBuf, msgFc);
 
             readBuf.flip();
@@ -139,9 +137,9 @@ public class MessageFile {
         long[] ts = new long[(int)(maxPos - minPos)];
         int cnt = 0;
         while (minPos < maxPos) {
-            long readCount = Math.min(maxPos - minPos, Const.MAX_LONG_CAPACITY) ;
+            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY) ;
             readBuf.position(0);
-            readBuf.limit(Const.MAX_LONG_CAPACITY * Const.LONG_BYTES);
+            readBuf.limit(readCount * Const.LONG_BYTES);
             readInBuf(minPos * Const.LONG_BYTES, readBuf, fc);
             readBuf.flip();
 
