@@ -29,8 +29,8 @@ public class Tester {
 
     public static void main(String[] args) {
         int[] nums = new int[] {1, 2, 3};
-        System.err.println(lowerBound(nums, 0, 3, 0));
+        System.out.println(lowerBound(nums, 0, 3, 0));
 
-        System.err.println(upperBound(nums, 0, 3, 0));
+        System.out.println(upperBound(nums, 0, 3, 0));
     }
 }
