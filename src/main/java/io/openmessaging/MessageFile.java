@@ -115,8 +115,8 @@ public class MessageFile {
             readBuf.position(0);
             readBuf.limit(readCount * Const.MSG_BYTES);
             readInBuf(minPos * Const.MSG_BYTES, readBuf, msgFc);
-
             readBuf.flip();
+
             while (readBuf.hasRemaining()) {
                 if (as[i] >= aMin && as[i] <= aMax) {
                     byte[] msg = new byte[Const.MSG_BYTES];
