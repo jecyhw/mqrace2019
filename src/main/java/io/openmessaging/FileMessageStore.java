@@ -52,6 +52,7 @@ public class FileMessageStore {
                 file.delete();
             }
         }
+        print("func=init success");
     }
 
     public static void put(Message message) {
