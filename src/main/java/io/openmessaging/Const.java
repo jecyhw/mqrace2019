@@ -4,7 +4,7 @@ package io.openmessaging;
  * Created by yanghuiwei on 2019-07-26
  */
 public interface Const {
-    String STORE_PATH = "./data/";
+    String STORE_PATH = "/alidata1/race2019/data/";
     String MSG_FILE_SUFFIX = ".msg";
     String T_FILE_SUFFIX = ".t";
     String A_FILE_SUFFIX = ".a";
