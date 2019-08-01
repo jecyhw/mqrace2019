@@ -28,7 +28,9 @@ public class FileMessageStore {
     private static List<MessageFile> messageFiles = new ArrayList<>();
     private static ThreadLocal<MessageFile> messageFileThreadLocal = ThreadLocal.withInitial(() ->  {
         MessageFile messageFile = new MessageFile();
-        messageFiles.add(messageFile);
+        synchronized (FileMessageStore.class) {
+            messageFiles.add(messageFile);
+        }
         return messageFile;
     });
 
@@ -37,7 +39,9 @@ public class FileMessageStore {
     private static ThreadLocal<GetItem> getBufThreadLocal = ThreadLocal.withInitial(() -> {
         GetItem item = new GetItem();
         getThreadCounter.incrementAndGet();
-        getItems.add(item);
+        synchronized (FileMessageStore.class) {
+            getItems.add(item);
+        }
         return item;
     });
 
@@ -134,11 +138,11 @@ public class FileMessageStore {
         if (isFirstGet) {
             synchronized (FileMessageStore.class) {
                 if (isFirstGet) {
-                    isFirstGet = false;
                     for (MessageFile messageFile : messageFiles) {
                         messageFile.flush();
                         printPutStat(messageFile);
                     }
+                    isFirstGet = false;
                 }
             }
         }
