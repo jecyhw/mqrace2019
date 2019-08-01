@@ -3,6 +3,7 @@ package io.openmessaging;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +22,7 @@ public class FileMessageStore {
 
     private static volatile boolean isFirstGetAvgValue = true;
     private static GetStat getAvgStat = new GetStat();
+    private static AtomicInteger robin = new AtomicInteger(0);
 
 
     private static List<MessageFile> messageFiles = new ArrayList<>();
@@ -63,17 +65,55 @@ public class FileMessageStore {
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
 
-        List<Message> messages = new ArrayList<>();
+        List<List<Message>> messagesList = new ArrayList<>(messageFiles.size());
         GetItem getItem = getBufThreadLocal.get();
-        for (MessageFile messageFile : messageFiles) {
-            messages.addAll(messageFile.get(aMin, aMax, tMin, tMax, getItem));
+
+        int messageSize = 0;
+
+        for (int i = 0, pos = robin.getAndIncrement(); i < messageFiles.size(); i++) {
+            List<Message> messages = messageFiles.get(pos % messageFiles.size()).get(aMin, aMax, tMin, tMax, getItem);
+            messagesList.add(messages);
+            messageSize += messages.size();
+            pos++;
         }
-        messages.sort(new Comparator<Message>() {
-            @Override
-            public int compare(Message o1, Message o2) {
-                return Long.compare(o1.getT(), o2.getT());
+
+        return sort(messagesList, messageSize);
+    }
+
+    private static List<Message> sort(List<List<Message>> messagesList, int size) {
+        if (messagesList.isEmpty()) {
+            return Collections.emptyList();
+        }
+        if (messagesList.size() == 1) {
+            return messagesList.get(0);
+        }
+        List<Message> messages = messagesList.get(0);
+        for (int i = 1; i < messagesList.size(); i++) {
+            messages = merge(messages, messagesList.get(i));
+        }
+        return messages;
+    }
+
+    private static List<Message> merge(List<Message> messages1, List<Message> messages2) {
+        List<Message> messages = new ArrayList<>(messages1.size() + messages2.size());
+        int i1 = 0, i2 = 0;
+        while (i1 < messages1.size() && i2 < messages2.size()) {
+            Message message1 = messages1.get(i1);
+            Message message2 = messages2.get(i2);
+            if (message1.getT() < message2.getT()) {
+                messages.add(message1);
+                i1++;
+            } else {
+                messages.add(message2);
+                i2++;
             }
-        });
+        }
+
+        if (i1 < messages1.size()) {
+            messages.addAll(messages1.subList(i1, messages1.size()));
+        } else {
+            messages.addAll(messages2.subList(i2, messages2.size()));
+        }
         return messages;
     }
 

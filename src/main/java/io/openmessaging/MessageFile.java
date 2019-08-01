@@ -65,8 +65,8 @@ public class MessageFile {
         putStat(message);
 
         try {
-            writeLong(tFc, tBuf, message.getT());
-            writeLong(aFc, aBuf, message.getA());
+            writeInt(tFc, tBuf, (int)message.getT());
+            writeInt(aFc, aBuf, (int)message.getA());
             writeMsg(message.getBody());
         } catch (IOException e) {
             print("func=put error t=" + message.getT() + " a=" + message.getA() + " msg=" + Utils.bytesToHex(message.getBody()) + " " + e.getMessage());
@@ -84,8 +84,8 @@ public class MessageFile {
                 }
 
                 ByteBuffer readBuf = getItem.buf;
-                long[] as = readLongArray(minPos, maxPos, readBuf, aFc);
-                long[] ts = readLongArray(minPos, maxPos, readBuf, tFc);
+                int[] as = readArray(minPos, maxPos, readBuf, aFc);
+                int[] ts = readArray(minPos, maxPos, readBuf, tFc);
 
                 List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
                 getStat(getItem, (int)(maxPos - minPos), messages.size());
@@ -107,7 +107,7 @@ public class MessageFile {
         }
     }
 
-    private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, long[] as, long[] ts, long aMin, long aMax) {
+    private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax) {
         List<Message> messages = new ArrayList<>();
         int i = 0;
         while (minPos < maxPos) {
@@ -133,8 +133,8 @@ public class MessageFile {
         return messages;
     }
 
-    private long[] readLongArray(long minPos, long maxPos, ByteBuffer readBuf, FileChannel fc) {
-        long[] arr = new long[(int)(maxPos - minPos)];
+    private int[] readArray(long minPos, long maxPos, ByteBuffer readBuf, FileChannel fc) {
+        int[] arr = new int[(int)(maxPos - minPos)];
         int cnt = 0;
         while (minPos < maxPos) {
             int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY);
@@ -144,7 +144,7 @@ public class MessageFile {
             readBuf.flip();
 
             while (readBuf.hasRemaining()) {
-                arr[cnt++] = readBuf.getLong();
+                arr[cnt++] = readBuf.getInt();
             }
             minPos += readCount;
         }
@@ -162,7 +162,7 @@ public class MessageFile {
                 long maxPos = upperBound(tMax, keyBuf);
                 if (minPos < maxPos) {
                     ByteBuffer readBuf = getItem.buf;
-                    long[] as = readLongArray(minPos, maxPos, readBuf, aFc);
+                    int[] as = readArray(minPos, maxPos, readBuf, aFc);
                     for (int i = 0; i < as.length; i++) {
                         if (as[i] >= aMin && as[i] <= aMax) {
                             sum += as[i];
@@ -187,7 +187,7 @@ public class MessageFile {
         bb.clear();
         while (low < high) {
             mid = low + (high - low) / 2;
-            long t = readLong(mid * Const.LONG_BYTES, bb, tFc);
+            long t = readInt(mid * Const.LONG_BYTES, bb, tFc);
             if (val > t) {
                 low = mid + 1;
             }
@@ -204,7 +204,7 @@ public class MessageFile {
         bb.clear();
         while (low < high) {
             mid = low + (high - low) / 2;
-            long t = readLong(mid * Const.LONG_BYTES, bb, tFc);
+            long t = readInt(mid * Const.LONG_BYTES, bb, tFc);
             if (t > ele) {
                 high = mid;
             }
@@ -227,20 +227,20 @@ public class MessageFile {
         }
     }
 
-    private long readLong(long pos, ByteBuffer bb, FileChannel fc) {
+    private long readInt(long pos, ByteBuffer bb, FileChannel fc) {
         try {
             while (bb.hasRemaining()) {
                 int read = fc.read(bb, pos);
                 pos += read;
             }
             bb.flip();
-            long t = bb.getLong();
+            long t = bb.getInt();
             bb.clear();
 
             return t;
         } catch (IOException e) {
             //出现异常返回最大值，最终查找到的message列表就为空
-            print("func=readLong error pos=" + pos + " " + e.getMessage());
+            print("func=readInt error pos=" + pos + " " + e.getMessage());
             return Long.MAX_VALUE;
         }
     }
@@ -281,11 +281,11 @@ public class MessageFile {
         prevMessage = message;
     }
 
-    private void writeLong(FileChannel fc, ByteBuffer buf, long a) throws IOException {
+    private void writeInt(FileChannel fc, ByteBuffer buf, int a) throws IOException {
         if (buf.remaining() < Const.LONG_BYTES) {
             flush(fc, buf);
         }
-        buf.putLong(a);
+        buf.putInt(a);
     }
 
     private void writeMsg(byte[] msg) throws IOException {
