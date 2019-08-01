@@ -16,6 +16,7 @@ import static io.openmessaging.Utils.print;
  * Created by yanghuiwei on 2019-07-26
  */
 public class FileMessageStore {
+    private static volatile boolean isFirstWrite = true;
 
     private static volatile boolean isFirstGet = true;
     private static GetStat getStat = new GetStat();
@@ -24,6 +25,13 @@ public class FileMessageStore {
     private static GetStat getAvgStat = new GetStat();
     private static AtomicInteger robin = new AtomicInteger(0);
 
+    public static List<Info> infoList = new ArrayList<>();
+    private static AtomicInteger tidCounter = new AtomicInteger(0);
+    private static ThreadLocal<Info> infoThreadLocal = ThreadLocal.withInitial(() ->  {
+        Info info = new Info(tidCounter.getAndIncrement());
+        infoList.add(info);
+        return info;
+    });
 
     private static List<MessageFile> messageFiles = new ArrayList<>();
     private static ThreadLocal<MessageFile> messageFileThreadLocal = ThreadLocal.withInitial(() ->  {
@@ -63,8 +71,20 @@ public class FileMessageStore {
     }
 
     public static void put(Message message) {
+        firstWrite(message);
+        Monitor.writeStage(message);
+        infoThreadLocal.get().cal(message);
         messageFileThreadLocal.get().put(message);
     }
+
+    private static ThreadLocal<Comparator<Message>> comparatorThreadLocal = ThreadLocal.withInitial(() ->  {
+        return new Comparator<Message>() {
+            @Override
+            public int compare(Message o1, Message o2) {
+                return Long.compare(o1.getT(), o2.getT());
+            }
+        };
+    });
 
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
@@ -81,6 +101,7 @@ public class FileMessageStore {
             pos++;
         }
 
+        Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messageSize);
         return sort(messagesList, messageSize);
     }
 
@@ -123,6 +144,7 @@ public class FileMessageStore {
 
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         firstGetAvgValue(aMin, aMax, tMin, tMax);
+
         long sum = 0;
         int count = 0;
         GetItem getItem = getBufThreadLocal.get();
@@ -131,13 +153,30 @@ public class FileMessageStore {
             sum += intervalSum.sum;
             count += intervalSum.count;
         }
+        Monitor.getAvgStage( aMin, aMax, tMin, tMax, count);
         return sum / count;
+    }
+
+    private static void firstWrite(Message message) {
+
+        if (isFirstWrite) {
+            synchronized (FileMessageStore.class) {
+                if (isFirstWrite) {
+                    Monitor.firstPid = Thread.currentThread().getId();
+                    Monitor.mark(0);
+                    isFirstWrite = false;
+                }
+            }
+        }
     }
 
     private static void firstGet(long aMin, long aMax, long tMin, long tMax) {
         if (isFirstGet) {
             synchronized (FileMessageStore.class) {
                 if (isFirstGet) {
+                    Monitor.firstPid = Thread.currentThread().getId();
+                    Monitor.mark(1);
+
                     for (MessageFile messageFile : messageFiles) {
                         messageFile.flush();
                         printPutStat(messageFile);
@@ -158,6 +197,9 @@ public class FileMessageStore {
             synchronized (FileMessageStore.class) {
                 if (isFirstGetAvgValue) {
                     isFirstGetAvgValue = false;
+                    Monitor.firstPid = Thread.currentThread().getId();
+                    Monitor.mark(2);
+
                     printStat(getStat);
                 }
             }
@@ -193,6 +235,9 @@ public class FileMessageStore {
             @Override
             public void run()
             {
+                Monitor.mark(3);
+                Monitor.print();
+
                 print("func=shutdownHook---------------------------------------");
 
                 for (MessageFile messageFile : messageFiles) {

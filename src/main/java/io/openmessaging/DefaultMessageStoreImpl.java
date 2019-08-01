@@ -9,6 +9,7 @@ import java.util.List;
 public class DefaultMessageStoreImpl extends MessageStore {
 
     public DefaultMessageStoreImpl() {
+        Monitor.init();
         FileMessageStore.init();
     }
 
