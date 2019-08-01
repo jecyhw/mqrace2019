@@ -17,9 +17,9 @@ import static io.openmessaging.Utils.print;
  */
 public class MessageFile {
     int messageCount = 0;
-    private ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.BUFFER_SIZE);
-    private ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.BUFFER_SIZE);
-    private ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.BUFFER_SIZE);
+    private ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
+    private ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
+    private ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
 
     static AtomicInteger idAllocator = new AtomicInteger(0);
 

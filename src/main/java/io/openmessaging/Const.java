@@ -12,8 +12,8 @@ public interface Const {
     int PRINT_MSG_INTERVAL = 1024 * 128;
     int MSG_BYTES = 34;
     int LONG_BYTES = 4;
-    int MSG_COUNT = 4;
-    int BUFFER_SIZE = MSG_COUNT * 4096; // 必须是LONG_BYTES的倍数
-    int MAX_LONG_CAPACITY = BUFFER_SIZE / LONG_BYTES;
-    int MAX_MSG_CAPACITY = BUFFER_SIZE / MSG_BYTES;
+    int PUT_BUFFER_SIZE = 4 * 4096; // 16k写入
+    int GET_BUFFER_SIZE = 1024 * 1024 * 4; //一次对多读取4m
+    int MAX_LONG_CAPACITY = GET_BUFFER_SIZE / LONG_BYTES;
+    int MAX_MSG_CAPACITY = GET_BUFFER_SIZE / MSG_BYTES;
 }
