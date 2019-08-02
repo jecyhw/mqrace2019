@@ -255,7 +255,7 @@ public class FileMessageStore {
         print("func=printPutStat---------------------------------------");
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < messageFile.chCount.length; i++) {
-            sb.append(i).append("=").append(messageFile.chCount[i]).append(" ");
+            sb.append(i).append("=").append(messageFile.chCount[i]).append(",");
 
         }
         dPrint(sb.toString());
@@ -267,6 +267,11 @@ public class FileMessageStore {
         } catch (IOException e) {
             print("func=firstGet error " + e.getMessage());
         }
+        sb = new StringBuilder();
+        for (int i = 0; i < messageFile.aIntervals.length; i++) {
+            sb.append(i).append("=").append(messageFile.aIntervals[i]).append(",");
+        }
+        dPrint(sb.toString());
     }
 
 

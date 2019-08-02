@@ -43,6 +43,7 @@ public class MessageFile {
     int[] chCount = new int[256];
     boolean isByte = true;
 
+    int[] aIntervals = new int[501];
     private Message prevMessage;
 
     public MessageFile() {
@@ -278,7 +279,13 @@ public class MessageFile {
                 print("func=putStat t is equal t=" + message.getT());
                 isTEqual = true;
             }
-            maxTInterval = Math.max(maxTInterval, message.getT() - message.getA());
+            maxTInterval = Math.max(maxTInterval, message.getT() - prevMessage.getT());
+            int aInterval = (int)(message.getA() - prevMessage.getA());
+            if (aInterval > 500) {
+                aIntervals[500]++;
+            } else {
+                aIntervals[aInterval]++;
+            }
         }
         prevMessage = message;
     }

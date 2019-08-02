@@ -43,7 +43,7 @@ public class Tester {
             memory.readBitPos = 0;
             put(data, 0, i);
             if (get(memory) != i) {
-                System.err.println(false);
+                System.out.println(false);
             }
         }
 
