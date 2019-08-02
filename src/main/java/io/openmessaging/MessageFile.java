@@ -16,7 +16,9 @@ import static io.openmessaging.Utils.print;
  * Created by yanghuiwei on 2019-07-26
  */
 public class MessageFile {
+    MemoryIndex memoryIndex = new MemoryIndex();
     int messageCount = 0;
+
     private ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);

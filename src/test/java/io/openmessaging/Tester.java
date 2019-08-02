@@ -1,5 +1,8 @@
 package io.openmessaging;
 
+import static io.openmessaging.VariableUtils.get;
+import static io.openmessaging.VariableUtils.put;
+
 /**
  * Created by yanghuiwei on 2019-07-28
  */
@@ -32,5 +35,26 @@ public class Tester {
         System.out.println(lowerBound(nums, 0, 3, 0));
 
         System.out.println(upperBound(nums, 0, 3, 0));
+
+        Memory memory = new Memory();
+        for (int i = 0; i < 1024 * 1024 * 10; i++) {
+            byte[] data = new byte[50];
+            memory.data = data;
+            memory.readBitPos = 0;
+            put(data, 0, i);
+            if (get(memory) != i) {
+                System.err.println(false);
+            }
+        }
+
+        long startTime = System.currentTimeMillis();
+        byte[] data = new byte[50];
+        for (long i = 0L; i < 1024L * 1024 * 1024 * 2; i += 10) {
+            for (int j = 0; j < 10; j++) {
+                put(data, 0, j);
+            }
+        }
+        System.out.println(System.currentTimeMillis() - startTime);
+
     }
 }
