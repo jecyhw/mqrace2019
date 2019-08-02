@@ -270,7 +270,7 @@ public class FileMessageStore {
         sb = new StringBuilder();
         for (int i = 0; i < messageFile.aIntervals.length; i++) {
             if (messageFile.aIntervals[i] > 0) {
-                sb.append(i).append("=").append(messageFile.aIntervals[i]).append(",");
+                sb.append(i - 35000).append("=").append(messageFile.aIntervals[i]).append(",");
             }
         }
         dPrint(sb.toString());
