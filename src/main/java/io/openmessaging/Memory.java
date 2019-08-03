@@ -8,12 +8,10 @@ public class Memory {
 
     //已使用的比特位数
     int putBitLength = 0;
-    //读取t的时候使用
-    int readBitPos;
 
     public boolean put(int val) {
         if (hasRemaining()) {
-            putBitLength += VariableUtils.put(data, putBitLength, val);
+            putBitLength = VariableUtils.put(data, putBitLength, val);
             return true;
         }
         return false;

@@ -23,7 +23,6 @@ public class FileMessageStore {
 
     private static volatile boolean isFirstGetAvgValue = true;
     private static GetStat getAvgStat = new GetStat();
-    private static AtomicInteger robin = new AtomicInteger(0);
 
     public static List<Info> infoList = new ArrayList<>();
     private static AtomicInteger tidCounter = new AtomicInteger(0);
@@ -53,6 +52,7 @@ public class FileMessageStore {
         return item;
     });
 
+    private static Comparator<Message> messageComparator = Comparator.comparingLong(Message::getT);
 
     public static void init() {
         //创建存储父目录
@@ -77,70 +77,26 @@ public class FileMessageStore {
         messageFileThreadLocal.get().put(message);
     }
 
-    private static ThreadLocal<Comparator<Message>> comparatorThreadLocal = ThreadLocal.withInitial(() ->  {
-        return new Comparator<Message>() {
-            @Override
-            public int compare(Message o1, Message o2) {
-                return Long.compare(o1.getT(), o2.getT());
-            }
-        };
-    });
-
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
 
-        List<List<Message>> messagesList = new ArrayList<>(messageFiles.size());
+        List<Message> messages = null;
         GetItem getItem = getBufThreadLocal.get();
 
-        int messageSize = 0;
 
-        for (int i = 0, pos = robin.getAndIncrement(); i < messageFiles.size(); i++) {
-            List<Message> messages = messageFiles.get(pos % messageFiles.size()).get(aMin, aMax, tMin, tMax, getItem);
-            messagesList.add(messages);
-            messageSize += messages.size();
-            pos++;
-        }
-
-        Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messageSize);
-        return sort(messagesList, messageSize);
-    }
-
-    private static List<Message> sort(List<List<Message>> messagesList, int size) {
-        if (messagesList.isEmpty()) {
-            return Collections.emptyList();
-        }
-        if (messagesList.size() == 1) {
-            return messagesList.get(0);
-        }
-        List<Message> messages = messagesList.get(0);
-        for (int i = 1; i < messagesList.size(); i++) {
-            messages = merge(messages, messagesList.get(i));
-        }
-        return messages;
-    }
-
-    private static List<Message> merge(List<Message> messages1, List<Message> messages2) {
-        List<Message> messages = new ArrayList<>(messages1.size() + messages2.size());
-        int i1 = 0, i2 = 0;
-        while (i1 < messages1.size() && i2 < messages2.size()) {
-            Message message1 = messages1.get(i1);
-            Message message2 = messages2.get(i2);
-            if (message1.getT() < message2.getT()) {
-                messages.add(message1);
-                i1++;
+        for (MessageFile messageFile : messageFiles) {
+            if (messages == null) {
+                messages = messageFile.get(aMin, aMax, tMin, tMax, getItem);
             } else {
-                messages.add(message2);
-                i2++;
+                messages.addAll(messageFile.get(aMin, aMax, tMin, tMax, getItem));
             }
         }
 
-        if (i1 < messages1.size()) {
-            messages.addAll(messages1.subList(i1, messages1.size()));
-        } else {
-            messages.addAll(messages2.subList(i2, messages2.size()));
-        }
+        Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messages.size());
+        messages.sort(messageComparator);
         return messages;
     }
+
 
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         firstGetAvgValue(aMin, aMax, tMin, tMax);
@@ -263,7 +219,7 @@ public class FileMessageStore {
         dPrint("messageCount=" + messageFile.messageCount + " idAllocator=" + MessageFile.idAllocator.get());
         dPrint("isTSequence=" + messageFile.isTSequence + " isTEqual" + messageFile.isTEqual + " isByte=" + messageFile.isByte + " maxTInterval=" + messageFile.maxTInterval);
         try {
-            dPrint("tFileSize=" + messageFile.tFc.size() + " aFileSize=" + messageFile.aFc.size() + " msgFileSize=" + messageFile.msgFc.size());
+            dPrint(" aFileSize=" + messageFile.aFc.size() + " msgFileSize=" + messageFile.msgFc.size());
         } catch (IOException e) {
             print("func=firstGet error " + e.getMessage());
         }

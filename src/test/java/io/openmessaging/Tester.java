@@ -50,13 +50,12 @@ public class Tester {
     }
 
     private static void VariableUtilsTest() {
-        Memory memory = new Memory();
+        MemoryRead memoryRead = new MemoryRead();
         for (int i = 0; i < 1024 * 1024 * 10; i++) {
             byte[] data = new byte[50];
-            memory.data = data;
-            memory.readBitPos = 0;
+            memoryRead.bitPos = 0;
             put(data, 0, i);
-            if (get(memory) != i) {
+            if (get(data, memoryRead) != i) {
                 System.out.println(false);
             }
         }

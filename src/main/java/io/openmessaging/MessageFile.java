@@ -20,15 +20,12 @@ public class MessageFile {
     int messageCount = 0;
 
     private ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
-    private ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
 
     static AtomicInteger idAllocator = new AtomicInteger(0);
 
     RandomAccessFile msgFile;
     FileChannel msgFc;
-    RandomAccessFile tFile;
-    FileChannel tFc;
     RandomAccessFile aFile;
     FileChannel aFc;
 
@@ -44,15 +41,12 @@ public class MessageFile {
     boolean isByte = true;
 
     int[] aIntervals = new int[70002];
-    private Message prevMessage;
+    private Message prevMessage = new Message(0, 0, null);
 
     public MessageFile() {
         String fileId = String.valueOf(idAllocator.getAndIncrement());
 
         try {
-            tFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.T_FILE_SUFFIX, "rw");
-            tFc = tFile.getChannel();
-
             aFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.A_FILE_SUFFIX, "rw");
             aFc = aFile.getChannel();
 
@@ -68,35 +62,34 @@ public class MessageFile {
         putStat(message);
 
         try {
-            writeInt(tFc, tBuf, (int)message.getT());
+            memoryIndex.put((int)message.getT(), (int)prevMessage.getT());
             writeInt(aFc, aBuf, (int)message.getA());
             writeMsg(message.getBody());
         } catch (IOException e) {
             print("func=put error t=" + message.getT() + " a=" + message.getA() + " msg=" + Utils.bytesToHex(message.getBody()) + " " + e.getMessage());
         }
+        prevMessage = message;
     }
 
     public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
         if (tMin <= tMax && aMin <= aMax) {
-            try {
-                ByteBuffer keyBuf = getItem.keyBuf;
-                long minPos = lowerBound(tMin, keyBuf);
-                long maxPos = upperBound(tMax, keyBuf);
-                if (minPos >= maxPos) {
-                    return Collections.emptyList();
-                }
+            MemoryRead memoryRead = getItem.memoryRead;
+            MemoryGetItem minItem = getItem.minItem;
+            MemoryGetItem maxItem = getItem.maxItem;
+            memoryIndex.lowerBound((int)tMin, memoryRead, minItem);
+            memoryIndex.upperBound((int)tMax, memoryRead, maxItem);
 
-                ByteBuffer readBuf = getItem.buf;
-                int[] as = readArray(minPos, maxPos, readBuf, aFc);
-                int[] ts = readArray(minPos, maxPos, readBuf, tFc);
-
-                List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
-                getStat(getItem, (int)(maxPos - minPos), messages.size());
-                return messages;
-            } catch (Exception e) {
-                print("func=get error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax + " " + e.getMessage());
+            int minPos = minItem.pos;
+            int maxPos = maxItem.pos;
+            if (minPos >= maxPos) {
                 return Collections.emptyList();
             }
+            ByteBuffer readBuf = getItem.buf;
+            int[] as = readArray(minPos, maxPos, readBuf, aFc);
+            int[] ts = memoryIndex.range(minItem, maxItem, memoryRead, as);
+            List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
+            getStat(getItem, maxPos - minPos, messages.size());
+            return messages;
         } else {
             return Collections.emptyList();
         }
@@ -159,63 +152,32 @@ public class MessageFile {
         if (tMin <= tMax && aMin <= aMax) {
             long sum = 0;
             int count = 0;
-            ByteBuffer keyBuf = getItem.keyBuf;
-            try {
-                long minPos = lowerBound(tMin, keyBuf);
-                long maxPos = upperBound(tMax, keyBuf);
-                if (minPos < maxPos) {
-                    ByteBuffer readBuf = getItem.buf;
-                    int[] as = readArray(minPos, maxPos, readBuf, aFc);
-                    for (int i = 0; i < as.length; i++) {
-                        if (as[i] >= aMin && as[i] <= aMax) {
-                            sum += as[i];
-                            count++;
-                        }
-                    }
-                    intervalSum.sum = sum;
-                    intervalSum.count = count;
+            MemoryRead memoryRead = getItem.memoryRead;
+            MemoryGetItem minItem = getItem.minItem;
+            MemoryGetItem maxItem = getItem.maxItem;
 
-                    getStat(getItem, (int)(maxPos - minPos), count);
+            memoryIndex.lowerBound((int)tMin, memoryRead, minItem);
+            memoryIndex.upperBound((int)tMax, memoryRead, maxItem);
+
+            int minPos = minItem.pos;
+            int maxPos = maxItem.pos;
+
+            if (minPos < maxPos) {
+                ByteBuffer readBuf = getItem.buf;
+                int[] as = readArray(minPos, maxPos, readBuf, aFc);
+                for (int a : as) {
+                    if (a >= aMin && a <= aMax) {
+                        sum += a;
+                        count++;
+                    }
                 }
-            } catch (Exception e) {
-                print("func=getAvgValue error aMin=" + aMin + " aMax=" + aMax + " tMin" + tMin + " tMax=" + tMax + " " + e.getMessage());
+                intervalSum.sum = sum;
+                intervalSum.count = count;
+
+                getStat(getItem, (maxPos - minPos), count);
             }
         }
         return intervalSum;
-    }
-
-    private long lowerBound(long val, ByteBuffer bb) throws IOException {
-        long low = 0, high = messageCount, mid;
-
-        bb.clear();
-        while (low < high) {
-            mid = low + (high - low) / 2;
-            long t = readInt(mid * Const.LONG_BYTES, bb, tFc);
-            if (val > t) {
-                low = mid + 1;
-            }
-            else {
-                high = mid;
-            }
-        }
-        return low;
-    }
-
-    private long upperBound(long ele, ByteBuffer bb) throws IOException {
-        long low = 0, high = messageCount, mid;
-
-        bb.clear();
-        while (low < high) {
-            mid = low + (high - low) / 2;
-            long t = readInt(mid * Const.LONG_BYTES, bb, tFc);
-            if (t > ele) {
-                high = mid;
-            }
-            else {
-                low = mid + 1;
-            }
-        }
-        return low;
     }
 
     private void readInBuf(long pos, ByteBuffer bb, FileChannel fc) {
@@ -227,24 +189,6 @@ public class MessageFile {
         } catch (IOException e) {
             //出现异常返回最大值，最终查找到的message列表就为空
             print("func=readInBuf error pos=" + pos + " " + e.getMessage());
-        }
-    }
-
-    private long readInt(long pos, ByteBuffer bb, FileChannel fc) {
-        try {
-            while (bb.hasRemaining()) {
-                int read = fc.read(bb, pos);
-                pos += read;
-            }
-            bb.flip();
-            long t = bb.getInt();
-            bb.clear();
-
-            return t;
-        } catch (IOException e) {
-            //出现异常返回最大值，最终查找到的message列表就为空
-            print("func=readInt error pos=" + pos + " " + e.getMessage());
-            return Long.MAX_VALUE;
         }
     }
 
@@ -289,7 +233,6 @@ public class MessageFile {
                 aIntervals[aInterval]++;
             }
         }
-        prevMessage = message;
     }
 
     private void writeInt(FileChannel fc, ByteBuffer buf, int a) throws IOException {
@@ -320,9 +263,6 @@ public class MessageFile {
                 msgFc.close();
                 msgFile.close();
 
-                tFc.close();
-                tFile.close();
-
                 aFile.close();
                 aFc.close();
             }
@@ -333,11 +273,10 @@ public class MessageFile {
 
     public void flush() {
         try {
-            flush(tFc, tBuf);
+            memoryIndex.flush();
             flush(aFc, aBuf);
             flush(msgFc, msgBuf);
 
-            tBuf = null;
             aBuf = null;
             msgBuf = null;
         } catch (IOException e) {

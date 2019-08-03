@@ -26,9 +26,8 @@ public class VariableUtils {
         return bitPos + 2;
     }
 
-    public static int get(Memory memory) {
-        byte[] data = memory.data;
-        int bitPos = memory.readBitPos;
+    public static int get(byte[] data, MemoryRead memoryRead) {
+        int bitPos = memoryRead.bitPos;
         int v = 0;
         int count = 0;
         while (true) {
@@ -36,7 +35,7 @@ public class VariableUtils {
             v |= (getBit(data, bitPos + 1) << count);
             bitPos += 2;
             if (hasData == 0) {
-                memory.readBitPos = bitPos;
+                memoryRead.bitPos = bitPos;
                 return v;
             }
             count++;
