@@ -42,11 +42,11 @@ public class Tester {
     }
 
     private static void test() {
-        int index = 8, pos = 9;
-        int t = (pos << 8) | index;
+        int index = 1023, pos = 1024 * 1024;
+        int t = (pos << 10) | index;
 
-        System.out.println(t & 0xff);
-        System.out.println(t >> 8);
+        System.out.println(t & 0x3ff);
+        System.out.println(t >> 10);
     }
 
     private static void VariableUtilsTest() {

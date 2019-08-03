@@ -45,8 +45,8 @@ public class MemoryIndex {
             if (!memory.hasRemaining()) {
                 newMemory();
             }
-            //以及记录下一个t所在memory的地址
-            indexBuf.putInt((memory.putBitLength << 8) | memoryPos);
+            //以及记录下一个t所在memory的地址，目前10个字节表示长度，注意这里有坑，需要合理计算
+            indexBuf.putInt((memory.putBitLength << Const.INDEX_BUFFER_BIT_LENGTH) | memoryPos);
         } else {
             int diffT = t - prevT;
             if (!memory.put(diffT)) {
@@ -83,8 +83,8 @@ public class MemoryIndex {
                 //从索引内存中读
                 int indexPos = curPos / Const.INDEX_INTERVAL;
 
-                int indexBufsPos = indexPos / Const.INDEX_BUFFER_SIZE;
-                int indexBufPos = indexPos % Const.INDEX_BUFFER_SIZE;
+                int indexBufsPos = indexPos / Const.INDEX_ELE_LENGTH;
+                int indexBufPos = indexPos % Const.INDEX_ELE_LENGTH;
 
                 ByteBuffer tIndexBuf = indexBufs.get(indexBufsPos).duplicate();
                 //得到这个位置的t值
@@ -92,8 +92,8 @@ public class MemoryIndex {
                 //得到这个t的下一个t存储的位置
                 int nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
                 //(memory.putBitLength << 8) | memoryPos;
-                nextMemIndex = nextValPosInfo & 0xff;
-                memoryRead.bitPos = nextValPosInfo >> 8;
+                nextMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
+                memoryRead.bitPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
 
                 res[i] = curT;
             } else {
@@ -134,8 +134,8 @@ public class MemoryIndex {
         int candidateTPos = indexPos * Const.INDEX_INTERVAL;
         if (indexPos >= 0) {
             while (true) {
-                int indexBufsPos = indexPos / Const.INDEX_BUFFER_SIZE;
-                int indexBufPos = indexPos % Const.INDEX_BUFFER_SIZE;
+                int indexBufsPos = indexPos / Const.INDEX_ELE_LENGTH;
+                int indexBufPos = indexPos % Const.INDEX_ELE_LENGTH;
 
                 ByteBuffer tIndexBuf = indexBufs.get(indexBufsPos).duplicate();
                 int candidateT, nextValPosInfo;
@@ -144,8 +144,8 @@ public class MemoryIndex {
                 //得到这个t的下一个t存储的位置
                 nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
                 //(memory.putBitLength << 8) | memoryPos;
-                int nextCandidateTMemIndex = nextValPosInfo & 0xff;
-                int nextCandidateTMemPos = nextValPosInfo >> 8;
+                int nextCandidateTMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
+                int nextCandidateTMemPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
 
                 if (nextCandidateTMemIndex > memoryPos) {
                     item.set(0, putCount, nextCandidateTMemIndex, 0);
@@ -213,8 +213,8 @@ public class MemoryIndex {
         //先找第一个大于等于val的位置，减1就是第一个小于val的位置
         while (low < high) {
             mid = low + (high - low) / 2;
-            indexBufsPos = mid / Const.INDEX_BUFFER_SIZE;
-            indexBufPos = mid % Const.INDEX_BUFFER_SIZE;
+            indexBufsPos = mid / Const.INDEX_ELE_LENGTH;
+            indexBufPos = mid % Const.INDEX_ELE_LENGTH;
 
             long t = indexBufs.get(indexBufsPos).duplicate().getInt(indexBufPos * Const.INDEX_ELE_SIZE);
 
@@ -229,7 +229,7 @@ public class MemoryIndex {
     }
 
     public void flush() {
-        indexBufEleCount = (indexBufs.size() * Const.INDEX_BUFFER_SIZE - indexBufs.get(0).remaining()) / Const.INDEX_ELE_SIZE;
+        indexBufEleCount = (indexBufs.size() * Const.INDEX_BUFFER_SIZE - indexBufs.get(indexBufs.size() - 1).remaining()) / Const.INDEX_ELE_SIZE;
         Utils.print("MemoryIndex func=flush memoryIndexBuf=" + memoryIndexBufCounter.get() + " memoryBuf=" + memoryBufCounter.get());
     }
 
