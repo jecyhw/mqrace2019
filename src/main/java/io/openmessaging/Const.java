@@ -20,4 +20,9 @@ public interface Const {
 
     int MEMORY_BUFFER_SIZE = 1024 * 1024;
     boolean MEMORY_BUFFER_DIRECT = true;
+
+
+    int INDEX_BUFFER_SIZE = 1024 * 1024;
+    int INDEX_INTERVAL = 16;
+    int INDEX_ELE_SIZE = 8;
 }

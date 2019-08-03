@@ -31,11 +31,25 @@ public class Tester {
     }
 
     public static void main(String[] args) {
+        test();
         int[] nums = new int[] {1, 2, 3};
         System.out.println(lowerBound(nums, 0, 3, 0));
 
         System.out.println(upperBound(nums, 0, 3, 0));
 
+        VariableUtilsTest();
+
+    }
+
+    private static void test() {
+        int index = 8, pos = 9;
+        int t = (pos << 8) | index;
+
+        System.out.println(t & 0xff);
+        System.out.println(t >> 8);
+    }
+
+    private static void VariableUtilsTest() {
         Memory memory = new Memory();
         for (int i = 0; i < 1024 * 1024 * 10; i++) {
             byte[] data = new byte[50];
@@ -55,6 +69,5 @@ public class Tester {
             }
         }
         System.out.println(System.currentTimeMillis() - startTime);
-
     }
 }
