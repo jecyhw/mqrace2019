@@ -6,7 +6,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -82,16 +81,16 @@ public class MessageFile {
             int minPos = minItem.pos;
             int maxPos = maxItem.pos;
             if (minPos >= maxPos) {
-                return Collections.emptyList();
+                return new ArrayList<>();
             }
             ByteBuffer readBuf = getItem.buf;
             int[] as = readArray(minPos, maxPos, readBuf, aFc);
-            int[] ts = memoryIndex.range(minItem, maxItem, memoryRead, as);
+            int[] ts = memoryIndex.range(minItem, maxItem, memoryRead);
             List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
             getStat(getItem, maxPos - minPos, messages.size());
             return messages;
         } else {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
     }
 

@@ -3,7 +3,6 @@ package io.openmessaging;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,12 +82,11 @@ public class FileMessageStore {
         List<Message> messages = null;
         GetItem getItem = getBufThreadLocal.get();
 
-
-        for (MessageFile messageFile : messageFiles) {
+        for (int i = messageFiles.size() - 1; i >= 0; i--) {
             if (messages == null) {
-                messages = messageFile.get(aMin, aMax, tMin, tMax, getItem);
+                messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
             } else {
-                messages.addAll(messageFile.get(aMin, aMax, tMin, tMax, getItem));
+                messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem));
             }
         }
 
@@ -104,8 +102,8 @@ public class FileMessageStore {
         long sum = 0;
         int count = 0;
         GetItem getItem = getBufThreadLocal.get();
-        for (MessageFile messageFile : messageFiles) {
-            IntervalSum intervalSum = messageFile.getAvgValue(aMin, aMax, tMin, tMax, getItem);
+        for (int i = messageFiles.size() - 1; i >= 0; i--) {
+            IntervalSum intervalSum = messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, getItem);
             sum += intervalSum.sum;
             count += intervalSum.count;
         }
