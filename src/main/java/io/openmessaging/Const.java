@@ -12,6 +12,7 @@ public interface Const {
     int PRINT_MSG_INTERVAL = 1024 * 128 * 128 * 16;
     int MSG_BYTES = 34;
     int LONG_BYTES = 4;
+
     int PUT_BUFFER_SIZE = 4 * 4096; // 16k写入
     int GET_BUFFER_SIZE = 1024 * 1024 * 4; //一次对多读取4m
     int MAX_LONG_CAPACITY = GET_BUFFER_SIZE / LONG_BYTES;
@@ -28,6 +29,9 @@ public interface Const {
     int INDEX_ELE_LENGTH = INDEX_BUFFER_SIZE / INDEX_ELE_SIZE;
     int INDEX_BUFFER_BIT_LENGTH = 10;
     int INDEX_BUFFER_BIT = 0x3ff;
+
+    int A_OFFSET = 10000;
+    int A_BYTES = 2;
 
     boolean PRINT_LOG = true;
 

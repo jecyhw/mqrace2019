@@ -6,6 +6,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -58,11 +59,11 @@ public class MessageFile {
     }
 
     public void put(Message message) {
-        putStat(message);
+//        putStat(message);
 
         try {
             memoryIndex.put((int)message.getT(), (int)prevMessage.getT());
-            writeInt(aFc, aBuf, (int)message.getA());
+            writeShort(aFc, aBuf, (short)(message.getT()-message.getA()+Const.A_OFFSET) );
             writeMsg(message.getBody());
         } catch (IOException e) {
             print("func=put error t=" + message.getT() + " a=" + message.getA() + " msg=" + Utils.bytesToHex(message.getBody()) + " " + e.getMessage());
@@ -70,7 +71,7 @@ public class MessageFile {
         prevMessage = message;
     }
 
-    public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+    public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem, ArrBuffer arrBuffer) {
         if (tMin <= tMax && aMin <= aMax) {
             MemoryRead memoryRead = getItem.memoryRead;
             MemoryGetItem minItem = getItem.minItem;
@@ -84,13 +85,15 @@ public class MessageFile {
                 return new ArrayList<>();
             }
             ByteBuffer readBuf = getItem.buf;
-            int[] as = readArray(minPos, maxPos, readBuf, aFc);
+
+            readAArray(minPos, maxPos, readBuf, aFc, arrBuffer.getAs());
             int[] ts = memoryIndex.range(minItem, maxItem, memoryRead);
-            List<Message> messages = readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
+
+            List<Message> messages = readMsgs(minPos, maxPos, readBuf, arrBuffer.getAs(), ts, aMin, aMax);
             getStat(getItem, maxPos - minPos, messages.size());
             return messages;
         } else {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
     }
 
@@ -105,7 +108,6 @@ public class MessageFile {
     private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax) {
         List<Message> messages = new ArrayList<>();
         int i = 0;
-
         while (minPos < maxPos) {
             int readCount = Math.min((int)(maxPos - minPos), Const.MAX_MSG_CAPACITY) ;
             readBuf.position(0);
@@ -114,14 +116,13 @@ public class MessageFile {
             readBuf.flip();
 
             while (readBuf.hasRemaining()) {
-                if (as[i] >= aMin && as[i] <= aMax) {
-                    byte[] msg = new byte[Const.MSG_BYTES];
-                    readBuf.get(msg);
-                    try {
-                        messages.add(new Message(as[i], ts[i], msg));
-                    } catch (Exception e) {
-                        e.getMessage();
-                    }
+                int aVal = ts[i]-as[i]+Const.A_OFFSET;
+                if (aVal >= aMin && aVal <= aMax) {
+                    Message message = MessageCacheShare.get();
+                    readBuf.get(message.getBody());
+                    message.setA(aVal);
+                    message.setT(ts[i]);
+                    messages.add(message);
                 } else {
                     readBuf.position(readBuf.position() + Const.MSG_BYTES);
                 }
@@ -150,8 +151,24 @@ public class MessageFile {
         }
         return arr;
     }
+    private int readAArray(long minPos, long maxPos, ByteBuffer readBuf, FileChannel fc, int[] arr) {
+        int cnt = 0;
+        while (minPos < maxPos) {
+            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY);
+            readBuf.position(0);
+            readBuf.limit(readCount * Const.A_BYTES);
+            readInBuf(minPos * Const.A_BYTES, readBuf, fc);
+            readBuf.flip();
 
-    public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+            while (readBuf.hasRemaining()) {
+                arr[cnt++] = (int)readBuf.getShort();
+            }
+            minPos += readCount;
+        }
+        return cnt;
+    }
+
+    public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem, ArrBuffer arrBuffer) {
         IntervalSum intervalSum = new IntervalSum();
         if (tMin <= tMax && aMin <= aMax) {
             long sum = 0;
@@ -168,10 +185,13 @@ public class MessageFile {
 
             if (minPos < maxPos) {
                 ByteBuffer readBuf = getItem.buf;
-                int[] as = readArray(minPos, maxPos, readBuf, aFc);
-                for (int a : as) {
-                    if (a >= aMin && a <= aMax) {
-                        sum += a;
+                int[] as = arrBuffer.getAs();
+                int[] ts = memoryIndex.range(minItem, maxItem, memoryRead);
+                int size = readAArray(minPos, maxPos, readBuf, aFc, as);
+                for (int i = 0; i < size; i++) {
+                    int aVal = ts[i] - as[i] + Const.A_OFFSET;
+                    if (aVal >= aMin && aVal <= aMax) {
+                        sum += aVal;
                         count++;
                     }
                 }
@@ -244,6 +264,13 @@ public class MessageFile {
             flush(fc, buf);
         }
         buf.putInt(a);
+    }
+
+    private void writeShort(FileChannel fc, ByteBuffer buf, short a) throws IOException {
+        if (buf.remaining() < Const.A_BYTES) {
+            flush(fc, buf);
+        }
+        buf.putShort(a);
     }
 
     private void writeMsg(byte[] msg) throws IOException {

@@ -66,6 +66,7 @@ public class FileMessageStore {
                 file.delete();
             }
         }
+        MessageCacheShare.init();
         print("func=init success");
     }
 
@@ -76,14 +77,19 @@ public class FileMessageStore {
         messageFileThreadLocal.get().put(message);
     }
 
+    private static ThreadLocal<ArrBuffer> arrBufferThreadLocal = ThreadLocal.withInitial(() ->  {
+        return new ArrBuffer();
+    });
+
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
 
         List<Message> messages = new ArrayList<>();
         GetItem getItem = getBufThreadLocal.get();
+        ArrBuffer arrBuffer = arrBufferThreadLocal.get();
 
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem));
+            messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, arrBuffer));
         }
 
         Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messages.size());
@@ -98,8 +104,10 @@ public class FileMessageStore {
         long sum = 0;
         int count = 0;
         GetItem getItem = getBufThreadLocal.get();
+        ArrBuffer arrBuffer = arrBufferThreadLocal.get();
+
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            IntervalSum intervalSum = messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, getItem);
+            IntervalSum intervalSum = messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, getItem, arrBuffer);
             sum += intervalSum.sum;
             count += intervalSum.count;
         }
