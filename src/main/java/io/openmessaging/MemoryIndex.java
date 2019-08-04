@@ -34,7 +34,7 @@ public class MemoryIndex {
 
     public void put(int t, int prevT) {
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
-        if ((putCount++ % Const.INDEX_INTERVAL) == 0) {
+        if (putCount % Const.INDEX_INTERVAL == 0) {
             if (!indexBuf.hasRemaining()) {
                 newIndexBuf();
             }
@@ -55,6 +55,7 @@ public class MemoryIndex {
                 memory.put(diffT);
             }
         }
+        putCount++;
     }
 
     public int[] range(MemoryGetItem sItem, MemoryGetItem eItem, MemoryRead memoryRead) {
@@ -69,6 +70,7 @@ public class MemoryIndex {
         int i = 0;
         int curT = 0;
 
+//        System.out.println("3.st=" + sItem.t + " et=" + eItem.t + " sp=" + sItem.pos + " ep=" + eItem.pos);
         if (curPos != 0) {
             res[i++] = curT = sItem.t;
             curPos++;
@@ -76,8 +78,6 @@ public class MemoryIndex {
 
         int nextMemIndex = sItem.nextMemIndex;
         memoryRead.bitPos = sItem.nextMemPos;
-
-
 
         while (i < len) {
             if ((curPos % Const.INDEX_INTERVAL) == 0) {
@@ -92,7 +92,6 @@ public class MemoryIndex {
                 curT = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE);
                 //得到这个t的下一个t存储的位置
                 int nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
-                //(memory.putBitLength << 8) | memoryPos;
                 nextMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
                 memoryRead.bitPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
 
@@ -131,57 +130,69 @@ public class MemoryIndex {
     }
 
     private void bound(int val, MemoryRead memoryRead, MemoryGetItem item, boolean isLt) {
-        int indexPos = firstLess(val);
-        int candidateTPos = indexPos * Const.INDEX_INTERVAL;
-        if (indexPos >= 0) {
+//        System.out.println(Thread.currentThread().getName() + " bound-----------------------------------------");
+        int curPos = firstLess(val) * Const.INDEX_INTERVAL;
+        int curT = 0, nextMemIndex = 0;
+        if (curPos >= 0) {
             while (true) {
-                int indexBufsPos = indexPos / Const.INDEX_ELE_LENGTH;
-                int indexBufPos = indexPos % Const.INDEX_ELE_LENGTH;
-
-                ByteBuffer tIndexBuf = indexBufs.get(indexBufsPos).duplicate();
-                //得到这个位置的t值
-                int candidateT = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE);
-                //得到这个t的下一个t存储的位置
-                int nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
-                //(memory.putBitLength << 8) | memoryPos;
-                int nextCandidateTMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
-                int nextCandidateTMemPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
-
-                if (nextCandidateTMemIndex > memoryPos) {
-                    item.set(0, putCount, nextCandidateTMemIndex, 0);
-                    return;
-                }
-
-                if (check(candidateT, candidateTPos, nextCandidateTMemIndex, nextCandidateTMemPos, val, item, isLt)) {
-                    return;
-                }
-
-                memoryRead.bitPos = nextCandidateTMemPos;
-                Memory mem = memories.get(nextCandidateTMemIndex);
-                byte[] data = mem.data;
-
-                candidateTPos++;
-                for (int i = 1; i < Const.INDEX_INTERVAL; i++) {
-                    candidateT += VariableUtils.get(data, memoryRead);
-                    if (memoryRead.bitPos >= mem.putBitLength) {
-                        //这个内存块读到末尾了
-                        if (++nextCandidateTMemIndex > memoryPos) {
-                            //所有内存块读完了
-                            item.set(0, putCount, nextCandidateTMemIndex, 0);
-                            return;
-                        } else {
-                            //跳转到下一个内存块
-                            mem = memories.get(nextCandidateTMemIndex);
-                            memoryRead.bitPos = 0;
-                        }
-                    }
-                    //必须要在 memoryRead.bitPos >= mem.putBitLength 判断之后
-                    if (check(candidateT, candidateTPos, nextCandidateTMemIndex, memoryRead.bitPos, val, item, isLt)) {
+                if ((curPos % Const.INDEX_INTERVAL) == 0) {
+                    if (curPos == putCount) {//结束了
+                        item.set(0, putCount, memories.size(), 0);
                         return;
                     }
-                    candidateTPos++;
+                    //从索引内存中读
+                    int indexPos = curPos / Const.INDEX_INTERVAL;
+
+                    int indexBufsPos = indexPos / Const.INDEX_ELE_LENGTH;
+                    int indexBufPos = indexPos % Const.INDEX_ELE_LENGTH;
+
+                    ByteBuffer tIndexBuf = indexBufs.get(indexBufsPos).duplicate();
+                    //得到这个位置的t值
+                    curT = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE);
+                    //得到这个t的下一个t存储的位置
+                    int nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
+                    nextMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
+                    memoryRead.bitPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
+
+
+//                    System.out.println(Thread.currentThread().getName() + " 1.pos:" + curPos + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                    if (check(curT, curPos, nextMemIndex, memoryRead.bitPos, val, item, isLt)) {
+                        return;
+                    }
+
+                    if (nextMemIndex > memoryPos) {
+                        if (curPos == putCount) {
+                            System.out.println();
+                        }
+                        //所有内存块读完了
+//                        System.out.println(Thread.currentThread().getName() + " 2.pos:" + (curPos + 1) + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                        item.set(0, curPos + 1, nextMemIndex, 0);
+                        return;
+                    }
+                } else {
+                    //从变长编码内存中读
+                    Memory mem = memories.get(nextMemIndex);
+                    curT += VariableUtils.get(mem.data, memoryRead);
+
+//                    System.out.println(Thread.currentThread().getName() + " 3.pos:" + curPos + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                    if (memoryRead.bitPos >= mem.putBitLength) {
+                        nextMemIndex++;
+                        memoryRead.bitPos = 0;
+
+                        if (nextMemIndex > memoryPos) {
+                            //所有内存块读完了
+//                            System.out.println(Thread.currentThread().getName() + " 4.pos:" + (curPos + 1) + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                            item.set(0, curPos + 1, nextMemIndex, 0);
+                            return;
+                        }
+
+                    }
+                    if (check(curT, curPos, nextMemIndex, memoryRead.bitPos, val, item, isLt)) {
+                        return;
+                    }
                 }
-                indexPos++;
+
+                curPos++;
             }
         } else {
             //pos表示0是第一个元素
@@ -237,8 +248,6 @@ public class MemoryIndex {
         indexBuf = ByteBuffer.allocateDirect(Const.INDEX_BUFFER_SIZE);
         indexBufs.add(indexBuf);
         memoryIndexBufCounter.getAndIncrement();
-
-        Utils.print("func=newIndexBuf memoryIndexBufCounter=" + memoryIndexBufCounter.get());
     }
 
     private void newMemory() {
@@ -246,7 +255,5 @@ public class MemoryIndex {
         memories.add(memory);
         ++memoryPos;
         memoryBufCounter.incrementAndGet();
-
-        Utils.print("func=newMemory memoryBufCounter=" + memoryBufCounter.get() + " putCount=" + putCount);
     }
 }

@@ -136,6 +136,48 @@ public class FileMessageStore {
                         printPutStat(messageFile);
                     }
                     isFirstGet = false;
+
+//                    int size = 0;
+//                    int[][] data = new int[messageFiles.size()][];
+//                    int len = 0;
+//                    for (MessageFile messageFile : messageFiles) {
+//                        MemoryGetItem sItem = new MemoryGetItem();
+//                        MemoryGetItem eItem = new MemoryGetItem();
+//                        eItem.nextMemIndex = messageFile.memoryIndex.memoryPos + 1;
+//                        eItem.pos = messageFile.memoryIndex.putCount;
+//                        int[] t = messageFile.memoryIndex.range(sItem, eItem, new MemoryRead());
+//                        size += t.length;
+//                        for (int i = 0; i < t.length; i++) {
+//                            if (t[i] % 2 == 0) {
+//                                if (t[i + 1] != t[i]) {
+//                                    System.err.println("flush error");
+//                                }
+//                                i++;
+//                            }
+//                        }
+//                        data[len++] = t;
+//                    }
+//
+//                    int[] all = new int[size];
+//                    len = 0;
+//                    for (int[] t : data) {
+//                        for (int i : t) {
+//                            all[len++] = i;
+//                        }
+//                    }
+//
+//                    Arrays.sort(all);
+//
+//                    for (int i = 0; i < all.length; i++) {
+//                        if (all[i] % 2 == 0) {
+//                            if (all[i + 1] != all[i]) {
+//                                System.err.println("flush error");
+//                            }
+//                            i++;
+//                        }
+//                    }
+//
+//                    System.out.println();
                 }
             }
         }
