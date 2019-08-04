@@ -218,13 +218,11 @@ public class MemoryIndex {
         if (isLt) {
             if (candidateT > destT) {
                 item.set(candidateT, candidateTCount, nextCandidateTIndex, nextCandidateTPos);
-                Utils.print("func=check ct:" + candidateT + " t:" + destT + " isLt:" + isLt + " lastT:" + lastT);
                 return true;
             }
         } else {
             if (candidateT >= destT) {
                 item.set(candidateT, candidateTCount, nextCandidateTIndex, nextCandidateTPos);
-                Utils.print("func=check ct:" + candidateT + " t:" + destT + " isLt:" + isLt + " lastT:" + lastT);
                 return true;
             }
         }
