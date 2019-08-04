@@ -29,6 +29,6 @@ public interface Const {
     int INDEX_BUFFER_BIT_LENGTH = 10;
     int INDEX_BUFFER_BIT = 0x3ff;
 
-    boolean PRINT_LOG = false;
+    boolean PRINT_LOG = true;
 
 }
