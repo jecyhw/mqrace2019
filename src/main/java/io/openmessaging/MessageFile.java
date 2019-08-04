@@ -105,6 +105,7 @@ public class MessageFile {
     private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax) {
         List<Message> messages = new ArrayList<>();
         int i = 0;
+
         while (minPos < maxPos) {
             int readCount = Math.min((int)(maxPos - minPos), Const.MAX_MSG_CAPACITY) ;
             readBuf.position(0);
@@ -116,7 +117,11 @@ public class MessageFile {
                 if (as[i] >= aMin && as[i] <= aMax) {
                     byte[] msg = new byte[Const.MSG_BYTES];
                     readBuf.get(msg);
-                    messages.add(new Message(as[i], ts[i], msg));
+                    try {
+                        messages.add(new Message(as[i], ts[i], msg));
+                    } catch (Exception e) {
+                        e.getMessage();
+                    }
                 } else {
                     readBuf.position(readBuf.position() + Const.MSG_BYTES);
                 }

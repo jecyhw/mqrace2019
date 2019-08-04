@@ -27,6 +27,8 @@ public class MemoryIndex {
     Memory memory = new Memory();
     int memoryPos = -1;
 
+    int lastT;
+
     public MemoryIndex() {
         newIndexBuf();
         newMemory();
@@ -56,13 +58,10 @@ public class MemoryIndex {
             }
         }
         putCount++;
+        lastT = t;
     }
 
     public int[] range(MemoryGetItem sItem, MemoryGetItem eItem, MemoryRead memoryRead) {
-        if (sItem.nextMemIndex > memoryPos) {
-            return null;
-        }
-
         int curPos = sItem.pos;
         //数据可能会存在多个块中
         int len = eItem.pos - curPos;
@@ -74,6 +73,10 @@ public class MemoryIndex {
         if (curPos != 0) {
             res[i++] = curT = sItem.t;
             curPos++;
+        }
+
+        if (sItem.nextMemIndex > memoryPos) {
+            return res;
         }
 
         int nextMemIndex = sItem.nextMemIndex;
@@ -138,6 +141,10 @@ public class MemoryIndex {
                 if ((curPos % Const.INDEX_INTERVAL) == 0) {
                     if (curPos == putCount) {//结束了
                         item.set(0, putCount, memories.size(), 0);
+                        if (lastT >= val) {
+                            System.out.println();
+                        }
+                        System.out.println(Thread.currentThread().getName() + " 5.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos + " lastT:" + lastT);
                         return;
                     }
                     //从索引内存中读
@@ -161,13 +168,14 @@ public class MemoryIndex {
                     }
 
                     if (nextMemIndex > memoryPos) {
-                        if (curPos == putCount) {
-                            System.out.println();
+                        if (check(curT, curPos, nextMemIndex, 0, val, item, isLt)) {
+                            return;
+                        } else {
+                            //所有内存块读完了
+//                            System.out.println(Thread.currentThread().getName() + " 2.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                            item.set(0, curPos + 1, nextMemIndex, 0);
+                            return;
                         }
-                        //所有内存块读完了
-//                        System.out.println(Thread.currentThread().getName() + " 2.pos:" + (curPos + 1) + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
-                        item.set(0, curPos + 1, nextMemIndex, 0);
-                        return;
                     }
                 } else {
                     //从变长编码内存中读
@@ -180,10 +188,14 @@ public class MemoryIndex {
                         memoryRead.bitPos = 0;
 
                         if (nextMemIndex > memoryPos) {
-                            //所有内存块读完了
-//                            System.out.println(Thread.currentThread().getName() + " 4.pos:" + (curPos + 1) + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
-                            item.set(0, curPos + 1, nextMemIndex, 0);
-                            return;
+                            if (check(curT, curPos, nextMemIndex, 0, val, item, isLt)) {
+                                return;
+                            } else {
+                                //所有内存块读完了
+//                                System.out.println(Thread.currentThread().getName() + " 4.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                                item.set(0, curPos + 1, nextMemIndex, 0);
+                                return;
+                            }
                         }
 
                     }

@@ -79,15 +79,11 @@ public class FileMessageStore {
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
 
-        List<Message> messages = null;
+        List<Message> messages = new ArrayList<>();
         GetItem getItem = getBufThreadLocal.get();
 
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            if (messages == null) {
-                messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
-            } else {
-                messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem));
-            }
+            messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem));
         }
 
         Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messages.size());
@@ -232,15 +228,15 @@ public class FileMessageStore {
             public void run()
             {
                 Monitor.mark(3);
-                Monitor.print();
+//                Monitor.print();
 
-                print("func=shutdownHook---------------------------------------");
-
-                for (MessageFile messageFile : messageFiles) {
-                    printPutStat(messageFile);
-                }
-                printStat(getStat);
-                printStat(getAvgStat);
+//                print("func=shutdownHook---------------------------------------");
+//
+//                for (MessageFile messageFile : messageFiles) {
+//                    printPutStat(messageFile);
+//                }
+//                printStat(getStat);
+//                printStat(getAvgStat);
 
                 System.err.println("func=shutdownHook stop");
             }
