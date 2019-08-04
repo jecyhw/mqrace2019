@@ -228,7 +228,7 @@ public class FileMessageStore {
             public void run()
             {
                 Monitor.mark(3);
-//                Monitor.print();
+                Monitor.print();
 
 //                print("func=shutdownHook---------------------------------------");
 //
