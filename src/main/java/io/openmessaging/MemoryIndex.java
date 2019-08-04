@@ -75,10 +75,6 @@ public class MemoryIndex {
             curPos++;
         }
 
-        if (sItem.nextMemIndex > memoryPos) {
-            return res;
-        }
-
         int nextMemIndex = sItem.nextMemIndex;
         memoryRead.bitPos = sItem.nextMemPos;
 
@@ -141,10 +137,7 @@ public class MemoryIndex {
                 if ((curPos % Const.INDEX_INTERVAL) == 0) {
                     if (curPos == putCount) {//结束了
                         item.set(0, putCount, memories.size(), 0);
-                        if (lastT >= val) {
-                            System.out.println();
-                        }
-                        System.out.println(Thread.currentThread().getName() + " 5.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos + " lastT:" + lastT);
+//                        System.out.println(Thread.currentThread().getName() + " 5.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos + " lastT:" + lastT);
                         return;
                     }
                     //从索引内存中读
