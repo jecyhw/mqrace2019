@@ -132,48 +132,6 @@ public class FileMessageStore {
                         printPutStat(messageFile);
                     }
                     isFirstGet = false;
-
-//                    int size = 0;
-//                    int[][] data = new int[messageFiles.size()][];
-//                    int len = 0;
-//                    for (MessageFile messageFile : messageFiles) {
-//                        MemoryGetItem sItem = new MemoryGetItem();
-//                        MemoryGetItem eItem = new MemoryGetItem();
-//                        eItem.nextMemIndex = messageFile.memoryIndex.memoryPos + 1;
-//                        eItem.pos = messageFile.memoryIndex.putCount;
-//                        int[] t = messageFile.memoryIndex.range(sItem, eItem, new MemoryRead());
-//                        size += t.length;
-//                        for (int i = 0; i < t.length; i++) {
-//                            if (t[i] % 2 == 0) {
-//                                if (t[i + 1] != t[i]) {
-//                                    System.err.println("flush error");
-//                                }
-//                                i++;
-//                            }
-//                        }
-//                        data[len++] = t;
-//                    }
-//
-//                    int[] all = new int[size];
-//                    len = 0;
-//                    for (int[] t : data) {
-//                        for (int i : t) {
-//                            all[len++] = i;
-//                        }
-//                    }
-//
-//                    Arrays.sort(all);
-//
-//                    for (int i = 0; i < all.length; i++) {
-//                        if (all[i] % 2 == 0) {
-//                            if (all[i + 1] != all[i]) {
-//                                System.err.println("flush error");
-//                            }
-//                            i++;
-//                        }
-//                    }
-//
-//                    System.out.println();
                 }
             }
         }
@@ -245,44 +203,44 @@ public class FileMessageStore {
 
     private static void printPutStat(MessageFile messageFile) {
         print("func=printPutStat---------------------------------------");
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < messageFile.chCount.length; i++) {
-            sb.append(i).append("=").append(messageFile.chCount[i]).append(",");
-
-        }
-        dPrint(sb.toString());
-        dPrint("putMinT=" + messageFile.putMinT + " putMaxT=" + messageFile.putMaxT + " putMinA=" + messageFile.putMinA + " putMaxA=" + messageFile.putMaxA);
+//        StringBuilder sb = new StringBuilder();
+//        for (int i = 0; i < messageFile.chCount.length; i++) {
+//            sb.append(i).append("=").append(messageFile.chCount[i]).append(",");
+//
+//        }
+//        dPrint(sb.toString());
+//        dPrint("putMinT=" + messageFile.putMinT + " putMaxT=" + messageFile.putMaxT + " putMinA=" + messageFile.putMinA + " putMaxA=" + messageFile.putMaxA);
         dPrint("messageCount=" + messageFile.messageCount + " idAllocator=" + MessageFile.idAllocator.get());
-        dPrint("isTSequence=" + messageFile.isTSequence + " isTEqual" + messageFile.isTEqual + " isByte=" + messageFile.isByte + " maxTInterval=" + messageFile.maxTInterval);
+//        dPrint("isTSequence=" + messageFile.isTSequence + " isTEqual" + messageFile.isTEqual + " isByte=" + messageFile.isByte + " maxTInterval=" + messageFile.maxTInterval);
         try {
             dPrint(" aFileSize=" + messageFile.aFc.size() + " msgFileSize=" + messageFile.msgFc.size());
         } catch (IOException e) {
             print("func=firstGet error " + e.getMessage());
         }
-        sb = new StringBuilder();
-        for (int i = 0; i < messageFile.aIntervals.length; i++) {
-            if (messageFile.aIntervals[i] > 0) {
-                sb.append(i - 35000).append("=").append(messageFile.aIntervals[i]).append(",");
-            }
-        }
-        dPrint(sb.toString());
+//        sb = new StringBuilder();
+//        for (int i = 0; i < messageFile.aIntervals.length; i++) {
+//            if (messageFile.aIntervals[i] > 0) {
+//                sb.append(i - 35000).append("=").append(messageFile.aIntervals[i]).append(",");
+//            }
+//        }
+//        dPrint(sb.toString());
     }
 
 
     private static void printStat(GetStat stat) {
         print("func=printStat---------------------------------------");
-        dPrint("minT=" + stat.minT + " maxT=" + stat.maxT + " minA=" + stat.minA + " maxA=" + stat.maxA);
-        dPrint("diffMinT=" + stat.diffMinT + " diffMaxT=" + stat.diffMaxT + " diffMinA=" + stat.diffMinA + " diffMaxA=" + stat.diffMaxA);
+//        dPrint("minT=" + stat.minT + " maxT=" + stat.maxT + " minA=" + stat.minA + " maxA=" + stat.maxA);
+//        dPrint("diffMinT=" + stat.diffMinT + " diffMaxT=" + stat.diffMaxT + " diffMinA=" + stat.diffMinA + " diffMaxA=" + stat.diffMaxA);
         dPrint("theadSetSize=" + getThreadCounter.get() + " getCount=" + stat.count.get());
 
-        StringBuilder sb = new StringBuilder();
-        for (GetItem item : getItems) {
-            sb.append("maxC=")
-                    .append(item.maxCount)
-                    .append(" maxAC=")
-                    .append(item.maxActualCount)
-                    .append(" ");
-        }
-        dPrint(sb.toString());
+//        StringBuilder sb = new StringBuilder();
+//        for (GetItem item : getItems) {
+//            sb.append("maxC=")
+//                    .append(item.maxCount)
+//                    .append(" maxAC=")
+//                    .append(item.maxActualCount)
+//                    .append(" ");
+//        }
+//        dPrint(sb.toString());
     }
 }

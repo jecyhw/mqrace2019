@@ -25,7 +25,6 @@ public class MemoryIndex {
     //t的相对值存储的内存
     List<Memory> memories = new ArrayList<>();
     Memory memory = new Memory();
-    int memoryPos = -1;
 
     int lastT;
 
@@ -44,10 +43,13 @@ public class MemoryIndex {
             //每隔INDEX_INTERVAL记录t（在indexBuf中记录了t就不会在memory中记录）
             indexBuf.putInt(t);
 
+            //下一个t的起始位置，先写在哪个块中，再写块的便宜位置
             if (memory.hasRemaining()) {
-                indexBuf.putInt((memory.putBitLength << Const.INDEX_BUFFER_BIT_LENGTH) | memoryPos);
+                indexBuf.putShort((short)(memories.size() - 1));
+                indexBuf.putInt(memory.putBitLength);
             } else {
-                indexBuf.putInt(memoryPos + 1);
+                indexBuf.putShort((short) memories.size());
+                indexBuf.putInt(0);
             }
             //以及记录下一个t所在memory的地址，目前10个字节表示长度，注意这里有坑，需要合理计算
         } else {
@@ -69,7 +71,6 @@ public class MemoryIndex {
         int i = 0;
         int curT = 0;
 
-//        System.out.println("3.st=" + sItem.t + " et=" + eItem.t + " sp=" + sItem.pos + " ep=" + eItem.pos);
         if (curPos != 0) {
             res[i++] = curT = sItem.t;
             curPos++;
@@ -87,12 +88,14 @@ public class MemoryIndex {
                 int indexBufPos = indexPos % Const.INDEX_ELE_LENGTH;
 
                 ByteBuffer tIndexBuf = indexBufs.get(indexBufsPos).duplicate();
+                //得到索引内存中这个位置的t值
+                int bufOffset = indexBufPos * Const.INDEX_ELE_SIZE;
+                curT = tIndexBuf.getInt(bufOffset);
+                //得到这个t的下一个t在内存块的位置
+                nextMemIndex = tIndexBuf.getShort(bufOffset + 4);
+                //得到这个t的下一个t在内存块中的偏移位置
+                memoryRead.bitPos = tIndexBuf.getInt(bufOffset + 6);
                 //得到这个位置的t值
-                curT = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE);
-                //得到这个t的下一个t存储的位置
-                int nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
-                nextMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
-                memoryRead.bitPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
 
                 res[i] = curT;
             } else {
@@ -132,11 +135,15 @@ public class MemoryIndex {
 //        System.out.println(Thread.currentThread().getName() + " bound-----------------------------------------");
         int curPos = firstLess(val) * Const.INDEX_INTERVAL;
         int curT = 0, nextMemIndex = 0;
+        int memorySize = memories.size();
+
         if (curPos >= 0) {
             while (true) {
                 if ((curPos % Const.INDEX_INTERVAL) == 0) {
-                    if (curPos == putCount) {//结束了
-                        item.set(0, putCount, memories.size(), 0);
+                    //数据在索引内存中
+                    if (curPos == putCount) {
+                        //总共putCount，数据下标从0开始，curPos到了putCount，说明没有数据了
+                        item.set(0, putCount, memorySize, 0);
 //                        System.out.println(Thread.currentThread().getName() + " 5.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos + " lastT:" + lastT);
                         return;
                     }
@@ -147,52 +154,54 @@ public class MemoryIndex {
                     int indexBufPos = indexPos % Const.INDEX_ELE_LENGTH;
 
                     ByteBuffer tIndexBuf = indexBufs.get(indexBufsPos).duplicate();
-                    //得到这个位置的t值
-                    curT = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE);
-                    //得到这个t的下一个t存储的位置
-                    int nextValPosInfo = tIndexBuf.getInt(indexBufPos * Const.INDEX_ELE_SIZE + 4);
-                    nextMemIndex = nextValPosInfo & Const.INDEX_BUFFER_BIT;
-                    memoryRead.bitPos = nextValPosInfo >> Const.INDEX_BUFFER_BIT_LENGTH;
-
-
+                    //得到索引内存中这个位置的t值
+                    int bufOffset = indexBufPos * Const.INDEX_ELE_SIZE;
+                    curT = tIndexBuf.getInt(bufOffset);
+                    //得到这个t的下一个t在内存块的位置
+                    nextMemIndex = tIndexBuf.getShort(bufOffset + 4);
+                    //得到这个t的下一个t在内存块中的偏移位置
+                    memoryRead.bitPos = tIndexBuf.getInt(bufOffset + 6);
+                    if (memoryRead.bitPos < 0) {
+                        System.out.println();
+                    }
 //                    System.out.println(Thread.currentThread().getName() + " 1.pos:" + curPos + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                    //检查当前在索引内存中的t是不是符合条件
                     if (check(curT, curPos, nextMemIndex, memoryRead.bitPos, val, item, isLt)) {
                         return;
                     }
 
-                    if (nextMemIndex > memoryPos) {
-                        if (check(curT, curPos, nextMemIndex, 0, val, item, isLt)) {
-                            return;
-                        } else {
-                            //所有内存块读完了
+                    if (nextMemIndex >= memorySize) {
+                        //说明索引内存中的t是最后一个元素，此时nextMemIndex会等于memories.size()，并且memoryRead.bitPos=0
 //                            System.out.println(Thread.currentThread().getName() + " 2.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
-                            item.set(0, curPos + 1, nextMemIndex, 0);
-                            return;
-                        }
+                        item.set(0, curPos + 1, memorySize, 0);
+                        return;
                     }
                 } else {
-                    //从变长编码内存中读
+                    //数据不在索引内存中，从变长编码内存中读
                     Memory mem = memories.get(nextMemIndex);
-                    curT += VariableUtils.get(mem.data, memoryRead);
+
+                    int bit = memoryRead.bitPos;
+                    try {
+                        curT += VariableUtils.get(mem.data, memoryRead);
+                    } catch (Exception e) {
+                        System.out.println(bit);
+                    }
 
 //                    System.out.println(Thread.currentThread().getName() + " 3.pos:" + curPos + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
                     if (memoryRead.bitPos >= mem.putBitLength) {
+                        //这个t刚好在内存块的最后一个位置,更新下一个t到下一个块中的起始位置信息
                         nextMemIndex++;
                         memoryRead.bitPos = 0;
-
-                        if (nextMemIndex > memoryPos) {
-                            if (check(curT, curPos, nextMemIndex, 0, val, item, isLt)) {
-                                return;
-                            } else {
-                                //所有内存块读完了
-//                                System.out.println(Thread.currentThread().getName() + " 4.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
-                                item.set(0, curPos + 1, nextMemIndex, 0);
-                                return;
-                            }
-                        }
-
                     }
+
+                    //校验变长编码内存中的t是不是符合条件
                     if (check(curT, curPos, nextMemIndex, memoryRead.bitPos, val, item, isLt)) {
+                        return;
+                    }
+                    if (nextMemIndex >= memorySize) {
+                        //所有内存块读完了
+//                                System.out.println(Thread.currentThread().getName() + " 4.pos:" + curPos + " putC:" + putCount + " ct:" + curT + " t:" + val + " neInd:" + nextMemIndex + " nxBitPos:" + memoryRead.bitPos + " memoryPos:" + memoryPos);
+                        item.set(0, curPos + 1, nextMemIndex, 0);
                         return;
                     }
                 }
@@ -209,11 +218,13 @@ public class MemoryIndex {
         if (isLt) {
             if (candidateT > destT) {
                 item.set(candidateT, candidateTCount, nextCandidateTIndex, nextCandidateTPos);
+                Utils.print("func=check ct:" + candidateT + " t:" + destT + " isLt:" + isLt + " lastT:" + lastT);
                 return true;
             }
         } else {
             if (candidateT >= destT) {
                 item.set(candidateT, candidateTCount, nextCandidateTIndex, nextCandidateTPos);
+                Utils.print("func=check ct:" + candidateT + " t:" + destT + " isLt:" + isLt + " lastT:" + lastT);
                 return true;
             }
         }
@@ -258,7 +269,6 @@ public class MemoryIndex {
     private void newMemory() {
         memory = new Memory();
         memories.add(memory);
-        ++memoryPos;
         memoryBufCounter.incrementAndGet();
     }
 }

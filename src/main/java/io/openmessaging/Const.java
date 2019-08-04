@@ -9,7 +9,7 @@ public interface Const {
     String T_FILE_SUFFIX = ".t";
     String A_FILE_SUFFIX = ".a";
 
-    int PRINT_MSG_INTERVAL = 1024 * 128;
+    int PRINT_MSG_INTERVAL = 1024 * 128 * 128 * 16;
     int MSG_BYTES = 34;
     int LONG_BYTES = 4;
     int PUT_BUFFER_SIZE = 4 * 4096; // 16k写入
@@ -22,11 +22,13 @@ public interface Const {
     boolean MEMORY_BUFFER_DIRECT = true;
 
 
-    int INDEX_BUFFER_SIZE = 1024 * 1024;
+    int INDEX_BUFFER_SIZE = 1024 * 1000; //必须是INDEX_ELE_SIZE的倍数
     int INDEX_INTERVAL = 16;
-    int INDEX_ELE_SIZE = 8;
+    int INDEX_ELE_SIZE = 10;
     int INDEX_ELE_LENGTH = INDEX_BUFFER_SIZE / INDEX_ELE_SIZE;
     int INDEX_BUFFER_BIT_LENGTH = 10;
     int INDEX_BUFFER_BIT = 0x3ff;
+
+    boolean PRINT_LOG = false;
 
 }

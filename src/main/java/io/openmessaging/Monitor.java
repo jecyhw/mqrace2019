@@ -204,13 +204,13 @@ public class Monitor {
     }
 
     public static void print(){
-        System.out.println("[monitor]---------------------------------------------");
-        System.out.println(stageBuilder.toString());
-        System.out.println("[info on write stage] uniqueTNum:" + uniqueTNum + ", tMaxInterval:" + tMaxInterval + ", writeTotal:" + writeTotal.get());
-        System.out.println("[info on get stage]" +  " getMsgMethodCnt:" + getMsgCnt.get() + ", getAvgMethodCnt:" + getAvgCnt.get()
-        + ", getMsgTotal:" + getMsgTotal.get() + ", getAvgTotal:" + getAvgTotal.get()
-        );
-        System.out.println("==================================score======================================");
+//        System.out.println("[monitor]---------------------------------------------");
+//        System.out.println(stageBuilder.toString());
+//        System.out.println("[info on write stage] uniqueTNum:" + uniqueTNum + ", tMaxInterval:" + tMaxInterval + ", writeTotal:" + writeTotal.get());
+//        System.out.println("[info on get stage]" +  " getMsgMethodCnt:" + getMsgCnt.get() + ", getAvgMethodCnt:" + getAvgCnt.get()
+//        + ", getMsgTotal:" + getMsgTotal.get() + ", getAvgTotal:" + getAvgTotal.get()
+//        );
+//        System.out.println("==================================score======================================");
         long score1 = (scores[0] > 0 ? writeTotal.get()/scores[0]:0);
         long score2 = (scores[1] > 0 ? getMsgTotal.get()/scores[1]:0);
         long score3 = (scores[2] > 0 ? getAvgTotal.get()/scores[2]:0);
@@ -218,15 +218,15 @@ public class Monitor {
         System.out.println("查询消息:" + score2 + " (" + scores[1] + "ms)");
         System.out.println("查询平均值:" + score3 + " (" + scores[2] + "ms)");
         System.out.println("score:" + (score1+score2+score3) + System.lineSeparator());
-        System.out.println("==================================score======================================");
-        System.out.println("[gc]---------------------------------------------");
-        System.out.println(gcBuilder.toString());
-        System.out.println("[iostat disk]-------------------------------------------");
-        System.out.println(iostatForDiskBuilder.toString());
-        System.out.println("[iostat cpu]-------------------------------------------");
-        System.out.println(iostatForCpuBuilder.toString());
-        System.out.println("[free]-------------------------------------------");
-        System.out.println(freeBuilder.toString());
+//        System.out.println("==================================score======================================");
+//        System.out.println("[gc]---------------------------------------------");
+//        System.out.println(gcBuilder.toString());
+//        System.out.println("[iostat disk]-------------------------------------------");
+//        System.out.println(iostatForDiskBuilder.toString());
+//        System.out.println("[iostat cpu]-------------------------------------------");
+//        System.out.println(iostatForCpuBuilder.toString());
+//        System.out.println("[free]-------------------------------------------");
+//        System.out.println(freeBuilder.toString());
     }
 }
 

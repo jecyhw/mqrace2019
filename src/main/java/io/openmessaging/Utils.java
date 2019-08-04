@@ -7,7 +7,9 @@ import java.util.Date;
  */
 public abstract class Utils {
     public static void print(String msg) {
-        System.out.println(new Date().toString() + " " + msg);
+        if (Const.PRINT_LOG) {
+            System.out.println(new Date().toString() + " " + msg);
+        }
     }
 
     public static String bytesToHex(byte[] hashInBytes) {
@@ -19,6 +21,8 @@ public abstract class Utils {
     }
 
     public static void dPrint(Object obj) {
-        System.out.println(obj);
+        if (Const.PRINT_LOG) {
+            System.out.println(obj);
+        }
     }
 }
