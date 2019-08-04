@@ -236,7 +236,7 @@ public class FileMessageStore {
 //                    printPutStat(messageFile);
 //                }
 //                printStat(getStat);
-//                printStat(getAvgStat);
+                printStat(getAvgStat);
 
                 System.err.println("func=shutdownHook stop");
             }
