@@ -18,11 +18,11 @@ public interface Const {
     int MAX_MSG_CAPACITY = GET_BUFFER_SIZE / MSG_BYTES;
 
 
-    int MEMORY_BUFFER_SIZE = 1024 * 4;
+    int MEMORY_BUFFER_SIZE = 1024 * 1024;
     boolean MEMORY_BUFFER_DIRECT = true;
 
 
-    int INDEX_BUFFER_SIZE = 1024 * 4;
+    int INDEX_BUFFER_SIZE = 1024 * 1024;
     int INDEX_INTERVAL = 16;
     int INDEX_ELE_SIZE = 8;
     int INDEX_ELE_LENGTH = INDEX_BUFFER_SIZE / INDEX_ELE_SIZE;
