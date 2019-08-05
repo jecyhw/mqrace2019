@@ -24,7 +24,7 @@ public interface Const {
 
 
     int INDEX_BUFFER_SIZE = 1024 * 1000; //必须是INDEX_ELE_SIZE的倍数
-    int INDEX_INTERVAL = 16;
+    int INDEX_INTERVAL = 128;
     int INDEX_ELE_SIZE = 10;
     int INDEX_ELE_LENGTH = INDEX_BUFFER_SIZE / INDEX_ELE_SIZE;
     int INDEX_BUFFER_BIT_LENGTH = 10;

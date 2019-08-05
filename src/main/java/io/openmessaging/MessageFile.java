@@ -40,7 +40,6 @@ public class MessageFile {
     int[] chCount = new int[256];
     boolean isByte = true;
 
-    int[] aIntervals = new int[70002];
     private Message prevMessage = new Message(0, 0, null);
 
     public MessageFile() {
@@ -248,14 +247,6 @@ public class MessageFile {
                 isTEqual = true;
             }
             maxTInterval = Math.max(maxTInterval, message.getT() - prevMessage.getT());
-            int aInterval = (int)(message.getA() - prevMessage.getA()) + 35000;
-            if (aInterval < 0) {
-                aIntervals[70001]++;
-            } else if (aInterval > 70000){
-                aIntervals[70000]++;
-            } else {
-                aIntervals[aInterval]++;
-            }
         }
     }
 
