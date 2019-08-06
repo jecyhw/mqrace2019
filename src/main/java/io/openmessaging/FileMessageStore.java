@@ -66,7 +66,6 @@ public class FileMessageStore {
                 file.delete();
             }
         }
-        MessageCacheShare.init();
         print("func=init success");
     }
 
@@ -77,21 +76,17 @@ public class FileMessageStore {
         messageFileThreadLocal.get().put(message);
     }
 
-    private static ThreadLocal<ArrBuffer> arrBufferThreadLocal = ThreadLocal.withInitial(() ->  {
-        return new ArrBuffer();
-    });
-
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
 
-        List<Message> messages = new ArrayList<>();
         GetItem getItem = getBufThreadLocal.get();
-        ArrBuffer arrBuffer = arrBufferThreadLocal.get();
 
+        getItem.messageSize = 0;
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, arrBuffer));
+            messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
         }
 
+        List<Message> messages = getItem.messages.subList(0, getItem.messageSize);
         Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messages.size());
         messages.sort(messageComparator);
         return messages;
@@ -104,14 +99,17 @@ public class FileMessageStore {
         long sum = 0;
         int count = 0;
         GetItem getItem = getBufThreadLocal.get();
-        ArrBuffer arrBuffer = arrBufferThreadLocal.get();
 
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            IntervalSum intervalSum = messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, getItem, arrBuffer);
+            IntervalSum intervalSum = messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, getItem);
             sum += intervalSum.sum;
             count += intervalSum.count;
         }
         Monitor.getAvgStage( aMin, aMax, tMin, tMax, count);
+
+        if (count == 0) {
+            System.out.println();
+        }
         return sum / count;
     }
 
@@ -221,7 +219,7 @@ public class FileMessageStore {
         dPrint("messageCount=" + messageFile.messageCount + " idAllocator=" + MessageFile.idAllocator.get());
 //        dPrint("isTSequence=" + messageFile.isTSequence + " isTEqual" + messageFile.isTEqual + " isByte=" + messageFile.isByte + " maxTInterval=" + messageFile.maxTInterval);
         try {
-            dPrint(" aFileSize=" + messageFile.aFc.size() + " msgFileSize=" + messageFile.msgFc.size());
+            dPrint(" msgFileSize=" + messageFile.msgFc.size());
         } catch (IOException e) {
             print("func=firstGet error " + e.getMessage());
         }

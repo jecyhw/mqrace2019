@@ -1,7 +1,5 @@
 package io.openmessaging;
 
-import static io.openmessaging.VariableUtils.get;
-import static io.openmessaging.VariableUtils.put;
 
 /**
  * Created by yanghuiwei on 2019-07-28
@@ -52,10 +50,23 @@ public class Tester {
     private static void VariableUtilsTest() {
         MemoryRead memoryRead = new MemoryRead();
         for (int i = 0; i < 1024 * 1024 * 10; i++) {
+            byte[] data = new byte[64];
+            memoryRead.tBitPos = 0;
+            VariableUtils.putUnsigned(data, 0, i);
+            memoryRead.tBitPos = 0;
+            int unsigned = VariableUtils.getUnsigned(data, memoryRead);
+            if (unsigned != i) {
+                System.out.println(false);
+            }
+        }
+
+        for (int i = -3615850; i < 3615850; i++) {
             byte[] data = new byte[50];
-            memoryRead.bitPos = 0;
-            put(data, 0, i);
-            if (get(data, memoryRead) != i) {
+            memoryRead.aBitPos = 0;
+            VariableUtils.putSigned(data, 0, i);
+            memoryRead.aBitPos = 0;
+            int signed = VariableUtils.getSigned(data, memoryRead);
+            if (signed != i) {
                 System.out.println(false);
             }
         }
@@ -64,7 +75,7 @@ public class Tester {
         byte[] data = new byte[50];
         for (long i = 0L; i < 1024L * 1024 * 1024 * 2; i += 10) {
             for (int j = 0; j < 10; j++) {
-                put(data, 0, j);
+                VariableUtils.putUnsigned(data, 0, j);
             }
         }
         System.out.println(System.currentTimeMillis() - startTime);

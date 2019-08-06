@@ -20,14 +20,11 @@ public class MessageFile {
     int messageCount = 0;
 
     private ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
-    private ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
 
     static AtomicInteger idAllocator = new AtomicInteger(0);
 
     RandomAccessFile msgFile;
     FileChannel msgFc;
-    RandomAccessFile aFile;
-    FileChannel aFc;
 
     boolean isTSequence = true;
     boolean isTEqual = false;
@@ -46,9 +43,6 @@ public class MessageFile {
         String fileId = String.valueOf(idAllocator.getAndIncrement());
 
         try {
-            aFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.A_FILE_SUFFIX, "rw");
-            aFc = aFile.getChannel();
-
             msgFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw");
             msgFc = msgFile.getChannel();
         } catch (FileNotFoundException e) {
@@ -61,8 +55,7 @@ public class MessageFile {
 //        putStat(message);
 
         try {
-            memoryIndex.put((int)message.getT(), (int)prevMessage.getT());
-            writeShort(aFc, aBuf, (short)(message.getT()-message.getA()+Const.A_OFFSET) );
+            memoryIndex.put((int)message.getT(), (int)prevMessage.getT(), (int) message.getA(), (int) prevMessage.getA());
             writeMsg(message.getBody());
         } catch (IOException e) {
             print("func=put error t=" + message.getT() + " a=" + message.getA() + " msg=" + Utils.bytesToHex(message.getBody()) + " " + e.getMessage());
@@ -70,7 +63,7 @@ public class MessageFile {
         prevMessage = message;
     }
 
-    public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem, ArrBuffer arrBuffer) {
+    public void get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
         if (tMin <= tMax && aMin <= aMax) {
             MemoryRead memoryRead = getItem.memoryRead;
             MemoryGetItem minItem = getItem.minItem;
@@ -81,31 +74,37 @@ public class MessageFile {
             int minPos = minItem.pos;
             int maxPos = maxItem.pos;
             if (minPos >= maxPos) {
-                return new ArrayList<>();
+                return;
             }
             ByteBuffer readBuf = getItem.buf;
 
-            readAArray(minPos, maxPos, readBuf, aFc, arrBuffer.getAs());
-            int[] ts = memoryIndex.range(minItem, maxItem, memoryRead);
+            int[] as = getItem.as;
+            int[] ts = memoryIndex.rangeT(minItem, maxItem, memoryRead);
+            memoryIndex.rangeA(minItem, maxItem, memoryRead, as);
 
-            List<Message> messages = readMsgs(minPos, maxPos, readBuf, arrBuffer.getAs(), ts, aMin, aMax);
-            getStat(getItem, maxPos - minPos, messages.size());
-            return messages;
-        } else {
-            return Collections.emptyList();
+            readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax, getItem);
         }
     }
 
-    private void getStat(GetItem getItem, int count, int actualCount) {
+    private void getStat(GetItem getItem, int count) {
         synchronized (MessageFile.class) {
             //统计命中的count
             getItem.maxCount = Math.max(getItem.maxCount, count);
-            getItem.maxActualCount = Math.max(getItem.maxActualCount, actualCount);
+            getItem.maxActualCount = Math.max(getItem.maxActualCount, getItem.messageSize);
         }
     }
 
-    private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax) {
-        List<Message> messages = new ArrayList<>();
+    private void readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax, GetItem getItem) {
+        List<Message> messages = getItem.messages;
+
+        int messageSize = getItem.messageSize;
+        int diffSize = ((int)(maxPos - minPos)) - (messages.size() - messageSize);
+        if (diffSize > 0) {
+            for (int i = 0; i < diffSize; i++) {
+                messages.add(new Message(0, 0, new byte[34]));
+            }
+        }
+
         int i = 0;
         while (minPos < maxPos) {
             int readCount = Math.min((int)(maxPos - minPos), Const.MAX_MSG_CAPACITY) ;
@@ -114,14 +113,15 @@ public class MessageFile {
             readInBuf(minPos * Const.MSG_BYTES, readBuf, msgFc);
             readBuf.flip();
 
+
             while (readBuf.hasRemaining()) {
-                int aVal = ts[i]-as[i]+Const.A_OFFSET;
+                int aVal = as[i];
                 if (aVal >= aMin && aVal <= aMax) {
-                    Message message = MessageCacheShare.get();
+                    Message message = messages.get(messageSize++);
                     readBuf.get(message.getBody());
                     message.setA(aVal);
                     message.setT(ts[i]);
-                    messages.add(message);
+
                 } else {
                     readBuf.position(readBuf.position() + Const.MSG_BYTES);
                 }
@@ -130,44 +130,11 @@ public class MessageFile {
 
             minPos += readCount;
         }
-        return messages;
+
+        getItem.messageSize = messageSize;
     }
 
-    private int[] readArray(long minPos, long maxPos, ByteBuffer readBuf, FileChannel fc) {
-        int[] arr = new int[(int)(maxPos - minPos)];
-        int cnt = 0;
-        while (minPos < maxPos) {
-            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY);
-            readBuf.position(0);
-            readBuf.limit(readCount * Const.LONG_BYTES);
-            readInBuf(minPos * Const.LONG_BYTES, readBuf, fc);
-            readBuf.flip();
-
-            while (readBuf.hasRemaining()) {
-                arr[cnt++] = readBuf.getInt();
-            }
-            minPos += readCount;
-        }
-        return arr;
-    }
-    private int readAArray(long minPos, long maxPos, ByteBuffer readBuf, FileChannel fc, int[] arr) {
-        int cnt = 0;
-        while (minPos < maxPos) {
-            int readCount = Math.min((int)(maxPos - minPos), Const.MAX_LONG_CAPACITY);
-            readBuf.position(0);
-            readBuf.limit(readCount * Const.A_BYTES);
-            readInBuf(minPos * Const.A_BYTES, readBuf, fc);
-            readBuf.flip();
-
-            while (readBuf.hasRemaining()) {
-                arr[cnt++] = (int)readBuf.getShort();
-            }
-            minPos += readCount;
-        }
-        return cnt;
-    }
-
-    public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem, ArrBuffer arrBuffer) {
+    public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
         IntervalSum intervalSum = new IntervalSum();
         if (tMin <= tMax && aMin <= aMax) {
             long sum = 0;
@@ -182,13 +149,13 @@ public class MessageFile {
             int minPos = minItem.pos;
             int maxPos = maxItem.pos;
 
+            int[] as = getItem.as;
             if (minPos < maxPos) {
-                ByteBuffer readBuf = getItem.buf;
-                int[] as = arrBuffer.getAs();
-                int[] ts = memoryIndex.range(minItem, maxItem, memoryRead);
-                int size = readAArray(minPos, maxPos, readBuf, aFc, as);
+                int size = maxPos - minPos;
+                int[] ts = getItem.as;
+                memoryIndex.rangeA(minItem, maxItem, memoryRead, ts);
                 for (int i = 0; i < size; i++) {
-                    int aVal = ts[i] - as[i] + Const.A_OFFSET;
+                    int aVal = as[i];
                     if (aVal >= aMin && aVal <= aMax) {
                         sum += aVal;
                         count++;
@@ -196,8 +163,6 @@ public class MessageFile {
                 }
                 intervalSum.sum = sum;
                 intervalSum.count = count;
-
-                getStat(getItem, (maxPos - minPos), count);
             }
         }
         return intervalSum;
@@ -284,9 +249,6 @@ public class MessageFile {
             if (msgFc != null) {
                 msgFc.close();
                 msgFile.close();
-
-                aFile.close();
-                aFc.close();
             }
         } catch (IOException e) {
             print("func=close error " + e.getMessage());
@@ -296,10 +258,8 @@ public class MessageFile {
     public void flush() {
         try {
             memoryIndex.flush();
-            flush(aFc, aBuf);
             flush(msgFc, msgBuf);
 
-            aBuf = null;
             msgBuf = null;
         } catch (IOException e) {
             print("func=flush error " + e.getMessage());

@@ -5,5 +5,6 @@ package io.openmessaging;
  */
 public class MemoryRead {
     //读取t的时候使用
-    int bitPos;
+    int tBitPos;
+    int aBitPos;
 }
