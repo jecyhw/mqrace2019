@@ -66,6 +66,7 @@ public class FileMessageStore {
                 file.delete();
             }
         }
+        MessageCacheShare.init();
         print("func=init success");
     }
 
@@ -79,14 +80,13 @@ public class FileMessageStore {
     public static List<Message> get(long aMin, long aMax, long tMin, long tMax) {
         firstGet(aMin, aMax, tMin, tMax);
 
+        List<Message> messages = new ArrayList<>();
         GetItem getItem = getBufThreadLocal.get();
-        getItem.messageSize = 0;
 
-        for (MessageFile messageFile : messageFiles) {
-            messageFile.get(aMin, aMax, tMin, tMax, getItem);
+        for (int i = messageFiles.size() - 1; i >= 0; i--) {
+            messages.addAll(messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem));
         }
 
-        List<Message> messages = getItem.messages.subList(0, getItem.messageSize);
         Monitor.getMessageStage( aMin,  aMax, tMin,  tMax, messages.size());
         messages.sort(messageComparator);
         return messages;
@@ -106,10 +106,6 @@ public class FileMessageStore {
             count += intervalSum.count;
         }
         Monitor.getAvgStage( aMin, aMax, tMin, tMax, count);
-
-        if (count == 0) {
-            System.out.println();
-        }
         return sum / count;
     }
 

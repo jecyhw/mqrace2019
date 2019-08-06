@@ -63,7 +63,7 @@ public class MessageFile {
         prevMessage = message;
     }
 
-    public void get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+    public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
         if (tMin <= tMax && aMin <= aMax) {
             MemoryRead memoryRead = getItem.memoryRead;
             MemoryGetItem minItem = getItem.minItem;
@@ -74,7 +74,7 @@ public class MessageFile {
             int minPos = minItem.pos;
             int maxPos = maxItem.pos;
             if (minPos >= maxPos) {
-                return;
+                return new ArrayList<>();
             }
             ByteBuffer readBuf = getItem.buf;
 
@@ -82,7 +82,9 @@ public class MessageFile {
             int[] ts = memoryIndex.rangeT(minItem, maxItem, memoryRead);
             memoryIndex.rangeA(minItem, maxItem, memoryRead, as);
 
-            readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax, getItem);
+            return readMsgs(minPos, maxPos, readBuf, as, ts, aMin, aMax);
+        } else {
+            return Collections.emptyList();
         }
     }
 
@@ -94,17 +96,8 @@ public class MessageFile {
         }
     }
 
-    private void readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax, GetItem getItem) {
-        List<Message> messages = getItem.messages;
-
-        int messageSize = getItem.messageSize;
-        int diffSize = ((int)(maxPos - minPos) + messageSize) - messages.size();
-        if (diffSize > 0) {
-            for (int i = 0; i < diffSize; i++) {
-                messages.add(new Message(0, 0, new byte[Const.MSG_BYTES]));
-            }
-        }
-
+    private List<Message> readMsgs(long minPos, long maxPos, ByteBuffer readBuf, int[] as, int[] ts, long aMin, long aMax) {
+        List<Message> messages = new ArrayList<>();
         int i = 0;
         while (minPos < maxPos) {
             int readCount = Math.min((int)(maxPos - minPos), Const.MAX_MSG_CAPACITY) ;
@@ -117,13 +110,11 @@ public class MessageFile {
             while (readBuf.hasRemaining()) {
                 int aVal = as[i];
                 if (aVal >= aMin && aVal <= aMax) {
-                    Message message = messages.get(messageSize);
+                    Message message = MessageCacheShare.get();
                     readBuf.get(message.getBody());
                     message.setA(aVal);
                     message.setT(ts[i]);
-
-                    messageSize++;
-
+                    messages.add(message);
                 } else {
                     readBuf.position(readBuf.position() + Const.MSG_BYTES);
                 }
@@ -132,7 +123,7 @@ public class MessageFile {
 
             minPos += readCount;
         }
-        getItem.messageSize = messageSize;
+        return messages;
     }
 
     public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
