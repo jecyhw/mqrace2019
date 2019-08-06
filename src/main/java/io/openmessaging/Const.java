@@ -19,7 +19,7 @@ public interface Const {
     int MAX_MSG_CAPACITY = GET_BUFFER_SIZE / MSG_BYTES;
 
 
-    int MEMORY_BUFFER_SIZE = 1024 * 1024;
+    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 9;
     boolean MEMORY_BUFFER_DIRECT = true;
 
 
