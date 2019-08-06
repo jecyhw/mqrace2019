@@ -80,10 +80,10 @@ public class FileMessageStore {
         firstGet(aMin, aMax, tMin, tMax);
 
         GetItem getItem = getBufThreadLocal.get();
-
         getItem.messageSize = 0;
-        for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
+
+        for (MessageFile messageFile : messageFiles) {
+            messageFile.get(aMin, aMax, tMin, tMax, getItem);
         }
 
         List<Message> messages = getItem.messages.subList(0, getItem.messageSize);
@@ -202,7 +202,7 @@ public class FileMessageStore {
 //                printStat(getStat);
                 printStat(getAvgStat);
 
-                System.err.println("func=shutdownHook stop");
+//                System.err.println("func=shutdownHook stop");
             }
         }));
     }

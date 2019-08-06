@@ -98,10 +98,10 @@ public class MessageFile {
         List<Message> messages = getItem.messages;
 
         int messageSize = getItem.messageSize;
-        int diffSize = ((int)(maxPos - minPos)) - (messages.size() - messageSize);
+        int diffSize = ((int)(maxPos - minPos) + messageSize) - messages.size();
         if (diffSize > 0) {
             for (int i = 0; i < diffSize; i++) {
-                messages.add(new Message(0, 0, new byte[34]));
+                messages.add(new Message(0, 0, new byte[Const.MSG_BYTES]));
             }
         }
 
@@ -117,10 +117,12 @@ public class MessageFile {
             while (readBuf.hasRemaining()) {
                 int aVal = as[i];
                 if (aVal >= aMin && aVal <= aMax) {
-                    Message message = messages.get(messageSize++);
+                    Message message = messages.get(messageSize);
                     readBuf.get(message.getBody());
                     message.setA(aVal);
                     message.setT(ts[i]);
+
+                    messageSize++;
 
                 } else {
                     readBuf.position(readBuf.position() + Const.MSG_BYTES);
@@ -130,7 +132,6 @@ public class MessageFile {
 
             minPos += readCount;
         }
-
         getItem.messageSize = messageSize;
     }
 
