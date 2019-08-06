@@ -15,7 +15,7 @@ public class GetItem {
     MemoryGetItem minItem = new MemoryGetItem();
     MemoryGetItem maxItem = new MemoryGetItem();
 
-    int[] as = new int[40 * 10000];
+    int[] as = new int[80 * 10000 + 100];
 
     List<Message> messages = new ArrayList<>();
     int messageSize = 0;
