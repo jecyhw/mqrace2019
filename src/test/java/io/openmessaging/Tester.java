@@ -1,6 +1,8 @@
 package io.openmessaging;
 
 
+import java.nio.ByteBuffer;
+
 /**
  * Created by yanghuiwei on 2019-07-28
  */
@@ -52,9 +54,9 @@ public class Tester {
         for (int i = 0; i < 1024 * 1024 * 10; i++) {
             byte[] data = new byte[64];
             memoryRead.tBitPos = 0;
-            VariableUtils.putUnsigned(data, 0, i);
+            VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, i);
             memoryRead.tBitPos = 0;
-            int unsigned = VariableUtils.getUnsigned(data, memoryRead);
+            int unsigned = VariableUtils.getUnsigned(ByteBuffer.wrap(data), memoryRead);
             if (unsigned != i) {
                 System.out.println(false);
             }
@@ -63,9 +65,9 @@ public class Tester {
         for (int i = -3615850; i < 3615850; i++) {
             byte[] data = new byte[50];
             memoryRead.aBitPos = 0;
-            VariableUtils.putSigned(data, 0, i);
+            VariableUtils.putSigned(ByteBuffer.wrap(data), 0, i);
             memoryRead.aBitPos = 0;
-            int signed = VariableUtils.getSigned(data, memoryRead);
+            int signed = VariableUtils.getSigned(ByteBuffer.wrap(data), memoryRead);
             if (signed != i) {
                 System.out.println(false);
             }
@@ -75,7 +77,7 @@ public class Tester {
         byte[] data = new byte[50];
         for (long i = 0L; i < 1024L * 1024 * 1024 * 2; i += 10) {
             for (int j = 0; j < 10; j++) {
-                VariableUtils.putUnsigned(data, 0, j);
+                VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, j);
             }
         }
         System.out.println(System.currentTimeMillis() - startTime);

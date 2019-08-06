@@ -304,7 +304,7 @@ public class MemoryIndex {
     }
 
     private void newIndexBuf() {
-        indexBuf = ByteBuffer.allocateDirect(Const.INDEX_BUFFER_SIZE);
+        indexBuf = ByteBuffer.allocate(Const.INDEX_BUFFER_SIZE);
         indexBufs.add(indexBuf);
         indexBufCounter.getAndIncrement();
     }
