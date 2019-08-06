@@ -105,6 +105,11 @@ public class FileMessageStore {
             sum += intervalSum.sum;
             count += intervalSum.count;
         }
+
+        if (count == 0) {
+            return 0;
+        }
+
         Monitor.getAvgStage( aMin, aMax, tMin, tMax, count);
         return sum / count;
     }
