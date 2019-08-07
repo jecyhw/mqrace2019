@@ -156,7 +156,6 @@ public class MemoryIndex {
         if (minPos >= maxPos) {
             return;
         }
-
         long sum = 0;
         int count = 0;
 
@@ -164,18 +163,18 @@ public class MemoryIndex {
             PrimaryIndex index = primaryIndices.get(minPos / Const.INDEX_ELE_LENGTH);
             int offset = minPos % Const.INDEX_ELE_LENGTH;
             //t在区间外
-            if (tRangeOutZone(primaryIndex, offset, tMin, tMax)) {
+            if (tRangeOutZone(index, minPos, offset, tMin, tMax)) {
                 break;
             }
-            if (aRangeInZone(index, offset, aMin, aMax) && tRangeInZone(primaryIndex, offset, tMin, tMax)) {
+            if (aRangeInZone(index, offset, aMin, aMax) && tRangeInZone(index, minPos, offset, tMin, tMax)) {
                 sum += index.aSumArr[offset];
-                if (offset == indexBufEleCount - 1) {
+                if (minPos == indexBufEleCount - 1) {
                     count += putCount % Const.INDEX_INTERVAL;
                 } else {
                     count += Const.INDEX_INTERVAL;
                 }
             } else if (!aRangeOutZone(index, offset, aMin, aMax)) {
-                sumAPosInPrimaryIndex(minPos, aMin, aMax, tMin, tMax, res);
+                sumAPosInPrimaryIndex(index, offset, aMin, aMax, tMin, tMax, res);
             }
             minPos++;
         }
@@ -183,14 +182,9 @@ public class MemoryIndex {
         res.count += count;
     }
 
-    public void sumAPosInPrimaryIndex(int pos, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
+    public void sumAPosInPrimaryIndex(PrimaryIndex index, int offset, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
         long sum = 0;
         int count = 0;
-
-        //得到在第几个主内存索引中
-        PrimaryIndex index = primaryIndices.get(pos / Const.INDEX_ELE_LENGTH);
-        //得到在主内存索引的偏移位置
-        int offset = pos % Const.INDEX_ELE_LENGTH;
 
         //得到索引内存中这个位置的t值
         int t = index.tArr[offset], a = index.aArr[offset];
@@ -216,19 +210,23 @@ public class MemoryIndex {
                 nextOffset = VariableUtils.getSigned(buf, nextOffset, dest, 0);
                 a += dest[0];
 
-                if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+                if (t > tMax) {
+                    break;
+                }
+                if (t >= tMin && a >= aMin && a <= aMax) {
                     sum += a;
                     count++;
                 }
 
                 if (nextOffset >= putBitLength) {
-                    nextOffset++;
-                    if (nextOffset >= memories.size()) {
+                    nextPos++;
+                    if (nextPos >= memories.size()) {
                         //说明读完了
                         break;
                     }
 
-                    mem = memories.get(nextOffset);
+                    nextOffset = 0;
+                    mem = memories.get(nextPos);
                     buf = mem.data;
                     putBitLength = mem.putBitLength;
                 }
@@ -238,30 +236,25 @@ public class MemoryIndex {
         res.count += count;
     }
 
-    public boolean aRangeInZone(PrimaryIndex primaryIndex, int offset, int aMin, int aMax) {
-        return aMax >= primaryIndex.aMaxArr[offset] && aMin <= primaryIndex.aMinArr[offset];
+    public boolean aRangeInZone(PrimaryIndex index, int offset, int aMin, int aMax) {
+        return aMax >= index.aMaxArr[offset] && aMin <= index.aMinArr[offset];
     }
 
-    public boolean aRangeOutZone(PrimaryIndex primaryIndex, int offset, int aMin, int aMax) {
-        return aMax < primaryIndex.aMinArr[offset] || aMin > primaryIndex.aMaxArr[offset];
+    public boolean aRangeOutZone(PrimaryIndex index, int offset, int aMin, int aMax) {
+        return aMax < index.aMinArr[offset] || aMin > index.aMaxArr[offset];
     }
 
-    public boolean tRangeInZone(PrimaryIndex primaryIndex, int offset, int tMin, int tMax) {
-        if (offset < indexBufEleCount - 1) {
-            return tMin <= primaryIndex.tArr[offset] && tMax >= primaryIndex.tArr[offset + 1];
+    public boolean tRangeInZone(PrimaryIndex index, int minPos, int offset, int tMin, int tMax) {
+        if (minPos < indexBufEleCount - 1) {
+            return tMin <= index.tArr[offset] && tMax >= index.tArr[offset + 1];
         } else {
             //最后一个元素分开判断
-            return tMin <= primaryIndex.tArr[offset] && tMax >= lastT;
+            return tMin <= index.tArr[offset] && tMax >= lastT;
         }
     }
 
-    public boolean tRangeOutZone(PrimaryIndex primaryIndex, int offset, int tMin, int tMax) {
-        if (offset < indexBufEleCount - 1) {
-            return tMin > primaryIndex.tArr[offset + 1];
-        } else {
-            //最后一个元素分开判断
-            return tMin > lastT;
-        }
+    public boolean tRangeOutZone(PrimaryIndex index, int minPos, int offset, int tMin, int tMax) {
+        return tMax < index.tArr[offset];
     }
 
     public int firstGreatInPrimaryIndex(int val) {
