@@ -166,4 +166,8 @@ public class MessageFile {
 
         buf.clear();
     }
+
+    public void flush() {
+        flush(msgFc, msgBuf);
+    }
 }

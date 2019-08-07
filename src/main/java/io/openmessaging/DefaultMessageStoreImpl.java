@@ -68,6 +68,15 @@ public class DefaultMessageStoreImpl extends MessageStore {
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
         int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
 
+        if (isFirstGet) {
+            synchronized (DefaultMessageStoreImpl.class) {
+                for (MessageFile messageFile : messageFiles) {
+                    messageFile.flush();
+                }
+                isFirstGet = false;
+            }
+        }
+
         List<Message> messages = new ArrayList<>();
         GetItem getItem = getBufThreadLocal.get();
 
