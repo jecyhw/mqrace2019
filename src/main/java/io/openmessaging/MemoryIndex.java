@@ -246,7 +246,13 @@ public class MemoryIndex {
 
     public boolean tRangeInZone(PrimaryIndex index, int minPos, int offset, int tMin, int tMax) {
         if (minPos < indexBufEleCount - 1) {
-            return tMin <= index.tArr[offset] && tMax >= index.tArr[offset + 1];
+            int max;
+            if (offset + 1 == Const.INDEX_ELE_LENGTH) {
+                max = primaryIndices.get((minPos + 1) / Const.INDEX_ELE_LENGTH).tArr[0];
+            } else {
+                max = index.tArr[offset + 1];
+            }
+            return tMin <= index.tArr[offset] && tMax >= max;
         } else {
             //最后一个元素分开判断
             return tMin <= index.tArr[offset] && tMax >= lastT;
