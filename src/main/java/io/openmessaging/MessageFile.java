@@ -54,9 +54,7 @@ public class MessageFile {
 
             int[] ts = getItem.ts;
             int[] as = getItem.as;
-            int tLen =memoryIndex.rangeTPosInPrimaryIndex(minPos, maxPos, ts);
-            memoryIndex.rangeAPosInPrimaryIndex(minPos, maxPos, as);
-
+            int tLen = memoryIndex.rangePosInPrimaryIndex(minPos, maxPos, ts, as);
             //minPos，maxPos是在主内存索引的位置
             return readMsgs(minPos * Const.INDEX_INTERVAL, readBuf, as, ts, tLen, aMin, aMax, tMin, tMax);
         } else {
@@ -106,31 +104,10 @@ public class MessageFile {
         return messages;
     }
 
-    public IntervalSum getAvgValue(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
-        IntervalSum intervalSum = new IntervalSum();
+    public IntervalSum getAvgValue(int aMin, int aMax, int tMin, int tMax, IntervalSum intervalSum) {
         if (tMin <= tMax && aMin <= aMax) {
-            long sum = 0;
-            int count = 0;
-
-            //TODO minPos，maxPos是在主内存索引的位置，这样的话还会有开始位置和结束位置还有有不满足条件的
-            //也可以maxPos使用firstLessInPrimaryIndex，但是需要注意的是如果firstLessInPrimaryIndex没有将返回PrimaryIndex的第一个位置
-            int minPos = memoryIndex.firstLessInPrimaryIndex((int)tMin);
-            int maxPos = memoryIndex.firstGreatInPrimaryIndex((int)tMax);
-
-            if (minPos < maxPos) {
-                int size = maxPos - minPos;
-                int[] as = getItem.as;
-                memoryIndex.rangeAPosInPrimaryIndex(minPos, maxPos, as);
-                for (int i = 0; i < size; i++) {
-                    int aVal = as[i];
-                    if (aVal >= aMin && aVal <= aMax) {
-                        sum += aVal;
-                        count++;
-                    }
-                }
-                intervalSum.sum = sum;
-                intervalSum.count = count;
-            }
+            int minPos = memoryIndex.firstLessInPrimaryIndex(tMin);
+            memoryIndex.sum(minPos, aMin, aMax, tMin, tMax, intervalSum);
         }
         return intervalSum;
     }
@@ -163,11 +140,11 @@ public class MessageFile {
         } catch (Exception e) {
             Utils.print("func=flush error");
         }
-
         buf.clear();
     }
 
     public void flush() {
         flush(msgFc, msgBuf);
+        memoryIndex.flush();
     }
 }

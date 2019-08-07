@@ -1,6 +1,7 @@
 package io.openmessaging;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -67,6 +68,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
         int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
+        GetItem getItem = getBufThreadLocal.get();
 
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
@@ -78,39 +80,71 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
 
         List<Message> messages = new ArrayList<>();
-        GetItem getItem = getBufThreadLocal.get();
-
-
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
             messages.addAll(messageFiles.get(i).get(aMinInt, aMaxInt, tMinInt, tMaxInt, getItem));
         }
 
         messages.sort(messageComparator);
+
+        int min = Math.max(aMinInt, tMinInt), max= Math.min(aMaxInt, tMaxInt);
+        int count = max - min + 1;
+        while (min <= max) {
+            if ((min & 1) == 0) {
+                count++;
+            }
+            min++;
+        }
+
+        if (messages.size() != count) {
+            System.err.println("6.error");
+        }
         return messages;
     }
 
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
-        long sum = 0;
-        int count = 0;
+        int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
+
         GetItem getItem = getBufThreadLocal.get();
 
+        IntervalSum intervalSum = getItem.intervalSum;
+        intervalSum.count = 0;
+        intervalSum.sum = 0;
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            IntervalSum intervalSum = messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, getItem);
-            sum += intervalSum.sum;
-            count += intervalSum.count;
+            messageFiles.get(i).getAvgValue(aMinInt, aMaxInt, tMinInt, tMaxInt, intervalSum);
         }
 
-        if (count == 0) {
+
+        long max = Math.min(tMax, aMax);
+        long min = Math.max(tMin, aMin);
+        long count = 0;
+        long sum = 0;
+        if (min < max) {
+            count = max - min + 1;
+            while (min < max) {
+                if ((min & 1) == 0) {
+                    count++;
+                    sum += min;
+                }
+                min++;
+                sum += min;
+            }
+        }
+
+        if (count != intervalSum.count || sum != intervalSum.sum) {
+            System.out.println();
+        }
+
+        if (intervalSum.count == 0) {
             return 0;
         }
-        return sum / count;
+
+        return intervalSum.sum / intervalSum.count;
     }
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            MemoryIndex.log();
 //                System.err.println("func=shutdownHook stop");
         }));
     }

@@ -30,6 +30,6 @@ public class Memory {
 
 
     public boolean hasRemaining() {
-        return putBitLength + 64 < (Const.MEMORY_BUFFER_SIZE * 8);
+        return putBitLength + 96 < (Const.MEMORY_BUFFER_SIZE * 8);
     }
 }

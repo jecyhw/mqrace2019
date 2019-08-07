@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  */
 public class GetItem {
     ByteBuffer buf = ByteBuffer.allocateDirect(Const.GET_BUFFER_SIZE);
-
+    IntervalSum intervalSum = new IntervalSum();
     int[] as = new int[80 * 10000 + 100];
     int[] ts = new int[80 * 10000 + 100];
 }

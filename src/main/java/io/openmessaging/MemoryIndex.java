@@ -20,50 +20,42 @@ public class MemoryIndex {
     List<PrimaryIndex> primaryIndices = new ArrayList<>();
     //当前索引正在使用的内存
     PrimaryIndex primaryIndex;
+    int primaryIndexPos = 0;
     //indexBufs存的元素个数
     int indexBufEleCount = 0;
+    int lastT;
 
     //t的相对值存储的内存
-    List<Memory> tMemories = new ArrayList<>();
-    List<Memory> aMemories = new ArrayList<>();
-    Memory tMemory;
-    Memory aMemory;
+    List<Memory> memories = new ArrayList<>();
+    Memory memory;
 
     public MemoryIndex() {
-        newTMemory();
-        newAMemory();
+        newMemory();
+        newPrimaryIndex();
     }
 
     public void put(int t, int prevT, int a, int prevA) {
-        int pos = indexBufEleCount % Const.INDEX_ELE_LENGTH;
-
+        lastT = t;
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
         if (putCount % Const.INDEX_INTERVAL == 0) {
-            if (pos == 0) {
+            if (primaryIndexPos == Const.INDEX_ELE_LENGTH) {
                 newPrimaryIndex();
+                primaryIndexPos = 0;
             }
             indexBufEleCount++;
 
+            int pos = primaryIndexPos++;
             //每隔INDEX_INTERVAL记录t（在indexBuf中记录了t就不会在memory中记录）
             primaryIndex.tArr[pos] = t;
             //下一个t的起始位置，先写在哪个块中，再写块的便宜位置
-            int taPos;
-            if (tMemory.hasRemaining()) {
-                taPos = tMemories.size() - 1;
-                primaryIndex.tOffsetArr[pos] = tMemory.putBitLength;
+            if (memory.hasRemaining()) {
+                primaryIndex.posArr[pos] = (short) (memories.size() - 1);
+                primaryIndex.offsetArr[pos] = memory.putBitLength;
             } else {
-                taPos = tMemories.size();
+                primaryIndex.posArr[pos] = (short) memories.size();
             }
 
             primaryIndex.aArr[pos] = a;
-            if (aMemory.hasRemaining()) {
-                taPos = taPos | ((aMemories.size() - 1) << 16);
-                primaryIndex.aOffsetArr[pos] = aMemory.putBitLength;
-            } else {
-                taPos = taPos | (aMemories.size() << 16);
-            }
-
-            primaryIndex.taPosArr[pos] = taPos;
 
             // 0位置记录的是[0, INDEX_INTERVAL)的区间信息
             primaryIndex.aMinArr[pos] = a;
@@ -73,17 +65,14 @@ public class MemoryIndex {
         } else {
 
             int diffT = t - prevT;
-            if (!tMemory.putUnsigned(diffT)) {
-                newTMemory();
-                tMemory.putUnsigned(diffT);
+            if (!memory.putUnsigned(diffT)) {
+                newMemory();
+                memory.putUnsigned(diffT);
             }
-
             int diffA = a - prevA;
-            if (!aMemory.putSigned(diffA)) {
-                newAMemory();
-                aMemory.putSigned(diffA);
-            }
+            memory.putSigned(diffA);
 
+            int pos = primaryIndexPos - 1;
             if (primaryIndex.aMinArr[pos] > a) {
                 primaryIndex.aMinArr[pos] = a;
             }
@@ -99,16 +88,14 @@ public class MemoryIndex {
      *
      * @param minPos >= 在PrimaryIndex的开始位置
      * @param maxPos < 在PrimaryIndex的结束位置
-     * @param dest
      * @return 返回读取的条数
      */
-    public int rangeTPosInPrimaryIndex(int minPos, int maxPos, int[] dest) {
+    public int rangePosInPrimaryIndex(int minPos, int maxPos, int[] destT, int[] destA) {
         //数据可能会存在多个块中
         int nextPos = -1, nextOffset = 0, putBitLength = 0;
-        int i = 0;
-
+        int destOffset = 0;
         Memory mem;
-        ByteBuffer tBuf = null;
+        ByteBuffer buf = null;
 
         while (minPos < maxPos) {
             //得到在第几个主内存索引中
@@ -118,119 +105,131 @@ public class MemoryIndex {
             minPos++;
 
             //得到索引内存中这个位置的t值
-            dest[i++] = index.tArr[offset];
+            destT[destOffset] = index.tArr[offset];
+            destA[destOffset++] = index.aArr[offset];
 
             //得到这个t的下一个t在内存块的位置
-            int newNextPos = index.taPosArr[offset] & 0xffff;
+            int newNextPos = index.posArr[offset];
 
             if (newNextPos != nextPos) {
-                if (newNextPos >= tMemories.size()) {
+                if (newNextPos >= memories.size()) {
                     //说明读完了
-                    return i;
+                    return destOffset;
                 }
                 //内存块发生改变，更新信息
                 nextPos = newNextPos;
-                mem = tMemories.get(nextPos);
-                tBuf = mem.data;
+                mem = memories.get(nextPos);
+                buf = mem.data;
                 putBitLength = mem.putBitLength;
-                nextOffset = index.tOffsetArr[offset];
+                nextOffset = index.offsetArr[offset];
             }
 
             //从变长编码内存中读
             for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-                nextOffset = VariableUtils.getUnsigned(tBuf, nextOffset, dest, i);
-                dest[i] += dest[i - 1];
-                i++;
+                nextOffset = VariableUtils.getUnsigned(buf, nextOffset, destT, destOffset);
+                destT[destOffset] += destT[destOffset - 1];
+                nextOffset = VariableUtils.getSigned(buf, nextOffset, destA, destOffset);
+                destA[destOffset] += destA[destOffset - 1];
+
+                destOffset++;
 
                 if (nextOffset >= putBitLength) {
                     nextPos++;
-                    if (nextPos >= tMemories.size()) {
+                    if (nextPos >= memories.size()) {
                         //说明读完了
-                        return i;
+                        return destOffset;
                     }
 
                     nextOffset = 0;
-                    mem = tMemories.get(nextPos);
-                    tBuf = mem.data;
+                    mem = memories.get(nextPos);
+                    buf = mem.data;
                     putBitLength = mem.putBitLength;
                 }
             }
         }
-        return i;
+        return destOffset;
     }
 
-    public void rangeAPosInPrimaryIndex(int minPos, int maxPos, int[] dest) {
-        //数据可能会存在多个块中
-        int nextPos = -1, nextOffset = 0, putBitLength = 0;
-        int i = 0, len = (maxPos - minPos) * Const.INDEX_INTERVAL;
+    public void sum(int minPos, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
+        int maxPos = indexBufEleCount;
+        if (minPos >= maxPos) {
+            return;
+        }
 
-        Memory mem;
-        ByteBuffer aBuf = null;
+        long sum = 0;
+        int count = 0;
 
-        while (i < len) {
-            //得到在第几个主内存索引中
+        while (minPos < maxPos) {
             PrimaryIndex index = primaryIndices.get(minPos / Const.INDEX_ELE_LENGTH);
-            //得到在主内存索引的偏移位置
             int offset = minPos % Const.INDEX_ELE_LENGTH;
+            //区间外
+            if (tRangeOutZone(primaryIndex, offset, tMin, tMax)) {
+                break;
+            }
+            if (aRangeInZone(index, offset, aMin, aMax) && tRangeInZone(primaryIndex, offset, tMin, tMax)) {
+                sum += index.aSumArr[offset];
+                count += ((offset == indexBufEleCount - 1) ? putCount % Const.INDEX_INTERVAL : Const.INDEX_INTERVAL);
+            } else if (!aRangeOutZone(index, offset, aMin, aMax)) {
+                sumAPosInPrimaryIndex(minPos, aMin, aMax, tMin, tMax, res);
+            }
             minPos++;
+        }
+        res.sum += sum;
+        res.count += count;
+    }
 
-            //得到索引内存中这个位置的t值
-            dest[i++] = index.aArr[offset];
+    public void sumAPosInPrimaryIndex(int pos, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
+        long sum = 0;
+        int count = 0;
 
-            //得到这个t的下一个t在内存块的位置
-            int newNextPos = index.taPosArr[offset] >>> 16;
+        //得到在第几个主内存索引中
+        PrimaryIndex index = primaryIndices.get(pos / Const.INDEX_ELE_LENGTH);
+        //得到在主内存索引的偏移位置
+        int offset = pos % Const.INDEX_ELE_LENGTH;
 
-            if (newNextPos != nextPos) {
-                if (newNextPos >= aMemories.size()) {
-                    //说明读完了
-                    return;
+        //得到索引内存中这个位置的t值
+        int t = index.tArr[offset], a = index.aArr[offset];
+        if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+            sum = a;
+            count = 1;
+        }
+
+        if (pos < indexBufEleCount - 1) {
+            //不是最后一个元素，得到下一个t、a在内存块的位置
+            int nextPos = index.posArr[offset];
+            Memory mem = memories.get(nextPos);
+            ByteBuffer buf = mem.data;
+            int putBitLength = mem.putBitLength;
+            int nextOffset = index.offsetArr[offset];
+
+            int[] dest = new int[1];
+            //从变长编码内存中读
+            for (int k = 1; k < Const.INDEX_INTERVAL; k++) {
+                nextOffset = VariableUtils.getUnsigned(buf, nextOffset, dest, 0);
+                t += dest[0];
+                nextOffset = VariableUtils.getSigned(buf, nextOffset, dest, 0);
+                a += dest[0];
+
+                if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+                    sum += a;
+                    count++;
                 }
 
-                //内存块发生改变，更新信息
-                nextPos = newNextPos;
-                mem = aMemories.get(nextPos);
-                aBuf = mem.data;
-                putBitLength = mem.putBitLength;
-                nextOffset = index.aOffsetArr[offset];
-            }
-
-            //从变长编码内存中读
-            for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-                nextOffset = VariableUtils.getSigned(aBuf, nextOffset, dest, i);
-                dest[i] += dest[i - 1];
-                i++;
-
                 if (nextOffset >= putBitLength) {
-                    nextPos++;
-                    if (nextPos >= aMemories.size()) {
+                    nextOffset++;
+                    if (nextOffset >= memories.size()) {
                         //说明读完了
                         return;
                     }
 
-                    nextOffset = 0;
-                    mem = aMemories.get(nextPos);
-                    aBuf = mem.data;
+                    mem = memories.get(nextOffset);
+                    buf = mem.data;
                     putBitLength = mem.putBitLength;
                 }
             }
         }
-    }
-
-    public void sum(int minPos, int maxPos, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
-        long sum = 0;
-        int count = 0;
-        while (minPos < maxPos) {
-            PrimaryIndex index = primaryIndices.get(minPos / Const.INDEX_ELE_LENGTH);
-            int offset = minPos % Const.INDEX_ELE_LENGTH;
-            minPos++;
-            //区间外
-            if (aRangeOutZone(index, offset, aMin, aMax)) {
-                continue;
-            }
-        }
-
-        res.sum = sum;
-        res.count = count;
+        res.sum += sum;
+        res.count += count;
     }
 
     public boolean aRangeInZone(PrimaryIndex primaryIndex, int offset, int aMin, int aMax) {
@@ -241,6 +240,23 @@ public class MemoryIndex {
         return aMax < primaryIndex.aMinArr[offset] || aMin > primaryIndex.aMaxArr[offset];
     }
 
+    public boolean tRangeInZone(PrimaryIndex primaryIndex, int offset, int tMin, int tMax) {
+        if (offset < indexBufEleCount - 1) {
+            return tMin <= primaryIndex.tArr[offset] && tMax >= primaryIndex.tArr[offset + 1];
+        } else {
+            //最后一个元素分开判断
+            return tMin <= primaryIndex.tArr[offset] && tMax >= lastT;
+        }
+    }
+
+    public boolean tRangeOutZone(PrimaryIndex primaryIndex, int offset, int tMin, int tMax) {
+        if (offset < indexBufEleCount - 1) {
+            return tMin > primaryIndex.tArr[offset + 1];
+        } else {
+            //最后一个元素分开判断
+            return tMin > lastT;
+        }
+    }
 
     public int firstGreatInPrimaryIndex(int val) {
         int low = 0, high = indexBufEleCount, mid, t;
@@ -279,7 +295,7 @@ public class MemoryIndex {
         return low == 0 ? low : low - 1;
     }
 
-    public static void log() {
+    public void flush() {
         Utils.print("MemoryIndex func=flush indexBuf=" + indexBufCounter.get() + " tBuf=" + tBufCounter.get() + " aBuf:" + aBufCounter.get());
     }
 
@@ -289,15 +305,9 @@ public class MemoryIndex {
         indexBufCounter.getAndIncrement();
     }
 
-    private void newTMemory() {
-        tMemory = new Memory();
-        tMemories.add(tMemory);
+    private void newMemory() {
+        memory = new Memory();
+        memories.add(memory);
         tBufCounter.incrementAndGet();
-    }
-
-    private void newAMemory() {
-        aMemory = new Memory();
-        aMemories.add(aMemory);
-        aBufCounter.incrementAndGet();
     }
 }
