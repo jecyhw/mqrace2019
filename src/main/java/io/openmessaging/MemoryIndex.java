@@ -162,13 +162,17 @@ public class MemoryIndex {
         while (minPos < maxPos) {
             PrimaryIndex index = primaryIndices.get(minPos / Const.INDEX_ELE_LENGTH);
             int offset = minPos % Const.INDEX_ELE_LENGTH;
-            //区间外
+            //t在区间外
             if (tRangeOutZone(primaryIndex, offset, tMin, tMax)) {
                 break;
             }
             if (aRangeInZone(index, offset, aMin, aMax) && tRangeInZone(primaryIndex, offset, tMin, tMax)) {
                 sum += index.aSumArr[offset];
-                count += ((offset == indexBufEleCount - 1) ? putCount % Const.INDEX_INTERVAL : Const.INDEX_INTERVAL);
+                if (offset == indexBufEleCount - 1) {
+                    count += putCount % Const.INDEX_INTERVAL;
+                } else {
+                    count += Const.INDEX_INTERVAL;
+                }
             } else if (!aRangeOutZone(index, offset, aMin, aMax)) {
                 sumAPosInPrimaryIndex(minPos, aMin, aMax, tMin, tMax, res);
             }
@@ -194,9 +198,10 @@ public class MemoryIndex {
             count = 1;
         }
 
-        if (pos < indexBufEleCount - 1) {
+        int nextPos = index.posArr[offset];
+        if (nextPos < memories.size()) {
             //不是最后一个元素，得到下一个t、a在内存块的位置
-            int nextPos = index.posArr[offset];
+
             Memory mem = memories.get(nextPos);
             ByteBuffer buf = mem.data;
             int putBitLength = mem.putBitLength;
@@ -219,7 +224,7 @@ public class MemoryIndex {
                     nextOffset++;
                     if (nextOffset >= memories.size()) {
                         //说明读完了
-                        return;
+                        break;
                     }
 
                     mem = memories.get(nextOffset);

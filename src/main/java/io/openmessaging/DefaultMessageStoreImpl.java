@@ -76,6 +76,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     messageFile.flush();
                 }
                 isFirstGet = false;
+//                getAvgValue(90825, 99999, 99985, 187124);
             }
         }
 
@@ -83,21 +84,19 @@ public class DefaultMessageStoreImpl extends MessageStore {
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
             messages.addAll(messageFiles.get(i).get(aMinInt, aMaxInt, tMinInt, tMaxInt, getItem));
         }
-
         messages.sort(messageComparator);
-
-        int min = Math.max(aMinInt, tMinInt), max= Math.min(aMaxInt, tMaxInt);
-        int count = max - min + 1;
-        while (min <= max) {
-            if ((min & 1) == 0) {
-                count++;
-            }
-            min++;
-        }
-
-        if (messages.size() != count) {
-            System.err.println("6.error");
-        }
+//        int min = Math.max(aMinInt, tMinInt), max= Math.min(aMaxInt, tMaxInt);
+//        int count = max - min + 1;
+//        while (min <= max) {
+//            if ((min & 1) == 0) {
+//                count++;
+//            }
+//            min++;
+//        }
+//
+//        if (messages.size() != count) {
+//            System.err.println("6.error");
+//        }
         return messages;
     }
 
@@ -115,26 +114,25 @@ public class DefaultMessageStoreImpl extends MessageStore {
             messageFiles.get(i).getAvgValue(aMinInt, aMaxInt, tMinInt, tMaxInt, intervalSum);
         }
 
-
-        long max = Math.min(tMax, aMax);
-        long min = Math.max(tMin, aMin);
-        long count = 0;
-        long sum = 0;
-        if (min < max) {
-            count = max - min + 1;
-            while (min < max) {
-                if ((min & 1) == 0) {
-                    count++;
-                    sum += min;
-                }
-                min++;
-                sum += min;
-            }
-        }
-
-        if (count != intervalSum.count || sum != intervalSum.sum) {
-            System.err.println("value check");
-        }
+//        long max = Math.min(tMax, aMax);
+//        long min = Math.max(tMin, aMin);
+//        long count = 0;
+//        long sum = 0;
+//        if (min < max) {
+//            count = max - min + 1;
+//            while (min <= max) {
+//                if ((min & 1) == 0) {
+//                    count++;
+//                    sum += min;
+//                }
+//                sum += min;
+//                min++;
+//            }
+//        }
+//
+//        if (count != intervalSum.count || sum != intervalSum.sum) {
+//            System.err.println("value check count:" + count + " sum:" + sum + " c:" + intervalSum.count + " s:" + intervalSum.sum);
+//        }
 
         if (intervalSum.count == 0) {
             return 0;

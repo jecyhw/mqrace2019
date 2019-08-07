@@ -271,22 +271,24 @@ public class DemoTester {
 
                     long res = 0;
                     long count = 0;
+                    long sum;
                     if (evenIndex1 <= evenIndex2) {
                         //顺序数之和
                         long sum1 = ((long)(index2 + index1) * (index2 - index1 + 1)) >>> 1;
                         //重复的偶数之和
                         long sum2 = ((long)(evenIndex1 + evenIndex2) * ((evenIndex2 - evenIndex1 >>> 1) + 1)) >>> 1;
-                        long sum = sum1 + sum2;
+                        sum = sum1 + sum2;
                         count = index2 - index1 + 1 + (evenIndex2 - evenIndex1 >>> 1) + 1;
                         res = sum / count;
                     } else {
                         //顺序数之和
-                        long sum = (index2 + index1) * (index2 - index1 + 1) >>> 1;
+                        sum = (index2 + index1) * (index2 - index1 + 1) >>> 1;
                         count = index2 - index1 + 1;
                         res = sum / count;
                     }
 
                     if (res != val) {
+                        System.out.println("sum:" + sum + " count:" + count);
                         checkError(aIndex1, aIndex2, tIndex1, tIndex2, res, val);
                     }
 
