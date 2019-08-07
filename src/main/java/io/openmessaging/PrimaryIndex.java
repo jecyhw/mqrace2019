@@ -9,7 +9,7 @@ public class PrimaryIndex {
     int[] aArr = new int[Const.INDEX_ELE_LENGTH];
     int[] aOffsetArr = new int[Const.INDEX_ELE_LENGTH];
 
-    //t和a的内存块下标
+    //t和a的内存块下标，t存低16位，a存高16位
     int[] taPosArr = new int[Const.INDEX_ELE_LENGTH];
 
     int[] aMinArr = new int[Const.INDEX_ELE_LENGTH];
