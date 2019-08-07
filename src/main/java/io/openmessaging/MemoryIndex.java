@@ -120,13 +120,9 @@ public class MemoryIndex {
                 //内存块发生改变，更新信息
                 nextPos = newNextPos;
                 mem = memories.get(nextPos);
-                buf = mem.data.duplicate();
+                buf = mem.data;
                 nextOffset = index.offsetArr[offset];
                 putBitLength = mem.putBitLength;
-
-                if (nextOffset >= putBitLength) {
-                    System.out.println();
-                }
             }
 
             //从变长编码内存中读
@@ -147,7 +143,7 @@ public class MemoryIndex {
 
                     nextOffset = 0;
                     mem = memories.get(nextPos);
-                    buf = mem.data.duplicate();
+                    buf = mem.data;
                     putBitLength = mem.putBitLength;
                 }
             }

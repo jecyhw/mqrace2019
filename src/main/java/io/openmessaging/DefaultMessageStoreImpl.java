@@ -76,32 +76,32 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     messageFile.flush();
                 }
                 isFirstGet = false;
-                List<Message> messages = new ArrayList<>();
-                for (int i = messageFiles.size() - 1; i >= 0; i--) {
-                    messages.addAll(messageFiles.get(i).get(1032358, 1132358, 1082705, 1139032, getItem));
-                }
-                messages.sort(messageComparator);
-                for (int i = 0; i < messages.size(); i++) {
-                    Message message = messages.get(i);
-                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
-                        System.err.println("1.error");
-                    }
-                    if ((message.getT() & 1) == 0) {
-                        if (message.getT() != messages.get(i + 1).getT()) {
-                            System.err.println("2.error");
-                        }
-                        if (i > 0) {
-                            if (message.getT() != messages.get(i - 1).getT() + 1) {
-                                System.err.println("3.error");
-                            }
-                        }
-                        i++;
-                    } else {
-                        if ( i > 0 && message.getT() != messages.get(i - 1).getT() + 1) {
-                            System.err.println("4.error");
-                        }
-                    }
-                }
+//                List<Message> messages = new ArrayList<>();
+//                for (int i = messageFiles.size() - 1; i >= 0; i--) {
+//                    messages.addAll(messageFiles.get(i).get(1032358, 1132358, 1082705, 1139032, getItem));
+//                }
+//                messages.sort(messageComparator);
+//                for (int i = 0; i < messages.size(); i++) {
+//                    Message message = messages.get(i);
+//                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
+//                        System.err.println("1.error");
+//                    }
+//                    if ((message.getT() & 1) == 0) {
+//                        if (message.getT() != messages.get(i + 1).getT()) {
+//                            System.err.println("2.error");
+//                        }
+//                        if (i > 0) {
+//                            if (message.getT() != messages.get(i - 1).getT() + 1) {
+//                                System.err.println("3.error");
+//                            }
+//                        }
+//                        i++;
+//                    } else {
+//                        if ( i > 0 && message.getT() != messages.get(i - 1).getT() + 1) {
+//                            System.err.println("4.error");
+//                        }
+//                    }
+//                }
 //                getAvgValue(90825, 99999, 99985, 187124);
             }
         }
