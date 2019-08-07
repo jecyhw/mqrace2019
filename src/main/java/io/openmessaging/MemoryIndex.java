@@ -53,6 +53,7 @@ public class MemoryIndex {
                 primaryIndex.offsetArr[pos] = memory.putBitLength;
             } else {
                 primaryIndex.posArr[pos] = (short) memories.size();
+                primaryIndex.offsetArr[pos] = 0;
             }
 
             primaryIndex.aArr[pos] = a;
@@ -64,13 +65,12 @@ public class MemoryIndex {
 
         } else {
 
-            int diffT = t - prevT;
-            if (!memory.putUnsigned(diffT)) {
+            int diffT = t - prevT, diffA = a - prevA;
+
+            if (!memory.put(diffT, diffA)) {
                 newMemory();
-                memory.putUnsigned(diffT);
+                memory.put(diffT, diffA);
             }
-            int diffA = a - prevA;
-            memory.putSigned(diffA);
 
             int pos = primaryIndexPos - 1;
             if (primaryIndex.aMinArr[pos] > a) {
@@ -106,7 +106,8 @@ public class MemoryIndex {
 
             //得到索引内存中这个位置的t值
             destT[destOffset] = index.tArr[offset];
-            destA[destOffset++] = index.aArr[offset];
+            destA[destOffset] = index.aArr[offset];
+            destOffset++;
 
             //得到这个t的下一个t在内存块的位置
             int newNextPos = index.posArr[offset];
@@ -119,9 +120,13 @@ public class MemoryIndex {
                 //内存块发生改变，更新信息
                 nextPos = newNextPos;
                 mem = memories.get(nextPos);
-                buf = mem.data;
-                putBitLength = mem.putBitLength;
+                buf = mem.data.duplicate();
                 nextOffset = index.offsetArr[offset];
+                putBitLength = mem.putBitLength;
+
+                if (nextOffset >= putBitLength) {
+                    System.out.println();
+                }
             }
 
             //从变长编码内存中读
@@ -142,7 +147,7 @@ public class MemoryIndex {
 
                     nextOffset = 0;
                     mem = memories.get(nextPos);
-                    buf = mem.data;
+                    buf = mem.data.duplicate();
                     putBitLength = mem.putBitLength;
                 }
             }

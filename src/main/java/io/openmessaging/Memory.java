@@ -11,23 +11,14 @@ public class Memory {
     //已使用的比特位数
     int putBitLength = 0;
 
-    public boolean putUnsigned(int val) {
+    public boolean put(int t, int a) {
         if (hasRemaining()) {
-            putBitLength = VariableUtils.putUnsigned(data, putBitLength, val);
+            putBitLength = VariableUtils.putUnsigned(data, putBitLength, t);
+            putBitLength = VariableUtils.putSigned(data, putBitLength, a);
             return true;
         }
         return false;
     }
-
-
-    public boolean putSigned(int val) {
-        if (hasRemaining()) {
-            putBitLength = VariableUtils.putSigned(data, putBitLength, val);
-            return true;
-        }
-        return false;
-    }
-
 
     public boolean hasRemaining() {
         return putBitLength + 96 < (Const.MEMORY_BUFFER_SIZE * 8);
