@@ -133,7 +133,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
 
         if (count != intervalSum.count || sum != intervalSum.sum) {
-            System.out.println();
+            System.err.println("value check");
         }
 
         if (intervalSum.count == 0) {
