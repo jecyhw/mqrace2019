@@ -17,22 +17,21 @@ public class VariableUtils {
         }
     }
 
-    public static int getSigned(ByteBuffer buf, MemoryRead memoryRead) {
-        int bitPos = memoryRead.aBitPos;
+    public static int getSigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
         //获取符号位，0表示正数，1表是负数
-        int signed = getBit(buf, bitPos);
+        int signed = getBit(buf, bitOffset);
 
-        bitPos++;
+        bitOffset++;
 
         while (true) {
-            int hasData = getBit(buf, bitPos);
-            v |= (getBit(buf, bitPos + 1) << count);
-            bitPos += 2;
+            int hasData = getBit(buf, bitOffset);
+            v |= (getBit(buf, bitOffset + 1) << count);
+            bitOffset += 2;
             if (hasData == 0) {
-                memoryRead.aBitPos = bitPos;
-                return signed == 0 ? v : -v;
+                dest[pos] = signed == 0 ? v : -v;
+                return bitOffset;
             }
             count++;
         }
@@ -58,17 +57,16 @@ public class VariableUtils {
         return bitPos + 2;
     }
 
-    public static int getUnsigned(ByteBuffer buf, MemoryRead memoryRead) {
-        int bitPos = memoryRead.tBitPos;
+    public static int getUnsigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
         while (true) {
-            int hasData = getBit(buf, bitPos);
-            v |= (getBit(buf, bitPos + 1) << count);
-            bitPos += 2;
+            int hasData = getBit(buf, bitOffset);
+            v |= (getBit(buf, bitOffset + 1) << count);
+            bitOffset += 2;
             if (hasData == 0) {
-                memoryRead.tBitPos = bitPos;
-                return v;
+                dest[pos] = v;
+                return bitOffset;
             }
             count++;
         }

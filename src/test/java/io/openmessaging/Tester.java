@@ -50,25 +50,22 @@ public class Tester {
     }
 
     private static void VariableUtilsTest() {
-        MemoryRead memoryRead = new MemoryRead();
+        int[] dest = new int[1];
+
         for (int i = 0; i < 1024 * 1024 * 10; i++) {
             byte[] data = new byte[64];
-            memoryRead.tBitPos = 0;
             VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, i);
-            memoryRead.tBitPos = 0;
-            int unsigned = VariableUtils.getUnsigned(ByteBuffer.wrap(data), memoryRead);
-            if (unsigned != i) {
+            int unsigned = VariableUtils.getUnsigned(ByteBuffer.wrap(data), 0, dest, 0);
+            if (dest[0] != i) {
                 System.out.println(false);
             }
         }
 
         for (int i = -3615850; i < 3615850; i++) {
             byte[] data = new byte[50];
-            memoryRead.aBitPos = 0;
             VariableUtils.putSigned(ByteBuffer.wrap(data), 0, i);
-            memoryRead.aBitPos = 0;
-            int signed = VariableUtils.getSigned(ByteBuffer.wrap(data), memoryRead);
-            if (signed != i) {
+            VariableUtils.getSigned(ByteBuffer.wrap(data), 0, dest, 0);
+            if (dest[0] != i) {
                 System.out.println(false);
             }
         }

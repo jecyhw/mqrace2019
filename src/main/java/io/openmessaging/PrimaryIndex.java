@@ -4,16 +4,15 @@ package io.openmessaging;
  * Created by yanghuiwei on 2019-08-06
  */
 public class PrimaryIndex {
-    int[] t = new int[Const.INDEX_ELE_LENGTH];
+    int[] tArr = new int[Const.INDEX_ELE_LENGTH];
+    int[] tOffsetArr = new int[Const.INDEX_ELE_LENGTH];
+    int[] aArr = new int[Const.INDEX_ELE_LENGTH];
+    int[] aOffsetArr = new int[Const.INDEX_ELE_LENGTH];
+
     //t和a的内存块下标
-    int[] a = new int[Const.INDEX_ELE_LENGTH];
+    int[] taPosArr = new int[Const.INDEX_ELE_LENGTH];
 
-    int[] pos = new int[Const.INDEX_ELE_LENGTH];
-
-
-    int[] aMin = new int[Const.INDEX_ELE_LENGTH];
-    int[] aMax = new int[Const.INDEX_ELE_LENGTH];
-    int[] aSum = new int[Const.INDEX_ELE_LENGTH];
-
-
+    int[] aMinArr = new int[Const.INDEX_ELE_LENGTH];
+    int[] aMaxArr = new int[Const.INDEX_ELE_LENGTH];
+    long[] aSumArr = new long[Const.INDEX_ELE_LENGTH];
 }

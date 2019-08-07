@@ -19,10 +19,4 @@ public abstract class Utils {
         }
         return sb.toString();
     }
-
-    public static void dPrint(Object obj) {
-        if (Const.PRINT_LOG) {
-            System.out.println(obj);
-        }
-    }
 }
