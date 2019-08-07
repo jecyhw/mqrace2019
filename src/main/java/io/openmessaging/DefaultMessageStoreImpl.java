@@ -111,7 +111,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             MemoryIndex.log();
-//                System.err.println("func=shutdownHook stop");
+                System.err.println("func=shutdownHook stop");
         }));
     }
 }
