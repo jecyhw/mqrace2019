@@ -21,5 +21,8 @@ public interface Const {
 
     int A_DECREASE = 1;
 
+    int MAX_GET_MSG_SIZE = 50 * 10000;
+
     boolean PRINT_LOG = true;
+    int PUT_THREAD_SIZE = 12;
 }

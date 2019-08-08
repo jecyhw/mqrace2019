@@ -89,11 +89,11 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
                 isFirstGet = false;
 //                List<Message> messages = new ArrayList<>();
-//                for (int i = messageFiles.size() - 1; i >= 0; i--) {
+//                for (int i = messageFiles.messageFileSize() - 1; i >= 0; i--) {
 //                    messages.addAll(messageFiles.get(i).get(1032358, 1132358, 1082705, 1139032, getItem));
 //                }
 //                messages.sort(messageComparator);
-//                for (int i = 0; i < messages.size(); i++) {
+//                for (int i = 0; i < messages.messageFileSize(); i++) {
 //                    Message message = messages.get(i);
 //                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
 //                        System.err.println("1.error");
@@ -118,11 +118,19 @@ public class DefaultMessageStoreImpl extends MessageStore {
             }
         }
 
-        List<Message> messages = new ArrayList<>();
-        for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messages.addAll(messageFiles.get(i).get(aMinInt, aMaxInt, tMinInt, tMaxInt, getItem));
+        int messageFileSize = messageFiles.size();
+
+        List<List<Message>> messagesList = new ArrayList<>(messageFileSize);
+
+        int totalMessageSize = 0;
+        for (int i = messageFileSize - 1; i >= 0; i--) {
+            List<Message> messages = messageFiles.get(i).get(aMinInt, aMaxInt, tMinInt, tMaxInt, getItem);
+            totalMessageSize += messages.size();
+            messagesList.add(messages);
         }
-        messages.sort(messageComparator);
+
+        List<Message> messages = merge(messagesList, totalMessageSize, getItem.sortPos);
+//        messages.sort(messageComparator);
 //        int min = Math.max(aMinInt, tMinInt), max= Math.min(aMaxInt, tMaxInt);
 //        int count = max - min + 1;
 //        while (min <= max) {
@@ -132,11 +140,36 @@ public class DefaultMessageStoreImpl extends MessageStore {
 //            min++;
 //        }
 //
-//        if (messages.size() != count) {
+//        if (messages.messageFileSize() != count) {
 //            System.err.println("6.error");
 //        }
 
         Monitor.updateMaxMsgNum(messages.size());
+        return messages;
+    }
+
+    private List<Message> merge(List<List<Message>> messagesList, int totalMessageSize, int[] sortPos) {
+        List<Message> messages = new ArrayList<>(totalMessageSize);
+        for (int i = 0; i < sortPos.length; i++) {
+            sortPos[i] = 0;
+        }
+        int minIndex = 0;
+        for (int i = 0; i < totalMessageSize; ++i) {
+            long minT = Integer.MAX_VALUE;
+            for (int j = messagesList.size() - 1; j >= 0; j--) {
+                List<Message> list = messagesList.get(j);
+                if (sortPos[j] >= list.size()) {
+                    continue;
+                }
+                long t = list.get(sortPos[j]).getT();
+                if (t < minT) {
+                    minT = t;
+                    minIndex = j;
+                }
+            }
+            messages.add(messagesList.get(minIndex).get(sortPos[minIndex]++));
+        }
+
         return messages;
     }
 

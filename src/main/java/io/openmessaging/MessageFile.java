@@ -47,7 +47,7 @@ public class MessageFile {
             int maxPos = memoryIndex.firstGreatInPrimaryIndex(tMax);
 
             if (minPos >= maxPos) {
-                return new ArrayList<>();
+                return Collections.emptyList();
             }
 
             ByteBuffer readBuf = getItem.buf;
@@ -63,7 +63,7 @@ public class MessageFile {
     }
 
     private List<Message> readMsgs(long minPos, ByteBuffer readBuf, int[] as, int[] ts, int tLen, int aMin, int aMax, int tMin, int tMax) {
-        List<Message> messages = new ArrayList<>();
+        List<Message> messages = new ArrayList<>(tLen);
         //从后往前过滤
         tLen--;
         while (tLen >= 0 && ts[tLen] > tMax) {
