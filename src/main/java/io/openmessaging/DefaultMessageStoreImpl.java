@@ -1,5 +1,7 @@
 package io.openmessaging;
 
+import io.netty.util.concurrent.FastThreadLocal;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -17,24 +19,31 @@ public class DefaultMessageStoreImpl extends MessageStore {
     private static volatile boolean isFirstAvgGet = true;
 
     private static List<MessageFile> messageFiles = new ArrayList<>();
-    private static ThreadLocal<MessageFile> messageFileThreadLocal = ThreadLocal.withInitial(() ->  {
-        MessageFile messageFile = new MessageFile();
-        synchronized (DefaultMessageStoreImpl.class) {
-            messageFiles.add(messageFile);
+    private static FastThreadLocal<MessageFile> messageFileThreadLocal = new FastThreadLocal<MessageFile>() {
+        @Override
+        public MessageFile initialValue()
+        {
+            MessageFile messageFile = new MessageFile();
+            synchronized (DefaultMessageStoreImpl.class) {
+                messageFiles.add(messageFile);
+            }
+            return messageFile;
         }
-        return messageFile;
-    });
+    };
 
     private static AtomicInteger getThreadCounter = new AtomicInteger(0);
     private static List<GetItem> getItems = new ArrayList<>();
-    private static ThreadLocal<GetItem> getBufThreadLocal = ThreadLocal.withInitial(() -> {
-        GetItem item = new GetItem();
-        getThreadCounter.incrementAndGet();
-        synchronized (DefaultMessageStoreImpl.class) {
-            getItems.add(item);
+    private static FastThreadLocal<GetItem> getBufThreadLocal = new FastThreadLocal<GetItem>() {
+        @Override
+        public GetItem initialValue() {
+            GetItem item = new GetItem();
+            getThreadCounter.incrementAndGet();
+            synchronized (DefaultMessageStoreImpl.class) {
+                getItems.add(item);
+            }
+            return item;
         }
-        return item;
-    });
+    };
 
     private static Comparator<Message> messageComparator = Comparator.comparingLong(Message::getT);
 
@@ -137,7 +146,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         if (isFirstAvgGet) {
             synchronized (DefaultMessageStoreImpl.class) {
-                Monitor.getAvgStart();
+                Monitor.getAvgStat();
                 isFirstAvgGet = false;
             }
         }

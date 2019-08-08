@@ -1,6 +1,8 @@
 package io.openmessaging;
 
 
+import io.netty.util.concurrent.FastThreadLocal;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -78,5 +80,13 @@ public class Tester {
             }
         }
         System.out.println(System.currentTimeMillis() - startTime);
+
+        System.out.println(new FastThreadLocal<String>() {
+            @Override
+            public String initialValue()
+            {
+                return "test";
+            }
+        }.get());
     }
 }

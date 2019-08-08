@@ -6,6 +6,7 @@ package io.openmessaging;
 public interface Const {
     String STORE_PATH = "./data/";
     String MSG_FILE_SUFFIX = ".msg";
+    int GET_AVG_COUNT = 31000;
 
     int MSG_BYTES = 34;
 
@@ -15,7 +16,7 @@ public interface Const {
 
     int MEMORY_BUFFER_SIZE = 1024 * 1024;
 
-    int INDEX_INTERVAL = 32;
+    int INDEX_INTERVAL = 128;
     int INDEX_ELE_LENGTH = 1024 * 512;
 
     boolean PRINT_LOG = true;
