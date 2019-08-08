@@ -16,7 +16,6 @@ import static io.openmessaging.Utils.print;
  */
 public class DefaultMessageStoreImpl extends MessageStore {
     private static volatile boolean isFirstGet = true;
-    private static volatile boolean isFirstAvgGet = true;
 
     private static List<MessageFile> messageFiles = new ArrayList<>();
     private static FastThreadLocal<MessageFile> messageFileThreadLocal = new FastThreadLocal<MessageFile>() {
@@ -144,12 +143,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
-        if (isFirstAvgGet) {
-            synchronized (DefaultMessageStoreImpl.class) {
-                Monitor.getAvgStat();
-                isFirstAvgGet = false;
-            }
-        }
+        Monitor.getAvgStat();
+
         int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
 
         GetItem getItem = getBufThreadLocal.get();
