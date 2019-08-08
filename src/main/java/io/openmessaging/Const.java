@@ -15,7 +15,7 @@ public interface Const {
 
     int MEMORY_BUFFER_SIZE = 1024 * 1024;
 
-    int INDEX_INTERVAL = 32;
+    int INDEX_INTERVAL = 256;
     int INDEX_ELE_LENGTH = 1024 * 512;
 
     boolean PRINT_LOG = true;
