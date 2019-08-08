@@ -46,5 +46,9 @@ public class Monitor {
         sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum).append("\n");
 
         Utils.print(sb.toString());
+
+        if (Const.PRINT_ERR) {
+            System.err.println("func=shutdownHook stop");
+        }
     }
 }
