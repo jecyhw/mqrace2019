@@ -9,6 +9,7 @@ public class VariableUtils {
     private static final int MAX_NUM = 2;
 
     public static int putSigned(ByteBuffer buf, int bitPos, int v) {
+        v = v - Const.A_DECREASE;
         if (v < 0) {
             put1(buf, bitPos);
             return putUnsigned(buf, bitPos + 1, -v);
@@ -30,7 +31,7 @@ public class VariableUtils {
             v |= (getBit(buf, bitOffset + 1) << count);
             bitOffset += 2;
             if (hasData == 0) {
-                dest[pos] = signed == 0 ? v : -v;
+                dest[pos] = (signed == 0 ? v : -v) + Const.A_DECREASE;
                 return bitOffset;
             }
             count++;

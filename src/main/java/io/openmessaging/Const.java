@@ -19,5 +19,7 @@ public interface Const {
     int INDEX_INTERVAL = 128;
     int INDEX_ELE_LENGTH = 1024 * 512;
 
+    int A_DECREASE = 1;
+
     boolean PRINT_LOG = true;
 }

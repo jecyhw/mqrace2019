@@ -37,7 +37,7 @@ public class Monitor {
 
     public static void log() {
         StringBuilder sb = new StringBuilder();
-        sb.append("INDEX_INTERVAL:").append(Const.INDEX_INTERVAL).append(",INDEX_ELE_LENGTH").append(Const.INDEX_ELE_LENGTH).append("\n");
+        sb.append("INDEX_INTERVAL:").append(Const.INDEX_INTERVAL).append(",INDEX_ELE_LENGTH:").append(Const.INDEX_ELE_LENGTH).append("\n");
         sb.append("put cost time:").append(getMsgStartTime - putStartTime)
                 .append(",get msg cost time:").append(getAvgTimes[0] - getMsgStartTime)
                 .append(",get avg cost time:").append(getAvgTimes[getAvgCounter.get()] - getAvgTimes[0])
