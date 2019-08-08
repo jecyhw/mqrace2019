@@ -1,7 +1,6 @@
 package io.openmessaging;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -15,6 +14,7 @@ import static io.openmessaging.Utils.print;
  */
 public class DefaultMessageStoreImpl extends MessageStore {
     private static volatile boolean isFirstGet = true;
+    private static volatile boolean isFirstAvgGet = true;
 
     private static List<MessageFile> messageFiles = new ArrayList<>();
     private static ThreadLocal<MessageFile> messageFileThreadLocal = ThreadLocal.withInitial(() ->  {
@@ -52,6 +52,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
             }
         }
         MessageCacheShare.init();
+
+        Monitor.putStart();
         print("func=init success");
     }
 
@@ -75,6 +77,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
                 for (MessageFile messageFile : messageFiles) {
                     messageFile.flush();
                 }
+                Monitor.getMsgStart();
+
                 isFirstGet = false;
 //                List<Message> messages = new ArrayList<>();
 //                for (int i = messageFiles.size() - 1; i >= 0; i--) {
@@ -123,12 +127,20 @@ public class DefaultMessageStoreImpl extends MessageStore {
 //        if (messages.size() != count) {
 //            System.err.println("6.error");
 //        }
+
+        Monitor.updateMaxMsgNum(messages.size());
         return messages;
     }
 
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
+        if (isFirstAvgGet) {
+            synchronized (DefaultMessageStoreImpl.class) {
+                Monitor.getAvgStart();
+                isFirstAvgGet = false;
+            }
+        }
         int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
 
         GetItem getItem = getBufThreadLocal.get();
@@ -177,7 +189,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-//                System.err.println("func=shutdownHook stop");
+            Monitor.log();
+            System.err.println("func=shutdownHook stop");
         }));
     }
 }

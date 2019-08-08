@@ -10,8 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class MemoryIndex {
     static AtomicInteger indexBufCounter = new AtomicInteger();
-    static AtomicInteger tBufCounter = new AtomicInteger(1);
-    static AtomicInteger aBufCounter = new AtomicInteger(1);
+    static AtomicInteger tBufCounter = new AtomicInteger(0);
+    static AtomicInteger aBufCounter = new AtomicInteger(0);
 
     //put计数
     int putCount = 0;
@@ -301,7 +301,8 @@ public class MemoryIndex {
     }
 
     public void flush() {
-        Utils.print("MemoryIndex func=flush indexBuf=" + indexBufCounter.get() + " tBuf=" + tBufCounter.get() + " aBuf:" + aBufCounter.get());
+        Utils.print("MemoryIndex func=flush indexBuf:" + indexBufCounter.get() + " tBuf:" + tBufCounter.get() + " aBuf:" + aBufCounter.get() + " indexBufEleCount:" + indexBufEleCount
+                + " putCount:" + putCount + " memories:" + memories.size() + " primaryIndices:" + primaryIndices.size());
     }
 
     private void newPrimaryIndex() {
