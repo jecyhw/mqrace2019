@@ -14,7 +14,8 @@ public interface Const {
     int GET_BUFFER_SIZE = 1024 * 1024 * 4; //一次对多读取4m
     int MAX_MSG_CAPACITY = GET_BUFFER_SIZE / MSG_BYTES;
 
-    int MEMORY_BUFFER_SIZE = 1024 * 1024;
+    //固定成一块
+    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 130;
 
     int INDEX_INTERVAL = 128;
     int INDEX_ELE_LENGTH = 1400000;//需要和INDEX_INTERVAL一起调

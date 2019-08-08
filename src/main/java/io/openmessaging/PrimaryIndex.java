@@ -7,7 +7,6 @@ public class PrimaryIndex {
     int[] tArr = new int[Const.INDEX_ELE_LENGTH];
     int[] aArr = new int[Const.INDEX_ELE_LENGTH];
 
-    short[] posArr = new short[Const.INDEX_ELE_LENGTH];
     int[] offsetArr = new int[Const.INDEX_ELE_LENGTH];
 
     int[] aMinArr = new int[Const.INDEX_ELE_LENGTH];

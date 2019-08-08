@@ -1,8 +1,6 @@
 package io.openmessaging;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -25,12 +23,7 @@ public class MemoryIndex {
     int lastT;
 
     //t的相对值存储的内存
-    List<Memory> memories = new ArrayList<>();
-    Memory memory;
-
-    public MemoryIndex() {
-        newMemory();
-    }
+    Memory memory = new Memory();
 
     public void put(int t, int prevT, int a, int prevA) {
         lastT = t;
@@ -42,13 +35,8 @@ public class MemoryIndex {
             //每隔INDEX_INTERVAL记录t（在indexBuf中记录了t就不会在memory中记录）
             primaryIndex.tArr[pos] = t;
             //下一个t的起始位置，先写在哪个块中，再写块的便宜位置
-            if (memory.hasRemaining()) {
-                primaryIndex.posArr[pos] = (short) (memories.size() - 1);
-                primaryIndex.offsetArr[pos] = memory.putBitLength;
-            } else {
-                primaryIndex.posArr[pos] = (short) memories.size();
-                primaryIndex.offsetArr[pos] = 0;
-            }
+            primaryIndex.offsetArr[pos] = memory.putBitLength;
+
 
             primaryIndex.aArr[pos] = a;
 
@@ -61,10 +49,7 @@ public class MemoryIndex {
 
             int diffT = t - prevT, diffA = a - prevA;
 
-            if (!memory.put(diffT, diffA)) {
-                newMemory();
-                memory.put(diffT, diffA);
-            }
+            memory.put(diffT, diffA);
 
             int pos = primaryIndexPos - 1;
             if (primaryIndex.aMinArr[pos] > a) {
@@ -86,10 +71,9 @@ public class MemoryIndex {
      */
     public int rangePosInPrimaryIndex(int minPos, int maxPos, int[] destT, int[] destA) {
         //数据可能会存在多个块中
-        int nextPos = -1, nextOffset = 0, putBitLength = 0;
+        int nextOffset, putBitLength = memory.putBitLength;
         int destOffset = 0;
-        Memory mem;
-        ByteBuffer buf = null;
+        ByteBuffer buf = memory.data;
 
         PrimaryIndex index = primaryIndex;
         while (minPos < maxPos) {
@@ -99,18 +83,9 @@ public class MemoryIndex {
             destOffset++;
 
             //得到这个t的下一个t在内存块的位置
-            int newNextPos = index.posArr[minPos];
-            if (newNextPos != nextPos) {
-                if (newNextPos >= memories.size()) {
-                    //说明读完了
-                    return destOffset;
-                }
-                //内存块发生改变，更新信息
-                nextPos = newNextPos;
-                mem = memories.get(nextPos);
-                buf = mem.data;
-                nextOffset = index.offsetArr[minPos];
-                putBitLength = mem.putBitLength;
+            nextOffset = index.offsetArr[minPos];
+            if (nextOffset >= putBitLength) {
+                return destOffset;
             }
 
             //从变长编码内存中读
@@ -123,16 +98,8 @@ public class MemoryIndex {
                 destOffset++;
 
                 if (nextOffset >= putBitLength) {
-                    nextPos++;
-                    if (nextPos >= memories.size()) {
-                        //说明读完了
-                        return destOffset;
-                    }
-
-                    nextOffset = 0;
-                    mem = memories.get(nextPos);
-                    buf = mem.data;
-                    putBitLength = mem.putBitLength;
+                    //说明读完了
+                    return destOffset;
                 }
             }
             minPos++;
@@ -181,15 +148,11 @@ public class MemoryIndex {
             count = 1;
         }
 
-        int nextPos = index.posArr[offset];
-        if (nextPos < memories.size()) {
-            //不是最后一个元素，得到下一个t、a在内存块的位置
-
-            Memory mem = memories.get(nextPos);
-            ByteBuffer buf = mem.data;
-            int putBitLength = mem.putBitLength;
-            int nextOffset = index.offsetArr[offset];
-
+        //不是最后一个元素，得到下一个t、a在内存块的位置
+        int nextOffset = index.offsetArr[offset];
+        int putBitLength = memory.putBitLength;
+        if (nextOffset < putBitLength) {
+            ByteBuffer buf = memory.data;
             int[] dest = new int[1];
             //从变长编码内存中读
             for (int k = 1; k < Const.INDEX_INTERVAL; k++) {
@@ -207,16 +170,7 @@ public class MemoryIndex {
                 }
 
                 if (nextOffset >= putBitLength) {
-                    nextPos++;
-                    if (nextPos >= memories.size()) {
-                        //说明读完了
-                        break;
-                    }
-
-                    nextOffset = 0;
-                    mem = memories.get(nextPos);
-                    buf = mem.data;
-                    putBitLength = mem.putBitLength;
+                    break;
                 }
             }
         }
@@ -284,12 +238,7 @@ public class MemoryIndex {
 
     public void flush() {
         Utils.print("MemoryIndex func=flush indexBuf:" + indexBufCounter.get() + " tBuf:" + tBufCounter.get() + " aBuf:" + aBufCounter.get() + " indexBufEleCount:" + indexBufEleCount
-                + " putCount:" + putCount + " memories:" + memories.size());
+                + " putCount:" + putCount);
     }
 
-    private void newMemory() {
-        memory = new Memory();
-        memories.add(memory);
-        tBufCounter.incrementAndGet();
-    }
 }
