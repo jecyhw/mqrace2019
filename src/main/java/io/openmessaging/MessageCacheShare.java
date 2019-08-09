@@ -3,7 +3,7 @@ package io.openmessaging;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageCacheShare {
-    private static int MAX_NUM = 1024*1024*13;
+    private static int MAX_NUM = 1024*1024*12;
     private static Message[] messages;
     private static AtomicInteger idxCounter;
 
