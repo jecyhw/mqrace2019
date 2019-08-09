@@ -73,7 +73,7 @@ public class MemoryIndex {
         //数据可能会存在多个块中
         int nextOffset, putBitLength = memory.putBitLength;
         int destOffset = 0;
-        ByteBuffer buf = memory.data;
+        UnsafeMemory buf = memory.data;
 
         PrimaryIndex index = primaryIndex;
         while (minPos < maxPos) {
@@ -152,7 +152,7 @@ public class MemoryIndex {
         int nextOffset = index.offsetArr[offset];
         int putBitLength = memory.putBitLength;
         if (nextOffset < putBitLength) {
-            ByteBuffer buf = memory.data;
+            UnsafeMemory buf = memory.data;
             int[] dest = new int[1];
             //从变长编码内存中读
             for (int k = 1; k < Const.INDEX_INTERVAL; k++) {

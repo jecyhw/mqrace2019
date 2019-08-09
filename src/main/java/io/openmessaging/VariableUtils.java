@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 public class VariableUtils {
     private static final int MAX_NUM = 2;
 
-    public static int putSigned(ByteBuffer buf, int bitPos, int v) {
+    public static int putSigned(UnsafeMemory buf, int bitPos, int v) {
         v = v - Const.A_DECREASE;
         if (v < 0) {
             put1(buf, bitPos);
@@ -18,7 +18,7 @@ public class VariableUtils {
         }
     }
 
-    public static int getSigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
+    public static int getSigned(UnsafeMemory buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
 
@@ -51,7 +51,7 @@ public class VariableUtils {
         }
     }
 
-    public static int putUnsigned(ByteBuffer buf, int bitPos, int v) {
+    public static int putUnsigned(UnsafeMemory buf, int bitPos, int v) {
         int t;
         while (true) {
             t = (v & 1);
@@ -71,7 +71,7 @@ public class VariableUtils {
         return bitPos + 2;
     }
 
-    public static int getUnsigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
+    public static int getUnsigned(UnsafeMemory buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
         byte aByte = getByte(buf, bitOffset);
@@ -96,12 +96,12 @@ public class VariableUtils {
         }
     }
 
-    private static int getBit(ByteBuffer buf, int bitPos) {
+    private static int getBit(UnsafeMemory buf, int bitPos) {
         return getBitFromByte(getByte(buf, bitPos), bitPos);
     }
 
 
-    private static byte getByte(ByteBuffer buf, int bitPos) {
+    private static byte getByte(UnsafeMemory buf, int bitPos) {
         return buf.get(bitPos >> 3);
     }
 
@@ -109,7 +109,7 @@ public class VariableUtils {
         return (b >>> (bitPos & 7)) & 1;
     }
 
-    private static void put1(ByteBuffer buf, int bitPos) {
+    private static void put1(UnsafeMemory buf, int bitPos) {
         int pos = bitPos >> 3;
         int bit = bitPos & 7;
         buf.put(pos, (byte) (buf.get(pos) | (1 << bit)));

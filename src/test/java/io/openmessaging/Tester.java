@@ -56,8 +56,8 @@ public class Tester {
 
         for (int i = 0; i < 1024 * 1024 * 10; i++) {
             byte[] data = new byte[64];
-            VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, i);
-            int unsigned = VariableUtils.getUnsigned(ByteBuffer.wrap(data), 0, dest, 0);
+            VariableUtils.putUnsigned(UnsafeMemory.wrap(data), 0, i);
+            int unsigned = VariableUtils.getUnsigned(UnsafeMemory.wrap(data), 0, dest, 0);
             if (dest[0] != i) {
                 System.out.println(false);
             }
@@ -65,8 +65,8 @@ public class Tester {
 
         for (int i = -3615850; i < 3615850; i++) {
             byte[] data = new byte[50];
-            VariableUtils.putSigned(ByteBuffer.wrap(data), 0, i);
-            VariableUtils.getSigned(ByteBuffer.wrap(data), 0, dest, 0);
+            VariableUtils.putSigned(UnsafeMemory.wrap(data), 0, i);
+            VariableUtils.getSigned(UnsafeMemory.wrap(data), 0, dest, 0);
             if (dest[0] != i) {
                 System.out.println(false);
             }
@@ -76,7 +76,7 @@ public class Tester {
         byte[] data = new byte[50];
         for (long i = 0L; i < 1024L * 1024 * 1024 * 2; i += 10) {
             for (int j = 0; j < 10; j++) {
-                VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, j);
+                VariableUtils.putUnsigned(UnsafeMemory.wrap(data), 0, j);
             }
         }
         System.out.println(System.currentTimeMillis() - startTime);
