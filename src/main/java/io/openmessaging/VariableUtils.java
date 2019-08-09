@@ -75,9 +75,11 @@ public class VariableUtils {
 
     private static int getBit(ByteBuffer buf, int bitPos) {
         int pos = bitPos >> 3;
-        int bit = bitPos & 7;
+        return getByte(buf.get(pos), bitPos);
+    }
 
-        return (buf.get(pos) >>> (bit)) & 1;
+    private static int getByte(byte b, int bitPos) {
+        return (b >>> (bitPos & 7)) & 1;
     }
 
     private static void put1(ByteBuffer buf, int bitPos) {
