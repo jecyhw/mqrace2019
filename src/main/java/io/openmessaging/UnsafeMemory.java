@@ -3,9 +3,9 @@ package io.openmessaging;
 import sun.misc.Unsafe;
 
 public class UnsafeMemory {
-    private  final static Unsafe unsafe;
-    private long capacity;
-    private long curIndex;
+    private final static Unsafe unsafe;
+    private int capacity;
+    private int curIndex;
     private long address;
 
     static {
@@ -21,11 +21,11 @@ public class UnsafeMemory {
         unsafe.putByte(address + curIndex++, val);
     }
 
-    public final void put(long pos, byte val){
+    public final void put(int pos, byte val){
         unsafe.putByte(address + pos, val);
     }
 
-    public final byte get(long pos){
+    public final byte get(int pos){
         return unsafe.getByte(address + pos);
     }
 
@@ -37,11 +37,15 @@ public class UnsafeMemory {
         return  memory;
     }
 
-    public final long capacity(){
+    public final int capacity(){
         return capacity;
     }
 
-    public final long size(){
+    public final int size(){
         return curIndex;
+    }
+
+    public final void clear(){
+        curIndex = 0;
     }
 }
