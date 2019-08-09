@@ -24,7 +24,7 @@ public class VariableUtils {
 
         byte aByte = getByte(buf, bitOffset);
         //获取符号位，0表示正数，1表是负数
-        int signed = getBit(buf, bitOffset++);
+        int signed = getBitFromByte(aByte, bitOffset++);
 
         if ((bitOffset & 7) == 0) {
             aByte = getByte(buf, bitOffset);
