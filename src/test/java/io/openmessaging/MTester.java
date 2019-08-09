@@ -12,7 +12,7 @@ public class MTester {
             unsafeMemory.put(i, (byte) 0xff);
         }
 
-        for (long i = unsafeMemory.size()-1; i >= 0; i--){
+        for (int i = unsafeMemory.size()-1; i >= 0; i--){
             byte b = unsafeMemory.get(i);
         }
     }

@@ -20,7 +20,7 @@ public class VariableUtils {
         int v = 0;
         int count = 0;
 
-        byte aByte = buf.get(bitOffset >> 3);
+        int aByte = buf.get(bitOffset >> 3);
         //获取符号位，0表示正数，1表是负数
         int signed =  (aByte >>> (bitOffset & 7)) & 1;
 
@@ -72,7 +72,7 @@ public class VariableUtils {
     public static int getUnsigned(UnsafeMemory buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
-        byte aByte = buf.get(bitOffset >> 3);
+        int aByte = buf.get(bitOffset >> 3);
         while (true) {
             int hasData = (aByte >>> (bitOffset & 7)) & 1;
 
