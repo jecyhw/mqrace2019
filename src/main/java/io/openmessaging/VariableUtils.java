@@ -28,8 +28,26 @@ public class VariableUtils {
             aByte = buf.get(bitOffset >> 3);
         }
 
+        int hasData = (aByte >>> (bitOffset & 7)) & 1;
+
+        if ((++bitOffset & 7) == 0) {
+            aByte = buf.get(bitOffset >> 3);
+        }
+
+        v |= (((aByte >>> ((bitOffset++) & 7)) & 1) << count);
+
+        if (hasData == 0) {
+            dest[pos] = (signed == 0 ? v : -v) + Const.A_DECREASE;
+            return bitOffset;
+        }
+
+        if ((bitOffset & 7) == 0) {
+            aByte = buf.get(bitOffset >> 3);
+        }
+        count++;
+
         while (true) {
-            int hasData = (aByte >>> (bitOffset & 7)) & 1;
+            hasData = (aByte >>> (bitOffset & 7)) & 1;
 
             if ((++bitOffset & 7) == 0) {
                 aByte = buf.get(bitOffset >> 3);
@@ -73,8 +91,27 @@ public class VariableUtils {
         int v = 0;
         int count = 0;
         int aByte = buf.get(bitOffset >> 3);
+
+        int hasData = (aByte >>> (bitOffset & 7)) & 1;
+
+        if ((++bitOffset & 7) == 0) {
+            aByte = buf.get(bitOffset >> 3);
+        }
+
+        v |= (((aByte >>> ((bitOffset++) & 7)) & 1) << count);
+
+        if (hasData == 0) {
+            dest[pos] = v;
+            return bitOffset;
+        }
+
+        if ((bitOffset & 7) == 0) {
+            aByte = buf.get(bitOffset >> 3);
+        }
+        count++;
+
         while (true) {
-            int hasData = (aByte >>> (bitOffset & 7)) & 1;
+            hasData = (aByte >>> (bitOffset & 7)) & 1;
 
             if ((++bitOffset & 7) == 0) {
                 aByte = buf.get(bitOffset >> 3);

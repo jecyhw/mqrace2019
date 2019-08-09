@@ -28,4 +28,6 @@ public interface Const {
     boolean PRINT_LOG = true;
     int PUT_THREAD_SIZE = 12;
     boolean PRINT_ERR = true;
+
+    int DEST = 1500;
 }
