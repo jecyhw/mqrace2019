@@ -66,6 +66,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     }
 
     public DefaultMessageStoreImpl() {
+        Monitor.mark(0);
         init();
     }
 
@@ -82,12 +83,14 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
-                for (MessageFile messageFile : messageFiles) {
-                    messageFile.flush();
+                if (isFirstGet) {
+                    for (MessageFile messageFile : messageFiles) {
+                        messageFile.flush();
+                    }
+                    Monitor.mark(2);
+                    Monitor.getMsgStart();
+                    isFirstGet = false;
                 }
-                Monitor.getMsgStart();
-
-                isFirstGet = false;
 //                List<Message> messages = new ArrayList<>();
 //                for (int i = messageFiles.messageFileSize() - 1; i >= 0; i--) {
 //                    messages.addAll(messageFiles.get(i).get(1032358, 1132358, 1082705, 1139032, getItem));
