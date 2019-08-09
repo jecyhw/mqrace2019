@@ -107,7 +107,8 @@ public class MessageFile {
     public IntervalSum getAvgValue(int aMin, int aMax, int tMin, int tMax, IntervalSum intervalSum) {
         if (tMin <= tMax && aMin <= aMax) {
             int minPos = memoryIndex.firstLessInPrimaryIndex(tMin);
-            memoryIndex.sum(minPos, aMin, aMax, tMin, tMax, intervalSum);
+            int maxPos = memoryIndex.firstGreatInPrimaryIndex(tMax);
+            memoryIndex.sum(minPos, maxPos, aMin, aMax, tMin, tMax, intervalSum);
         }
         return intervalSum;
     }

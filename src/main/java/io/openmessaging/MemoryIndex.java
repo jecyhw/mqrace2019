@@ -1,6 +1,5 @@
 package io.openmessaging;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -107,31 +106,42 @@ public class MemoryIndex {
         return destOffset;
     }
 
-    public void sum(int minPos, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
-        int maxPos = indexBufEleCount;
+    public void sum(int minPos, int maxPos, int aMin, int aMax, int tMin, int tMax, IntervalSum res) {
         if (minPos >= maxPos) {
             return;
         }
+
         long sum = 0;
         int count = 0;
 
         PrimaryIndex index = primaryIndex;
-        while (minPos < maxPos) {
-            //t在区间外
-            if (tRangeOutZone(index, minPos, minPos, tMin, tMax)) {
-                break;
+        //读第一块
+        if (!aRangeOutZone(index, minPos, aMin, aMax)) {
+            sumAPosInPrimaryIndex(index, minPos, aMin, aMax, tMin, tMax, res);
+        }
+        minPos++;
+        if (minPos < maxPos) {
+            maxPos--;
+            //最后一块
+            if (!aRangeOutZone(index, maxPos, aMin, aMax)) {
+                sumAPosInPrimaryIndex(index, maxPos, aMin, aMax, tMin, tMax, res);
             }
-            if (aRangeInZone(index, minPos, aMin, aMax) && tRangeInZone(index, minPos, minPos, tMin, tMax)) {
-                sum += index.aSumArr[minPos];
-                if (minPos == indexBufEleCount - 1) {
-                    count += putCount % Const.INDEX_INTERVAL;
-                } else {
-                    count += Const.INDEX_INTERVAL;
+
+            int maxIndexPos = indexBufEleCount - 1;
+            //中间
+            while (minPos < maxPos) {
+                if (aRangeInZone(index, minPos, aMin, aMax)) {
+                    sum += index.aSumArr[minPos];
+                    if (minPos == maxIndexPos) {
+                        count += putCount % Const.INDEX_INTERVAL;
+                    } else {
+                        count += Const.INDEX_INTERVAL;
+                    }
+                } else if (!aRangeOutZone(index, minPos, aMin, aMax)) {
+                    sumAPosInPrimaryIndex(index, minPos, aMin, aMax, tMin, tMax, res);
                 }
-            } else if (!aRangeOutZone(index, minPos, aMin, aMax)) {
-                sumAPosInPrimaryIndex(index, minPos, aMin, aMax, tMin, tMax, res);
+                minPos++;
             }
-            minPos++;
         }
         res.sum += sum;
         res.count += count;
@@ -184,19 +194,6 @@ public class MemoryIndex {
 
     public boolean aRangeOutZone(PrimaryIndex index, int offset, int aMin, int aMax) {
         return aMax < index.aMinArr[offset] || aMin > index.aMaxArr[offset];
-    }
-
-    public boolean tRangeInZone(PrimaryIndex index, int minPos, int offset, int tMin, int tMax) {
-        if (minPos < indexBufEleCount - 1) {
-            return tMin <= index.tArr[offset] && tMax >= index.tArr[offset + 1];
-        } else {
-            //最后一个元素分开判断
-            return tMin <= index.tArr[offset] && tMax >= lastT;
-        }
-    }
-
-    public boolean tRangeOutZone(PrimaryIndex index, int minPos, int offset, int tMin, int tMax) {
-        return tMax < index.tArr[offset];
     }
 
     public int firstGreatInPrimaryIndex(int val) {
