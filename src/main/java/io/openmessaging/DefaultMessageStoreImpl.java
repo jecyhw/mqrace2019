@@ -129,8 +129,11 @@ public class DefaultMessageStoreImpl extends MessageStore {
             messagesList.add(messages);
         }
 
-        List<Message> messages = merge(messagesList, totalMessageSize, getItem.sortPos);
-//        messages.sort(messageComparator);
+        List<Message> messages = new ArrayList<>(totalMessageSize);
+        for (int i = 0; i < messageFileSize; i++) {
+            messages.addAll(messagesList.get(i));
+        }
+        messages.sort(messageComparator);
 //        int min = Math.max(aMinInt, tMinInt), max= Math.min(aMaxInt, tMaxInt);
 //        int count = max - min + 1;
 //        while (min <= max) {
@@ -140,7 +143,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 //            min++;
 //        }
 //
-//        if (messages.messageFileSize() != count) {
+//        if (messages.size() != count) {
 //            System.err.println("6.error");
 //        }
 

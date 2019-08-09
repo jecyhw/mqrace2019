@@ -29,5 +29,5 @@ public interface Const {
     int PUT_THREAD_SIZE = 12;
     boolean PRINT_ERR = true;
 
-    int DEST = 1500;
+    int DEST = 1460;
 }
