@@ -61,13 +61,23 @@ public class VariableUtils {
     public static int getUnsigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
+        byte aByte = getByte(buf, bitOffset);
         while (true) {
-            int hasData = getBit(buf, bitOffset);
-            v |= (getBit(buf, bitOffset + 1) << count);
-            bitOffset += 2;
+            int hasData = getBitFromByte(aByte, bitOffset++);
+
+            if ((bitOffset & 7) == 0) {
+                aByte = getByte(buf, bitOffset);
+            }
+
+            v |= (getBitFromByte(aByte, bitOffset++) << count);
+
             if (hasData == 0) {
                 dest[pos] = v;
                 return bitOffset;
+            }
+
+            if ((bitOffset & 7) == 0) {
+                aByte = getByte(buf, bitOffset);
             }
             count++;
         }
