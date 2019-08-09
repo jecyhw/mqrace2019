@@ -74,11 +74,15 @@ public class VariableUtils {
     }
 
     private static int getBit(ByteBuffer buf, int bitPos) {
-        int pos = bitPos >> 3;
-        return getByte(buf.get(pos), bitPos);
+        return getBitFromByte(getByte(buf, bitPos), bitPos);
     }
 
-    private static int getByte(byte b, int bitPos) {
+
+    private static byte getByte(ByteBuffer buf, int bitPos) {
+        return buf.get(bitPos >> 3);
+    }
+
+    private static int getBitFromByte(byte b, int bitPos) {
         return (b >>> (bitPos & 7)) & 1;
     }
 
