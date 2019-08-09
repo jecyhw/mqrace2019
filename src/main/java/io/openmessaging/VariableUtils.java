@@ -22,7 +22,7 @@ public class VariableUtils {
         int v = 0;
         int count = 0;
 
-        byte aByte = getByte(buf, bitOffset);
+        int aByte = getByte(buf, bitOffset);
         //获取符号位，0表示正数，1表是负数
         int signed = getBitFromByte(aByte, bitOffset++);
 
@@ -74,7 +74,7 @@ public class VariableUtils {
     public static int getUnsigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
-        byte aByte = getByte(buf, bitOffset);
+        int aByte = getByte(buf, bitOffset);
         while (true) {
             int hasData = getBitFromByte(aByte, bitOffset++);
 
@@ -96,16 +96,11 @@ public class VariableUtils {
         }
     }
 
-    private static int getBit(ByteBuffer buf, int bitPos) {
-        return getBitFromByte(getByte(buf, bitPos), bitPos);
-    }
-
-
-    private static byte getByte(ByteBuffer buf, int bitPos) {
+    private static int getByte(ByteBuffer buf, int bitPos) {
         return buf.get(bitPos >> 3);
     }
 
-    private static int getBitFromByte(byte b, int bitPos) {
+    private static int getBitFromByte(int b, int bitPos) {
         return (b >>> (bitPos & 7)) & 1;
     }
 
