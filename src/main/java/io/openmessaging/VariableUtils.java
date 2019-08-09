@@ -22,22 +22,22 @@ public class VariableUtils {
         int v = 0;
         int count = 0;
 
-        byte aByte = getByte(buf, bitOffset);
+        byte aByte = buf.get(bitOffset >> 3);
         //获取符号位，0表示正数，1表是负数
-        int signed = getBit(buf, bitOffset++);
+        int signed =  (aByte >>> (bitOffset & 7)) & 1;
 
-        if ((bitOffset & 7) == 0) {
-            aByte = getByte(buf, bitOffset);
+        if ((++bitOffset & 7) == 0) {
+            aByte = buf.get(bitOffset >> 3);
         }
 
         while (true) {
-            int hasData = getBitFromByte(aByte, bitOffset++);
+            int hasData = (aByte >>> (bitOffset & 7)) & 1;
 
-            if ((bitOffset & 7) == 0) {
-                aByte = getByte(buf, bitOffset);
+            if ((++bitOffset & 7) == 0) {
+                aByte = buf.get(bitOffset >> 3);
             }
 
-            v |= (getBitFromByte(aByte, bitOffset++) << count);
+            v |= (((aByte >>> ((bitOffset++) & 7)) & 1) << count);
 
             if (hasData == 0) {
                 dest[pos] = (signed == 0 ? v : -v) + Const.A_DECREASE;
@@ -45,7 +45,7 @@ public class VariableUtils {
             }
 
             if ((bitOffset & 7) == 0) {
-                aByte = getByte(buf, bitOffset);
+                aByte = buf.get(bitOffset >> 3);
             }
             count++;
         }
@@ -74,15 +74,15 @@ public class VariableUtils {
     public static int getUnsigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
-        byte aByte = getByte(buf, bitOffset);
+        byte aByte = buf.get(bitOffset >> 3);
         while (true) {
-            int hasData = getBitFromByte(aByte, bitOffset++);
+            int hasData = (aByte >>> (bitOffset & 7)) & 1;
 
-            if ((bitOffset & 7) == 0) {
-                aByte = getByte(buf, bitOffset);
+            if ((++bitOffset & 7) == 0) {
+                aByte = buf.get(bitOffset >> 3);
             }
 
-            v |= (getBitFromByte(aByte, bitOffset++) << count);
+            v |= (((aByte >>> ((bitOffset++) & 7)) & 1) << count);
 
             if (hasData == 0) {
                 dest[pos] = v;
@@ -90,23 +90,14 @@ public class VariableUtils {
             }
 
             if ((bitOffset & 7) == 0) {
-                aByte = getByte(buf, bitOffset);
+                aByte = buf.get(bitOffset >> 3);
             }
             count++;
         }
     }
 
-    private static int getBit(ByteBuffer buf, int bitPos) {
-        return getBitFromByte(getByte(buf, bitPos), bitPos);
-    }
-
-
-    private static byte getByte(ByteBuffer buf, int bitPos) {
-        return buf.get(bitPos >> 3);
-    }
-
-    private static int getBitFromByte(byte b, int bitPos) {
-        return (b >>> (bitPos & 7)) & 1;
+    private static int getBitFromByte(byte b, int bitOffset) {
+        return (b >>> (bitOffset & 7)) & 1;
     }
 
     private static void put1(ByteBuffer buf, int bitPos) {
