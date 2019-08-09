@@ -21,18 +21,31 @@ public class VariableUtils {
     public static int getSigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
         int v = 0;
         int count = 0;
-        //获取符号位，0表示正数，1表是负数
-        int signed = getBit(buf, bitOffset);
 
-        bitOffset++;
+        byte aByte = getByte(buf, bitOffset);
+        //获取符号位，0表示正数，1表是负数
+        int signed = getBit(buf, bitOffset++);
+
+        if ((bitOffset & 7) == 0) {
+            aByte = getByte(buf, bitOffset);
+        }
 
         while (true) {
-            int hasData = getBit(buf, bitOffset);
-            v |= (getBit(buf, bitOffset + 1) << count);
-            bitOffset += 2;
+            int hasData = getBitFromByte(aByte, bitOffset++);
+
+            if ((bitOffset & 7) == 0) {
+                aByte = getByte(buf, bitOffset);
+            }
+
+            v |= (getBitFromByte(aByte, bitOffset++) << count);
+
             if (hasData == 0) {
                 dest[pos] = (signed == 0 ? v : -v) + Const.A_DECREASE;
                 return bitOffset;
+            }
+
+            if ((bitOffset & 7) == 0) {
+                aByte = getByte(buf, bitOffset);
             }
             count++;
         }
