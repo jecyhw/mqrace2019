@@ -14,7 +14,7 @@ public class DemoTester {
     public static void main(String args[]) throws Exception {
         //评测相关配置
         //发送阶段的发送数量，也即发送阶段必须要在规定时间内把这些消息发送完毕方可
-        int msgNum  = 10000;
+        int msgNum  = 10000000;
         //发送阶段的最大持续时间，也即在该时间内，如果消息依然没有发送完毕，则退出评测
         int sendTime = 10 * 60 * 1000;
         //查询阶段的最大持续时间，也即在该时间内，如果消息依然没有消费完毕，则退出评测
@@ -27,9 +27,9 @@ public class DemoTester {
         //查询的线程数量
         int checkTsNum = 10;
         // 每次查询消息的最大跨度
-        int maxMsgCheckSize = 10000;
+        int maxMsgCheckSize = 100000;
         // 每次查询求平均的最大跨度
-        int maxValueCheckSize = 10000;
+        int maxValueCheckSize = 100000;
 
         MessageStore messageStore = null;
 
@@ -141,7 +141,7 @@ public class DemoTester {
         private int maxCheckSize;
 
         public MessageChecker(MessageStore messageStore, long maxTimeStamp, int checkTimes, int maxIndex, int maxCheckSize,
-                AtomicLong timesCounter, AtomicLong numCounter) {
+                              AtomicLong timesCounter, AtomicLong numCounter) {
             this.timesCounter = timesCounter;
             this.numCounter = numCounter;
             this.checkTimes = checkTimes;
@@ -228,7 +228,7 @@ public class DemoTester {
         private int maxCheckSize;
 
         public ValueChecker(MessageStore messageStore, long maxTimeStamp, int checkTimes, int maxIndex, int maxCheckSize,
-                AtomicLong timesCounter, AtomicLong numCounter) {
+                            AtomicLong timesCounter, AtomicLong numCounter) {
             this.timesCounter = timesCounter;
             this.numCounter = numCounter;
             this.checkTimes = checkTimes;
