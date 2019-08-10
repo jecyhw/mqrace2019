@@ -17,8 +17,8 @@ public interface Const {
     //固定成一块
     int MEMORY_BUFFER_SIZE = 1024 * 1024 * 130;
 
-    int INDEX_INTERVAL = 96;
-    int INDEX_ELE_LENGTH = 2100000;//需要和INDEX_INTERVAL一起调
+    int INDEX_INTERVAL = 64;
+    int INDEX_ELE_LENGTH = 2800000;//需要和INDEX_INTERVAL一起调
     //INDEX_INTERVAL 为64，INDEX_ELE_LENGTH=2800000
 
     int A_DECREASE = 1;
@@ -28,5 +28,5 @@ public interface Const {
     boolean PRINT_LOG = true;
     int PUT_THREAD_SIZE = 12;
 
-    int DEST = 1480;
+    int DEST = 1400;
 }
