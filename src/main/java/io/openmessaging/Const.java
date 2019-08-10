@@ -28,5 +28,5 @@ public interface Const {
     boolean PRINT_LOG = true;
     int PUT_THREAD_SIZE = 12;
 
-    int DEST = 1460;
+    int DEST = 1480;
 }
