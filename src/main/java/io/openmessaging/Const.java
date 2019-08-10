@@ -19,7 +19,9 @@ public interface Const {
 
     int INDEX_INTERVAL = 48;
     int INDEX_ELE_LENGTH = 3700000;//需要和INDEX_INTERVAL一起调
+    //INDEX_INTERVAL 为48，INDEX_ELE_LENGTH=3700000
     //INDEX_INTERVAL 为64，INDEX_ELE_LENGTH=2800000
+    //INDEX_INTERVAL 128，INDEX_ELE_LENGTH=1400000
 
     int A_DECREASE = 1;
 
@@ -28,5 +30,5 @@ public interface Const {
     boolean PRINT_LOG = true;
     int PUT_THREAD_SIZE = 12;
 
-    int DEST = 1400;
+    int DEST = 1274;
 }
