@@ -44,7 +44,12 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
     };
 
-    private static Comparator<Message> messageComparator = Comparator.comparingLong(Message::getT);
+    private static Comparator<Message> messageComparator = new Comparator<Message>() {
+        @Override
+        public int compare(Message o1, Message o2) {
+            return Long.compare(o1.getT(), o2.getT());
+        }
+    };
 
     public static void init() {
         //创建存储父目录
@@ -66,7 +71,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
     }
 
     public DefaultMessageStoreImpl() {
-        Monitor.mark(0);
         init();
     }
 
@@ -87,7 +91,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     for (MessageFile messageFile : messageFiles) {
                         messageFile.flush();
                     }
-                    Monitor.mark(2);
                     Monitor.getMsgStart();
                     isFirstGet = false;
                 }
