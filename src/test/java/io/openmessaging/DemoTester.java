@@ -65,7 +65,7 @@ public class DemoTester {
         AtomicLong msgCheckNum = new AtomicLong(0);
         Thread[] msgChecks = new Thread[checkTsNum];
         for (int i = 0; i < checkTsNum; i++) {
-            msgChecks[i] = new Thread(new MessageChecker(messageStore, maxCheckTime, checkTimes, 10, maxMsgCheckSize, msgCheckTimes, msgCheckNum));
+            msgChecks[i] = new Thread(new MessageChecker(messageStore, maxCheckTime, checkTimes, msgNum, maxMsgCheckSize, msgCheckTimes, msgCheckNum));
         }
         for (int i = 0; i < checkTsNum; i++) {
             msgChecks[i].start();

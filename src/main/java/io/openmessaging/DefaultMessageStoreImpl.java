@@ -64,8 +64,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
                 file.delete();
             }
         }
-        MessageCacheShare.init();
-
         Monitor.putStart();
         print("func=init success");
     }

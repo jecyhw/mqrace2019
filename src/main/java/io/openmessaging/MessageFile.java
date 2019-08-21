@@ -84,7 +84,7 @@ public class MessageFile {
     }
 
     private List<Message> readMsgs(long minPos, ByteBuffer readBuf, long[] as, long[] ts, int tLen, long aMin, long aMax, long tMin, long tMax) {
-        List<Message> messages = new ArrayList<>(tLen);
+        List<Message> messages = new ArrayList<>();
         //从后往前过滤
         tLen--;
         while (tLen >= 0 && ts[tLen] > tMax) {
@@ -111,11 +111,9 @@ public class MessageFile {
             while (readBuf.hasRemaining()) {
                 long a = as[s];
                 if (a >= aMin && a <= aMax) {
-                    Message message = MessageCacheShare.get();
-                    readBuf.get(message.getBody());
-                    message.setA(a);
-                    message.setT(ts[s]);
-                    messages.add(message);
+                    byte[] body = new byte[Const.MSG_BYTES];
+                    readBuf.get(body);
+                    messages.add(new Message(a, ts[s], body));
                 } else {
                     readBuf.position(readBuf.position() + Const.MSG_BYTES);
                 }
