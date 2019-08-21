@@ -10,8 +10,7 @@ public class Memory {
     //已使用的比特位数
     int putBitLength = 0;
 
-    public void put(int t, int a) {
+    public void put(int t) {
         putBitLength = VariableUtils.putUnsigned(data, putBitLength, t);
-        putBitLength = VariableUtils.putSigned(data, putBitLength, a);
     }
 }

@@ -6,6 +6,7 @@ package io.openmessaging;
 public interface Const {
     String STORE_PATH = "./data/";
     String MSG_FILE_SUFFIX = ".msg";
+    String A_FILE_SUFFIX = ".a";
     int GET_AVG_COUNT = 31000;
 
     int MSG_BYTES = 34;
@@ -13,6 +14,9 @@ public interface Const {
     int PUT_BUFFER_SIZE = 4 * 4096; // 16k写入
     int GET_BUFFER_SIZE = 1024 * 512; //一次最多读取
     int MAX_MSG_CAPACITY = GET_BUFFER_SIZE / MSG_BYTES;
+    int LONG_BYTES = 8;
+    int MAX_LONG_CAPACITY = GET_BUFFER_SIZE / LONG_BYTES;
+
 
     //固定成一块
     int MEMORY_BUFFER_SIZE = 1024 * 1024 * 130;

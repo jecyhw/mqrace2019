@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 public class GetItem {
     ByteBuffer buf = ByteBuffer.allocateDirect(Const.GET_BUFFER_SIZE);
     IntervalSum intervalSum = new IntervalSum();
-    int[] as = new int[Const.MAX_GET_MSG_SIZE];
-    int[] ts = new int[Const.MAX_GET_MSG_SIZE];
-    int[] sortPos = new int[Const.PUT_THREAD_SIZE];
+    long[] as = new long[Const.MAX_GET_MSG_SIZE];
+    long[] ts = new long[Const.MAX_GET_MSG_SIZE];
 }

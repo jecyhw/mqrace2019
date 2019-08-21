@@ -82,7 +82,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
         GetItem getItem = getBufThreadLocal.get();
 
         if (isFirstGet) {
@@ -130,7 +129,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
         int totalMessageSize = 0;
         for (int i = messageFileSize - 1; i >= 0; i--) {
-            List<Message> messages = messageFiles.get(i).get(aMinInt, aMaxInt, tMinInt, tMaxInt, getItem);
+            List<Message> messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
             totalMessageSize += messages.size();
             messagesList.add(messages);
         }
@@ -187,7 +186,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         Monitor.getAvgStat();
 
-        int aMinInt = (int)aMin, aMaxInt = (int)aMax, tMinInt = (int)tMin, tMaxInt = (int)tMax;
 
         GetItem getItem = getBufThreadLocal.get();
 
@@ -195,7 +193,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         intervalSum.count = 0;
         intervalSum.sum = 0;
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messageFiles.get(i).getAvgValue(aMinInt, aMaxInt, tMinInt, tMaxInt, intervalSum);
+            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum);
         }
 
 //        long max = Math.min(tMax, aMax);
