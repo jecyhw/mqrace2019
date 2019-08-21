@@ -191,7 +191,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         intervalSum.count = 0;
         intervalSum.sum = 0;
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum);
+            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem);
         }
 
 //        long max = Math.min(tMax, aMax);

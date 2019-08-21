@@ -123,12 +123,46 @@ public class MessageFile {
         return messages;
     }
 
-    public void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum) {
-//        if (tMin <= tMax && aMin <= aMax) {
-//            int minPos = memoryIndex.firstLessInPrimaryIndex(tMin);
-//            int maxPos = memoryIndex.firstGreatInPrimaryIndex(tMax);
-//            memoryIndex.sum(minPos, maxPos, aMin, aMax, tMin, tMax, intervalSum);
-//        }
+    public void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
+        if (tMin <= tMax && aMin <= aMax) {
+            int minPos = memoryIndex.firstLessInPrimaryIndex(tMin);
+            int maxPos = memoryIndex.firstGreatInPrimaryIndex(tMax);
+
+            long[] ts = getItem.ts;
+            int tLen = memoryIndex.rangePosInPrimaryIndex(minPos, maxPos, ts);
+
+            int realMinPos = minPos * Const.INDEX_INTERVAL;
+            long[] as = getItem.as;
+            readAArray(realMinPos, realMinPos + tLen, getItem.buf, as);
+
+            //从后往前过滤
+            tLen--;
+            while (tLen >= 0 && ts[tLen] > tMax) {
+                tLen--;
+            }
+
+            //从前往后过滤
+            int s = 0;
+            while (s <= tLen && ts[s] < tMin) {
+                s++;
+                //注意minPos也要跟着自增
+            }
+
+            long sum = 0;
+            int count = 0;
+            tLen++;
+            while (s < tLen) {
+                long a = as[s];
+                if (a >= aMin && a <= aMax) {
+                    sum += a;
+                    count++;
+                }
+                s++;
+            }
+
+            intervalSum.count +=  count;
+            intervalSum.sum += sum;
+        }
     }
 
     private void readAArray(int minPos, int maxPos, ByteBuffer readBuf, long[] as) {

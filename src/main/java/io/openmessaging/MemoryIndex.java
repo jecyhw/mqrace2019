@@ -212,7 +212,7 @@ public class MemoryIndex {
 
     public void flush() {
         Utils.print("MemoryIndex func=flush indexBuf:" + indexBufCounter.get() + " tBuf:" + tBufCounter.get() + " indexBufEleCount:" + indexBufEleCount
-                + " putCount:" + putCount);
+                + " putCount:" + putCount + " putBitLength:" + memory.putBitLength);
     }
 
 }
