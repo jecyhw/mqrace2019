@@ -145,7 +145,6 @@ public class MessageFile {
             int s = 0;
             while (s <= tLen && ts[s] < tMin) {
                 s++;
-                //注意minPos也要跟着自增
             }
 
             long sum = 0;

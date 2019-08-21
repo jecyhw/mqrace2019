@@ -7,7 +7,7 @@ public interface Const {
     String STORE_PATH = "./data/";
     String MSG_FILE_SUFFIX = ".msg";
     String A_FILE_SUFFIX = ".a";
-    int GET_AVG_COUNT = 31000;
+    int GET_AVG_COUNT = 310000;
 
     int MSG_BYTES = 34;
 
