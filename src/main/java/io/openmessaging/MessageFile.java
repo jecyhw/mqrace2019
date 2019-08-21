@@ -127,6 +127,9 @@ public class MessageFile {
         if (tMin <= tMax && aMin <= aMax) {
             int minPos = memoryIndex.firstLessInPrimaryIndex(tMin);
             int maxPos = memoryIndex.firstGreatInPrimaryIndex(tMax);
+            if (minPos >= maxPos) {
+                return;
+            }
 
             long[] ts = getItem.ts;
             int tLen = memoryIndex.rangePosInPrimaryIndex(minPos, maxPos, ts);
@@ -149,8 +152,7 @@ public class MessageFile {
 
             long sum = 0;
             int count = 0;
-            tLen++;
-            while (s < tLen) {
+            while (s <= tLen) {
                 long a = as[s];
                 if (a >= aMin && a <= aMax) {
                     sum += a;
