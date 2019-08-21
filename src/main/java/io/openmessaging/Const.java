@@ -32,7 +32,6 @@ public interface Const {
     int MAX_GET_MSG_SIZE = 50 * 10000;
 
     boolean PRINT_LOG = true;
-    int PUT_THREAD_SIZE = 12;
 
-    int DEST = 1274;
+    int DEST = 35000;
 }
