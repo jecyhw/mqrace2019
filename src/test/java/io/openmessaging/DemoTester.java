@@ -65,7 +65,7 @@ public class DemoTester {
         AtomicLong msgCheckNum = new AtomicLong(0);
         Thread[] msgChecks = new Thread[checkTsNum];
         for (int i = 0; i < checkTsNum; i++) {
-            msgChecks[i] = new Thread(new MessageChecker(messageStore, maxCheckTime, checkTimes, 10, maxMsgCheckSize, msgCheckTimes, msgCheckNum));
+            msgChecks[i] = new Thread(new MessageChecker(messageStore, maxCheckTime, checkTimes, 2, maxMsgCheckSize, msgCheckTimes, msgCheckNum));
         }
         for (int i = 0; i < checkTsNum; i++) {
             msgChecks[i].start();
@@ -288,7 +288,7 @@ public class DemoTester {
                     }
 
                     if (res != val) {
-                        System.out.println("sum:" + sum + " count:" + count);
+                        System.out.println(Thread.currentThread().getName() + " sum:" + sum + " count:" + count);
                         checkError(aIndex1, aIndex2, tIndex1, tIndex2, res, val);
                     }
 

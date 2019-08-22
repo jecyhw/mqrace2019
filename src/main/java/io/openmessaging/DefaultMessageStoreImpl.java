@@ -194,33 +194,27 @@ public class DefaultMessageStoreImpl extends MessageStore {
             messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem);
         }
 
-//        long max = Math.min(tMax, aMax);
-//        long min = Math.max(tMin, aMin);
-//        long count = 0, c1 = 0;
-//        long sum = 0;
-//        for (int i = 0; i < min; i++) {
-//            if ((i & 1) == 0) {
-//                c1++;
-//            }
-//            c1++;
-//        }
-//
-//        if (min < max) {
-//            count = max - min + 1;
-//            while (min <= max) {
-//                if ((min & 1) == 0) {
-//                    count++;
-//                    sum += min;
-//                }
-//                sum += min;
-//                min++;
-//            }
-//        }
-//
-//        if (count != intervalSum.count || sum != intervalSum.sum) {
-//            System.err.println("value check count:" + count + " sum:" + sum + " c:" + intervalSum.count + " s:" + intervalSum.sum + " aMin:" + aMin
-//            + " aMax:" + aMax + " tMin:" + tMin + " tMax:" + tMax);
-//        }
+        long max = Math.min(tMax, aMax);
+        long min = Math.max(tMin, aMin);
+        long count = 0;
+        long sum = 0;
+
+        if (min <= max) {
+            count = max - min + 1;
+            while (min <= max) {
+                if ((min & 1) == 0) {
+                    count++;
+                    sum += min;
+                }
+                sum += min;
+                min++;
+            }
+        }
+
+        if (count != intervalSum.count || sum != intervalSum.sum) {
+            System.err.println(Thread.currentThread().getName() + " value check count:" + count + " sum:" + sum + " c:" + intervalSum.count + " s:" + intervalSum.sum + " aMin:" + aMin
+            + " aMax:" + aMax + " tMin:" + tMin + " tMax:" + tMax);
+        }
 
         if (intervalSum.count == 0) {
             return 0;
