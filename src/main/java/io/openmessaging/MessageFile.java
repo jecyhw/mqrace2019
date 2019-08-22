@@ -73,27 +73,25 @@ public class MessageFile {
         long t = message.getT();
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
         if (putCount % Const.INDEX_INTERVAL == 0) {
-            int pos = indexBufEleCount++;
+            int pos = indexBufEleCount;
             //每隔INDEX_INTERVAL记录t（在indexBuf中记录了t就不会在memory中记录）
             tArr[pos] = t;
             //下一个t的起始位置，先写在哪个块中，再写块的便宜位置
             offsetArr[pos] = putBitLength;
-            msgOffsetArr[pos] = msgFileSize + msgDataPos;
-
             if (uncompressMsgDataPos == Const.COMPRESS_MSG_SIZE) {
                 compressMsgBody();
             }
+            //需要先压缩在赋值
+            msgOffsetArr[pos] = msgFileSize + msgDataPos;
+
+            indexBufEleCount++;
         } else {
             int diffT = (int)(t - prevMessage.getT());
             putBitLength = VariableUtils.putUnsigned(memory, putBitLength, diffT);
         }
         putCount++;
 
-        try {
-            System.arraycopy(message.getBody(), 0, uncompressMsgData, uncompressMsgDataPos, Const.MSG_BYTES);
-        } catch (Exception e) {
-            e.getMessage();
-        }
+        System.arraycopy(message.getBody(), 0, uncompressMsgData, uncompressMsgDataPos, Const.MSG_BYTES);
         uncompressMsgDataPos += Const.MSG_BYTES;
 
         writeA(message.getA());
@@ -139,65 +137,52 @@ public class MessageFile {
                 return Collections.emptyList();
             }
 
-            ByteBuffer readBuf = getItem.buf;
-
             long[] ts = getItem.ts;
             int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts);
 
             int realMinPos = minPos * Const.INDEX_INTERVAL;
             long[] as = getItem.as;
-            readAArray(realMinPos, realMinPos + tLen, readBuf, as);
+            readAArray(realMinPos, realMinPos + tLen, getItem.buf, as);
             //minPos，maxPos是在主内存索引的位置
-            return readMsgs(minPos, maxPos, readBuf, as, ts, tLen, aMin, aMax, tMin, tMax);
+            return readMsgs(minPos, maxPos, getItem, as, ts, tLen, aMin, aMax, tMin, tMax);
         } else {
             return Collections.emptyList();
         }
     }
 
-    private List<Message> readMsgs(int minPos, int maxPos, ByteBuffer readBuf, long[] as, long[] ts, int tLen, long aMin, long aMax, long tMin, long tMax) {
+    private List<Message> readMsgs(int minPos, int maxPos, GetItem getItem, long[] as, long[] ts, int tLen, long aMin, long aMax, long tMin, long tMax) {
+        ByteBuffer readBuf = getItem.buf;
+
         //计算要读取的msg
         int startOffset = msgOffsetArr[minPos];
-        int len = msgOffsetArr[maxPos] - startOffset;
+        int len = msgOffsetArr[maxPos + 1] - startOffset;
         readBuf.position(0);
         readBuf.limit(len);
         readInBuf(startOffset, readBuf, msgFc);
 
+        byte[] compressMsgData = readBuf.array();
+        int compressMsgDataPos = 0, compressSize;
+        byte[] uncompressMsgData = getItem.uncompressMsgData;
+
         List<Message> messages = new ArrayList<>();
 
-        //从后往前过滤
-        tLen--;
-        while (tLen >= 0 && ts[tLen] > tMax) {
-            tLen--;
-        }
+        int pos = 0;
+        while (minPos < maxPos) {
+            compressSize = msgOffsetArr[minPos + 1] - msgOffsetArr[minPos];
+            Snappy.uncompress(compressMsgData, compressMsgDataPos, compressSize, uncompressMsgData, 0);
+            compressMsgDataPos += compressSize;
 
-        //从前往后过滤
-        int s = 0;
-        while (s <= tLen && ts[s] < tMin) {
-            s++;
-            //注意minPos也要跟着自增
-            minPos++;
-        }
-
-        tLen++;
-        while (s < tLen) {
-            int readCount = Math.min((tLen - s), Const.MAX_MSG_CAPACITY) ;
-            readBuf.position(0);
-            readBuf.limit(readCount * Const.MSG_BYTES);
-            readInBuf(minPos * Const.MSG_BYTES, readBuf, msgFc);
-            readBuf.flip();
-            minPos += readCount;
-
-            while (readBuf.hasRemaining()) {
-                long a = as[s];
-                if (a >= aMin && a <= aMax) {
+            for (int i = 0, uncompressMsgDataPos = 0; i < Const.INDEX_INTERVAL && pos < tLen; i++, uncompressMsgDataPos += Const.MSG_BYTES) {
+                long a = as[pos], t = ts[pos];
+                if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
                     byte[] body = new byte[Const.MSG_BYTES];
-                    readBuf.get(body);
-                    messages.add(new Message(a, ts[s], body));
-                } else {
-                    readBuf.position(readBuf.position() + Const.MSG_BYTES);
+                    System.arraycopy(uncompressMsgData, uncompressMsgDataPos, body, 0, Const.MSG_BYTES);
+                    messages.add(new Message(a, t, body));
                 }
-                s++;
+                pos++;
             }
+
+            minPos++;
         }
         return messages;
     }
@@ -287,6 +272,8 @@ public class MessageFile {
 
     public void flush() {
         flushMsg();
+        msgOffsetArr[indexBufEleCount] = msgFileSize += msgDataPos;
+
         flush(aFc, aBuf);
 
         try {
