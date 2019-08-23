@@ -7,19 +7,21 @@ import java.nio.ByteBuffer;
  */
 public class Codec {
     private static final int ZERO = 0;
+    private static final int ONE = 0b10;
+    private static final int TWO = 0b110;
+    private static final int THREE = 0b1110;
     private static final int BITS_AVAILABLE = Integer.SIZE;
 
     private static final int[] NUM_BIT_FLAG = new int[] {
             0b0, 0b10,
-            0b110, 0b110,
-            0b1110, 0b1110, 0b1110, 0b1110,
-            0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110
+            0b110, 0b1110,
+            0b11110, 0b11110, 0b11110, 0b11110,
+            0b111110, 0b111110, 0b111110, 0b111110, 0b111110, 0b111110, 0b111110, 0b111110
     };
 
     private ByteBuffer buf;
     private int bitsAvailable = Integer.SIZE;
     private int value = 0;
-    private int delta = 0;
     private int bitBos = 0;
 
     public void encode(int newDelta) {
@@ -28,7 +30,21 @@ public class Codec {
             return;
         }
 
-        bitBos++;
+        if (newDelta == ONE) {
+            bitBos += 2;
+            return;
+        }
+
+        if (newDelta == TWO) {
+            bitBos += 3;
+            return;
+        }
+        if (newDelta == THREE) {
+            bitBos += 4;
+        }
+
+
+        bitBos += 2;
         int t = newDelta, cnt = 0;
         while (t > 0) {
             cnt++;
@@ -36,7 +52,6 @@ public class Codec {
         }
         bitBos += (cnt << 1);
 
-        delta = newDelta;
     }
 
     public void flush() {
