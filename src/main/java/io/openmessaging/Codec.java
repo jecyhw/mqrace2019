@@ -12,6 +12,10 @@ public class Codec {
     private static final int THREE = 0b1110;
     private static final int BITS_AVAILABLE = Integer.SIZE;
 
+    private static final int[] NUM_BIT_LENGTH = new int[] {
+        1, 2, 3, 4, 5, 5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6
+    };
+
     private static final int[] NUM_BIT_FLAG = new int[] {
             0b0, 0b10,
             0b110, 0b1110,
@@ -19,43 +23,82 @@ public class Codec {
             0b111110, 0b111110, 0b111110, 0b111110, 0b111110, 0b111110, 0b111110, 0b111110
     };
 
+
     private ByteBuffer buf;
     private int bitsAvailable = Integer.SIZE;
     private int value = 0;
-    private int bitBos = 0;
+    private int bitBos1 = 0;
+    private int bitBos2 = 0;
+    private int delta = 0;
+
 
     public void encode(int newDelta) {
+        encode1(newDelta);
         if (newDelta == ZERO) {
-            bitBos++;
+            bitBos1++;
             return;
         }
 
         if (newDelta == ONE) {
-            bitBos += 2;
+            bitBos1 += 2;
             return;
         }
 
         if (newDelta == TWO) {
-            bitBos += 3;
+            bitBos1 += 3;
             return;
         }
         if (newDelta == THREE) {
-            bitBos += 4;
+            bitBos1 += 4;
+            return;
         }
 
 
-        bitBos += 2;
+        bitBos1 += 2;
         int t = newDelta, cnt = 0;
         while (t > 0) {
             cnt++;
             t >>= 1;
         }
-        bitBos += (cnt << 1);
+        bitBos1 += (cnt << 1);
 
     }
 
+    public void encode1(int newDelta) {
+        int deltaOfDelta = newDelta - delta;
+        if (deltaOfDelta == ZERO) {
+            bitBos2++;
+            return;
+        }
+
+        if (deltaOfDelta == ONE) {
+            bitBos2 += 2;
+            return;
+        }
+
+        if (deltaOfDelta == TWO) {
+            bitBos2 += 3;
+            return;
+        }
+        if (deltaOfDelta == THREE) {
+            bitBos2 += 4;
+            return;
+        }
+
+
+        bitBos2 += 3;
+        int t = Math.abs(deltaOfDelta), cnt = 0;
+        while (t > 0) {
+            cnt++;
+            t >>= 1;
+        }
+        bitBos2 += (cnt << 1);
+
+        delta = Math.abs(newDelta);
+    }
+
     public void flush() {
-        Utils.print("bitBos:" + bitBos / 8);
+        Utils.print("bitBos1:" + bitBos1 / 8 + " bitBos2:" + bitBos2 / 8);
     }
 
     public int getUnsigned(ByteBuffer buf, int bitOffset, int[] dest, int pos) {
