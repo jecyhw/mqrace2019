@@ -7,43 +7,32 @@ import java.nio.ByteBuffer;
  */
 public class Codec {
     private static final int ZERO = 0;
-    private static final int ONE = 0b10;
-    private static final int TWO = 0b110;
-    private static final int POSITIVE_FLAG = 0b111;
-    private static final int NEGIVATE_FLAG = 0b1111;
+    private static final int BITS_AVAILABLE = Integer.SIZE;
+    private static final int[] NUM_BIT_LEN = new int[]{0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
 
     private ByteBuffer buf;
     private int bitBos;
     private int bitsAvailable = Integer.SIZE;
     private int delta = 0;
-    private int minDeltaOfDelta = Integer.MAX_VALUE;
-    private int maxDeltaOfDelta = Integer.MIN_VALUE;
 
     public void encode(int newDelta) {
-        int deltaOfDelta = newDelta - delta;
-
-        minDeltaOfDelta = Math.min(minDeltaOfDelta, deltaOfDelta);
-        maxDeltaOfDelta = Math.max(maxDeltaOfDelta, deltaOfDelta);
-
-        if (deltaOfDelta == ZERO) {
+        if (newDelta == ZERO) {
             bitBos++;
             return;
         }
-        if (deltaOfDelta == ONE) {
-            bitBos += 2;
-            return;
-        }
-        if (deltaOfDelta == TWO) {
-            bitBos += 3;
-            return;
-        }
-        if (deltaOfDelta > 0) {
-            bitBos += 32 + 3;
+        bitBos++;
+        if (newDelta < 16) {
+            bitBos += (NUM_BIT_LEN[newDelta] << 1);
         } else {
-            bitBos += 32 + 4;
+            int t = newDelta, cnt = 0;
+            while (t > 0) {
+                cnt++;
+                t >>= 1;
+            }
+            bitBos += (cnt << 1);
         }
 
-        delta = Math.abs(newDelta);
+        delta = newDelta;
     }
 
     public void flush() {
