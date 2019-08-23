@@ -8,29 +8,33 @@ import java.nio.ByteBuffer;
 public class Codec {
     private static final int ZERO = 0;
     private static final int BITS_AVAILABLE = Integer.SIZE;
-    private static final int[] NUM_BIT_LEN = new int[]{0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3};
+
+    private static final int[] NUM_BIT_FLAG = new int[] {
+            0b0, 0b10,
+            0b110, 0b110,
+            0b1110, 0b1110, 0b1110, 0b1110,
+            0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110, 0b11110
+    };
 
     private ByteBuffer buf;
-    private int bitBos;
     private int bitsAvailable = Integer.SIZE;
+    private int value = 0;
     private int delta = 0;
+    private int bitBos = 0;
 
     public void encode(int newDelta) {
         if (newDelta == ZERO) {
             bitBos++;
             return;
         }
+
         bitBos++;
-        if (newDelta < 16) {
-            bitBos += (NUM_BIT_LEN[newDelta] << 1);
-        } else {
-            int t = newDelta, cnt = 0;
-            while (t > 0) {
-                cnt++;
-                t >>= 1;
-            }
-            bitBos += (cnt << 1);
+        int t = newDelta, cnt = 0;
+        while (t > 0) {
+            cnt++;
+            t >>= 1;
         }
+        bitBos += (cnt << 1);
 
         delta = newDelta;
     }
