@@ -29,7 +29,7 @@ public interface Const {
 
     int A_DECREASE = 1;
 
-    int MAX_GET_MSG_SIZE = 50 * 10000;
+    int MAX_GET_MSG_SIZE = 10 * 10000;
 
     int COMPRESS_MSG_SIZE = INDEX_INTERVAL * Const.MSG_BYTES;
 

@@ -155,7 +155,7 @@ public class MessageFile {
 
         //计算要读取的msg
         long startOffset = msgOffsetArr[minPos];
-        int len = (int)(msgOffsetArr[maxPos + 1] - startOffset);
+        int len = (int)(msgOffsetArr[maxPos] - startOffset);
         readBuf.position(0);
         readBuf.limit(len);
         readInBuf(startOffset, readBuf, msgFc);
@@ -184,6 +184,24 @@ public class MessageFile {
 
             minPos++;
         }
+//
+//        for (int i = 0; i < messages.size(); i++) {
+//            Message message = messages.get(i);
+//
+//            if ((message.getT() & 1) == 0) {
+//                try {
+//                    if (message.getT() != messages.get(i + 1).getT()) {
+//                        System.err.println("2.error");
+//                    }
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//
+//                i++;
+//            }
+//        }
+
+
         return messages;
     }
 
@@ -202,17 +220,27 @@ public class MessageFile {
             long[] as = getItem.as;
             readAArray(realMinPos, realMinPos + tLen, getItem.buf, as);
 
+            //从后往前过滤
+            tLen--;
+            while (tLen >= 0 && ts[tLen] > tMax) {
+                tLen--;
+            }
+
+            //从前往后过滤
+            int s = 0;
+            while (s <= tLen && ts[s] < tMin) {
+                s++;
+            }
+
             long sum = 0;
             int count = 0;
-            for (int i = 0; i < tLen; i++) {
-                long a = as[i], t = ts[i];
-                if (t != a) {
-                    System.err.println(t + ":" + a);
-                }
-                if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
+            while (s <= tLen) {
+                long a = as[s];
+                if (a >= aMin && a <= aMax) {
                     sum += a;
                     count++;
                 }
+                s++;
             }
 
             intervalSum.count +=  count;
@@ -261,8 +289,10 @@ public class MessageFile {
     }
 
     public void flush() {
+        //最后一块进行压缩
+        msgDataPos += Snappy.compress(uncompressMsgData, 0, Const.COMPRESS_MSG_SIZE, msgData, msgDataPos);
         flushMsg();
-        msgOffsetArr[indexBufEleCount] = msgFileSize += msgDataPos;
+        msgOffsetArr[indexBufEleCount] = msgFileSize + msgDataPos;
 
         flush(aFc, aBuf);
 
@@ -306,7 +336,7 @@ public class MessageFile {
 
                 if (nextOffset >= putBitLength) {
                     //说明读完了
-                    return destOffset;
+                    break;
                 }
             }
             minPos++;

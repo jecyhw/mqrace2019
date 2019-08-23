@@ -3,6 +3,8 @@ package io.openmessaging;
 import io.netty.util.concurrent.FastThreadLocal;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -92,11 +94,11 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     isFirstGet = false;
                 }
 //                List<Message> messages = new ArrayList<>();
-//                for (int i = messageFiles.messageFileSize() - 1; i >= 0; i--) {
-//                    messages.addAll(messageFiles.get(i).get(1032358, 1132358, 1082705, 1139032, getItem));
+//                for (int i = messageFiles.size() - 1; i >= 0; i--) {
+//                    messages.addAll(messageFiles.get(i).get(0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, getItem));
 //                }
 //                messages.sort(messageComparator);
-//                for (int i = 0; i < messages.messageFileSize(); i++) {
+//                for (int i = 0; i < messages.size(); i++) {
 //                    Message message = messages.get(i);
 //                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
 //                        System.err.println("1.error");
@@ -117,6 +119,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 //                        }
 //                    }
 //                }
+//                System.out.println();
 //                getAvgValue(6740781, 6840781, 6763632, 6778579);
             }
         }
@@ -137,45 +140,41 @@ public class DefaultMessageStoreImpl extends MessageStore {
             messages.addAll(messagesList.get(i));
         }
         messages.sort(messageComparator);
-//        int min = Math.max(aMinInt, tMinInt), max= Math.min(aMaxInt, tMaxInt);
-//        int count = max - min + 1;
+//        long min = Math.max(aMin, tMin), max= Math.min(aMax, tMax);
+//        int count = (int) (max - min + 1);
 //        while (min <= max) {
 //            if ((min & 1) == 0) {
 //                count++;
 //            }
 //            min++;
 //        }
+//                for (int i = 0; i < messages.size(); i++) {
+//                    Message message = messages.get(i);
+//                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
+//                        System.err.println("1.error");
+//                    }
+//                    if ((message.getT() & 1) == 0) {
+//                        if (message.getT() != messages.get(i + 1).getT()) {
+//                            System.err.println("2.error");
+//                        }
+//                        if (i > 0) {
+//                            if (message.getT() != messages.get(i - 1).getT() + 1) {
+//                                System.err.println("3.error");
+//                            }
+//                        }
+//                        i++;
+//                    } else {
+//                        if ( i > 0 && message.getT() != messages.get(i - 1).getT() + 1) {
+//                            System.err.println("4.error");
+//                        }
+//                    }
+//                }
 //
 //        if (messages.size() != count) {
 //            System.err.println("6.error");
 //        }
 
         Monitor.updateMaxMsgNum(messages.size());
-        return messages;
-    }
-
-    private List<Message> merge(List<List<Message>> messagesList, int totalMessageSize, int[] sortPos) {
-        List<Message> messages = new ArrayList<>(totalMessageSize);
-        for (int i = 0; i < sortPos.length; i++) {
-            sortPos[i] = 0;
-        }
-        int minIndex = 0;
-        for (int i = 0; i < totalMessageSize; ++i) {
-            long minT = Integer.MAX_VALUE;
-            for (int j = messagesList.size() - 1; j >= 0; j--) {
-                List<Message> list = messagesList.get(j);
-                if (sortPos[j] >= list.size()) {
-                    continue;
-                }
-                long t = list.get(sortPos[j]).getT();
-                if (t < minT) {
-                    minT = t;
-                    minIndex = j;
-                }
-            }
-            messages.add(messagesList.get(minIndex).get(sortPos[minIndex]++));
-        }
-
         return messages;
     }
 
