@@ -260,8 +260,15 @@ public class DemoTester {
                         tIndex1 = 0;
                     }
                     int tIndex2 = random.nextInt(maxCheckSize) + tIndex1;
+
+//                    aIndex1 = 4693389;
+//                    aIndex2 = 4703389;
+//                    tIndex1 = 4696892;
+//                    tIndex2 = 4702720;
+
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);
+
 
                     long val = messageStore.getAvgValue(aIndex1, aIndex2, tIndex1, tIndex2);
 

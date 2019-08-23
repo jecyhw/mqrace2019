@@ -3,8 +3,6 @@ package io.openmessaging;
 import io.netty.util.concurrent.FastThreadLocal;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -187,8 +185,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         GetItem getItem = getBufThreadLocal.get();
 
         IntervalSum intervalSum = getItem.intervalSum;
-        intervalSum.count = 0;
-        intervalSum.sum = 0;
+        intervalSum.reset();
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
             messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem);
         }
@@ -215,11 +212,9 @@ public class DefaultMessageStoreImpl extends MessageStore {
 //            + " aMax:" + aMax + " tMin:" + tMin + " tMax:" + tMax);
 //        }
 
-        if (intervalSum.count == 0) {
-            return 0;
-        }
 
-        return intervalSum.sum / intervalSum.count;
+
+        return intervalSum.avg();
     }
 
     static {

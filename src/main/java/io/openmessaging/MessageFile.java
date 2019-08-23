@@ -39,7 +39,7 @@ public class MessageFile {
     private final long[] tArr = new long[Const.INDEX_ELE_LENGTH];
     private final int[] offsetArr = new int[Const.INDEX_ELE_LENGTH];
     private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
-
+    private long firstT, lastT;
 
     //put计数
     private int putCount = 0;
@@ -52,8 +52,6 @@ public class MessageFile {
     private final ByteBuffer memory = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
     //已使用的比特位数
     private int putBitLength = 0;
-
-    private Message prevMessage = new Message(0, 0, null);
 
     public MessageFile() {
         try {
@@ -69,7 +67,7 @@ public class MessageFile {
 
     }
 
-    public void put(Message message) {
+    public final void put(Message message) {
         long t = message.getT();
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
         if (putCount % Const.INDEX_INTERVAL == 0) {
@@ -85,8 +83,12 @@ public class MessageFile {
             msgOffsetArr[pos] = msgFileSize + msgDataPos;
 
             indexBufEleCount++;
+
+            if (putCount == 0) {
+                firstT = message.getT();
+            }
         } else {
-            int diffT = (int)(t - prevMessage.getT());
+            int diffT = (int)(t - lastT);
             putBitLength = VariableUtils.putUnsigned(memory, putBitLength, diffT);
         }
         putCount++;
@@ -95,7 +97,8 @@ public class MessageFile {
         uncompressMsgDataPos += Const.MSG_BYTES;
 
         writeA(message.getA());
-        prevMessage = message;
+
+        lastT = message.getT();
     }
 
     private void compressMsgBody() {
@@ -128,7 +131,7 @@ public class MessageFile {
         aBuf.putLong(a);
     }
 
-    public List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+    public final List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
         if (tMin <= tMax && aMin <= aMax) {
             int minPos = firstLessInPrimaryIndex(tMin);
             int maxPos = firstGreatInPrimaryIndex(tMax);
@@ -142,7 +145,7 @@ public class MessageFile {
 
             int realMinPos = minPos * Const.INDEX_INTERVAL;
             long[] as = getItem.as;
-            readAArray(realMinPos, realMinPos + tLen, getItem.buf, as);
+            readAArray(realMinPos, tLen, getItem.buf, as);
             //minPos，maxPos是在主内存索引的位置
             return readMsgs(minPos, maxPos, getItem, as, ts, tLen, aMin, aMax, tMin, tMax);
         } else {
@@ -184,83 +187,51 @@ public class MessageFile {
 
             minPos++;
         }
-//
-//        for (int i = 0; i < messages.size(); i++) {
-//            Message message = messages.get(i);
-//
-//            if ((message.getT() & 1) == 0) {
-//                try {
-//                    if (message.getT() != messages.get(i + 1).getT()) {
-//                        System.err.println("2.error");
-//                    }
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//
-//                i++;
-//            }
-//        }
-
-
         return messages;
     }
 
-    public void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
+    public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
         if (tMin <= tMax && aMin <= aMax) {
-            int minPos = firstLessInPrimaryIndex(tMin);
-            int maxPos = firstGreatInPrimaryIndex(tMax);
-            if (minPos >= maxPos) {
+            int fromPos = findLeftClosedInterval(tMin);
+            int endPos = findRightOpenInterval(tMax);
+            if (fromPos >= endPos) {
                 return;
             }
-
-            long[] ts = getItem.ts;
-            int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts);
-
-            int realMinPos = minPos * Const.INDEX_INTERVAL;
-            long[] as = getItem.as;
-            readAArray(realMinPos, realMinPos + tLen, getItem.buf, as);
-
-            //从后往前过滤
-            tLen--;
-            while (tLen >= 0 && ts[tLen] > tMax) {
-                tLen--;
-            }
-
-            //从前往后过滤
-            int s = 0;
-            while (s <= tLen && ts[s] < tMin) {
-                s++;
-            }
-
-            long sum = 0;
-            int count = 0;
-            while (s <= tLen) {
-                long a = as[s];
-                if (a >= aMin && a <= aMax) {
-                    sum += a;
-                    count++;
-                }
-                s++;
-            }
-
-            intervalSum.count +=  count;
-            intervalSum.sum += sum;
+            sumAInRangeT(fromPos, endPos, aMin, aMax, tMin, tMax, intervalSum, getItem);
         }
     }
 
-    private void readAArray(int minPos, int maxPos, ByteBuffer readBuf, long[] as) {
+    private void sumAInRangeT( int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
+        int len = endPos - fromPos;
+
+        long[] as = getItem.as;
+        readAArray(fromPos, len, getItem.buf, as);
+
+        long sum = 0;
+        int count = 0;
+        for (int i = 0; i < len; i++) {
+            long a = as[i];
+            if (a >= aMin && a <= aMax) {
+                sum += a;
+                count++;
+            }
+        }
+        intervalSum.add(sum, count);
+    }
+
+    private void readAArray(int fromPos, int len, ByteBuffer readBuf, long[] as) {
         int cnt = 0;
-        while (minPos < maxPos) {
-            int readCount = Math.min((maxPos - minPos), Const.MAX_LONG_CAPACITY);
+        while (cnt < len) {
+            int readCount = Math.min((len - cnt), Const.MAX_LONG_CAPACITY);
             readBuf.position(0);
             readBuf.limit(readCount * Const.LONG_BYTES);
-            readInBuf(minPos * Const.LONG_BYTES, readBuf, aFc);
+            readInBuf(fromPos * Const.LONG_BYTES, readBuf, aFc);
             readBuf.flip();
 
             while (readBuf.hasRemaining()) {
                 as[cnt++] = readBuf.getLong();
             }
-            minPos += readCount;
+            fromPos += readCount;
         }
     }
 
@@ -288,7 +259,7 @@ public class MessageFile {
         buf.clear();
     }
 
-    public void flush() {
+    public final void flush() {
         //最后一块进行压缩
         msgDataPos += Snappy.compress(uncompressMsgData, 0, Const.COMPRESS_MSG_SIZE, msgData, msgDataPos);
         flushMsg();
@@ -310,7 +281,7 @@ public class MessageFile {
      * @param maxPos < 在PrimaryIndex的结束位置
      * @return 返回读取的条数
      */
-    public int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT) {
+    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT) {
         //数据可能会存在多个块中
         int nextOffset, putBitLength = this.putBitLength;
         int destOffset = 0;
@@ -344,8 +315,102 @@ public class MessageFile {
         return destOffset;
     }
 
+    /**
+     * 找左区间，包含[
+     */
+    private int findLeftClosedInterval(long destT) {
+        if (destT <= firstT) {
+            return 0;
+        }
 
-    public int firstGreatInPrimaryIndex(long val) {
+        if (destT > lastT) {
+            return putCount;
+        }
+
+        if (destT == lastT) {
+            return putCount - 1;
+        }
+        int minPos = firstLessInPrimaryIndex(destT);
+        return findLeftClosedIntervalFromMemory(minPos, destT);
+    }
+
+    /**
+     * 从内存中查找
+     */
+    private int findLeftClosedIntervalFromMemory(int minPos, long destT) {
+        long t = tArr[minPos];
+        if (t >= destT) {
+            return minPos * Const.INDEX_INTERVAL;
+        }
+        return findLeftClosedIntervalFromEncode(minPos, t, destT);
+    }
+
+    private int findLeftClosedIntervalFromEncode(int minPos, long t, long destT) {
+        int nextOffset = offsetArr[minPos];
+        int tPos = minPos * Const.INDEX_INTERVAL + 1;
+        int[] baseT = new int[1];
+        //从变长编码内存中读
+        for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
+            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
+            t += baseT[0];
+            if (t >= destT) {
+                return tPos;
+            }
+
+            tPos++;
+            if (nextOffset >= putBitLength) {
+                //说明读完了
+                break;
+            }
+        }
+        return tPos;
+    }
+
+    private int findRightOpenInterval(long destT) {
+        if (destT < firstT) {
+            return 0;
+        }
+
+        if (destT >= lastT) {
+            return putCount;
+        }
+        int minPos = firstLessInPrimaryIndex(destT);
+        return findRightOpenIntervalFromMemory(minPos, destT);
+    }
+
+    private int findRightOpenIntervalFromMemory(int minPos, long destT) {
+        long t = tArr[minPos];
+        if (t > destT) {
+            return minPos * Const.INDEX_INTERVAL;
+        }
+        return findRightOpenIntervalFromEncode(minPos, t, destT);
+    }
+
+    private int findRightOpenIntervalFromEncode(int minPos, long t, long destT) {
+        int nextOffset = offsetArr[minPos];
+        int tPos = minPos * Const.INDEX_INTERVAL + 1;
+        int[] baseT = new int[1];
+        //从变长编码内存中读
+        for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
+            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
+            t += baseT[0];
+            if (t > destT) {
+                return tPos;
+            }
+
+            tPos++;
+            if (nextOffset >= putBitLength) {
+                //说明读完了
+                break;
+            }
+        }
+        //继续从下一个块找
+        return findRightOpenIntervalFromMemory(minPos + 1, destT);
+    }
+
+
+
+    private int firstGreatInPrimaryIndex(long val) {
         int low = 0, high = indexBufEleCount, mid;
         while(low < high){
             mid = low + (high - low) / 2;
@@ -363,7 +428,7 @@ public class MessageFile {
     /**
      * 查找第一个小于val的数字位置，如果没有将返回PrimaryIndex的第一个位置
      */
-    public int firstLessInPrimaryIndex(long val) {
+    private int firstLessInPrimaryIndex(long val) {
         int low = 0, high = indexBufEleCount, mid;
 
         //先找第一个大于等于val的位置，减1就是第一个小于val的位置
