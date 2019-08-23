@@ -33,6 +33,11 @@ public class Tester {
     }
 
     public static void main(String[] args) {
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
+        byteBuffer.limit(1024);
+        while (byteBuffer.hasRemaining()) {
+            System.out.println(byteBuffer.getLong());
+        }
         test();
         int[] nums = new int[] {1, 2, 3};
         System.out.println(lowerBound(nums, 0, 3, 0));
