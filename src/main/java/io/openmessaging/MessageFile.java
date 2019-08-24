@@ -19,7 +19,7 @@ import static io.openmessaging.Utils.print;
  */
 public class MessageFile {
     private static AtomicInteger idAllocator = new AtomicInteger(0);
-    private Codec codec = new Codec();
+    private Encoder codec = new Encoder();
 
     //直接压缩到这个字节数组上
     private final byte[] msgData = new byte[Const.PUT_BUFFER_SIZE];
@@ -91,9 +91,11 @@ public class MessageFile {
         } else {
             int diffT = (int)(t - lastT);
             putBitLength = VariableUtils.putUnsigned(memory, putBitLength, diffT);
-
-            codec.encode(diffT);
         }
+        if (putCount > 0) {
+            codec.encode((int) (t - lastT));
+        }
+
         putCount++;
 
         System.arraycopy(message.getBody(), 0, uncompressMsgData, uncompressMsgDataPos, Const.MSG_BYTES);
