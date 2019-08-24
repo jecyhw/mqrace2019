@@ -11,10 +11,15 @@ public class Encoder {
     private int value = 0;
 
     private int delta = 0;
+    private int minDeltaOfDelta = Integer.MAX_VALUE;
+    private int maxDeltaOfDelta = Integer.MIN_VALUE;
 
 
     public void encode(int newDelta) {
         int deltaOfDelta = newDelta - delta;
+
+        minDeltaOfDelta = Math.min(minDeltaOfDelta, deltaOfDelta);
+        maxDeltaOfDelta = Math.max(maxDeltaOfDelta, deltaOfDelta);
 
         if (deltaOfDelta == 0) {
             putOnce(0, 1);
@@ -153,7 +158,7 @@ public class Encoder {
 
         bitsAvailable = 0;
         value = 0;
-        Utils.print("buf size:" + buf.limit());
+        Utils.print("buf size:" + buf.limit() + " min:" + minDeltaOfDelta + " max:" + maxDeltaOfDelta);
     }
 
 }
