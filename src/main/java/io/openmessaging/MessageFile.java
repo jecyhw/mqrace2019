@@ -76,7 +76,8 @@ public class MessageFile {
             //每隔INDEX_INTERVAL记录t（在indexBuf中记录了t就不会在memory中记录）
             tArr[pos] = t;
             //下一个t的起始位置，先写在哪个块中，再写块的便宜位置
-            offsetArr[pos] = putBitLength;
+            offsetArr[pos] = codec.getBitPosition();
+
             if (uncompressMsgDataPos == Const.COMPRESS_MSG_SIZE) {
                 compressMsgBody();
             }
@@ -91,8 +92,6 @@ public class MessageFile {
 
             codec.resetDelta();
         } else {
-            int diffT = (int)(t - lastT);
-            putBitLength = VariableUtils.putUnsigned(memory, putBitLength, diffT);
             codec.encode((int) (t - lastT));
         }
 

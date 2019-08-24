@@ -141,11 +141,7 @@ public class Encoder {
         value = 0;
     }
 
-    private int getPrevDelta() {
-        return delta;
-    }
-
-    private int getBitPosition() {
+    public int getBitPosition() {
         return buf.position() * 8 + bitsAvailable;
     }
 
