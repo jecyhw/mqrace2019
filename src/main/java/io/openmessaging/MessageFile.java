@@ -88,11 +88,11 @@ public class MessageFile {
             if (putCount == 0) {
                 firstT = message.getT();
             }
+
+            codec.resetDelta();
         } else {
             int diffT = (int)(t - lastT);
             putBitLength = VariableUtils.putUnsigned(memory, putBitLength, diffT);
-        }
-        if (putCount > 0) {
             codec.encode((int) (t - lastT));
         }
 

@@ -161,4 +161,7 @@ public class Encoder {
         Utils.print("buf size:" + buf.limit() + " min:" + minDeltaOfDelta + " max:" + maxDeltaOfDelta);
     }
 
+    public void resetDelta() {
+        delta = 0;
+    }
 }
