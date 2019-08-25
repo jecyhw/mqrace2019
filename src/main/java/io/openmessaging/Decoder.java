@@ -27,7 +27,7 @@ public class Decoder extends AbstractDecoder {
         reset(buf, bitPos);
         int delta = 0;
         //从一个区间里找
-        for (int i = 0; i < Const.INDEX_INTERVAL - 1; i++) {
+        for (int i = 1; i < Const.INDEX_INTERVAL; i++) {
             delta += getDeltaOfDelta();
             t = t + delta;
             if (t > destT) {
