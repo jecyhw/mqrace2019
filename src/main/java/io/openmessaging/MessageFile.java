@@ -18,8 +18,10 @@ import static io.openmessaging.Utils.print;
  * Created by yanghuiwei on 2019-07-26
  */
 public class MessageFile {
-    private static AtomicInteger idAllocator = new AtomicInteger(0);
-    private Encoder codec = new Encoder();
+    private static final AtomicInteger idAllocator = new AtomicInteger(0);
+    final ByteBuffer buf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
+
+    private Encoder codec = new Encoder(buf);
 
     //直接压缩到这个字节数组上
     private final byte[] msgData = new byte[Const.PUT_BUFFER_SIZE];
@@ -49,10 +51,6 @@ public class MessageFile {
     //indexBufs存的元素个数
     private int indexBufEleCount = 0;
 
-    //t的相对值存储的内存
-    private final ByteBuffer memory = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
-    //已使用的比特位数
-    private int putBitLength = 0;
 
     public MessageFile() {
         try {
@@ -135,7 +133,7 @@ public class MessageFile {
         aBuf.putLong(a);
     }
 
-    public final List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+    public final List<Message> get(long aMin, long aMax, long tMin, long tMax, GetItem getItem, ByteBuffer tBuf) {
         if (tMin <= tMax && aMin <= aMax) {
             int minPos = firstLessInPrimaryIndex(tMin);
             int maxPos = firstGreatInPrimaryIndex(tMax);
@@ -145,7 +143,7 @@ public class MessageFile {
             }
 
             long[] ts = getItem.ts;
-            int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts);
+            int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem.decoder, tBuf);
 
             int realMinPos = minPos * Const.INDEX_INTERVAL;
             long[] as = getItem.as;
@@ -194,7 +192,7 @@ public class MessageFile {
         return messages;
     }
 
-    public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
+    public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem, ByteBuffer tBuf) {
         if (tMin <= tMax && aMin <= aMax) {
             int fromPos = findLeftClosedInterval(tMin);
             int endPos = findRightOpenInterval(tMax);
@@ -273,7 +271,7 @@ public class MessageFile {
 
         try {
             Utils.print("MemoryIndex func=flush indexBuf:" + indexBufCounter.get() + " tBuf:" + tBufCounter.get() + " indexBufEleCount:" + indexBufEleCount
-                    + " putCount:" + putCount + " putBitLength:" + putBitLength / 8 + " aFilSize:" + aFile.length() + " compressMsgFileSize:" + msgFile.length() + ":" + msgFileSize + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES));
+                    + " putCount:" + putCount + " aFilSize:" + aFile.length() + " compressMsgFileSize:" + msgFile.length() + ":" + msgFileSize + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -285,37 +283,26 @@ public class MessageFile {
      *
      * @param minPos >= 在PrimaryIndex的开始位置
      * @param maxPos < 在PrimaryIndex的结束位置
+     * @param decoder
+     * @param tBuf
      * @return 返回读取的条数
      */
-    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT) {
+    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, Decoder decoder, ByteBuffer tBuf) {
+        if (maxPos == indexBufEleCount) {
+            maxPos--;
+            int destOffset = (maxPos - minPos) * Const.INDEX_INTERVAL;
+            destT[destOffset] = tArr[maxPos];
+            decoder.decode(tBuf, destT, destOffset + 1,  offsetArr[maxPos], putCount % Const.INDEX_INTERVAL - 1);
+        }
         //数据可能会存在多个块中
-        int nextOffset, putBitLength = this.putBitLength;
         int destOffset = 0;
-
-        int[] diffT = new int[1];
         while (minPos < maxPos) {
             //得到索引内存中这个位置的t值
             destT[destOffset] = tArr[minPos];
-            destOffset++;
-
             //得到这个t的下一个t在内存块的位置
-            nextOffset = offsetArr[minPos];
-            if (nextOffset >= putBitLength) {
-                return destOffset;
-            }
+            decoder.decode(tBuf, destT, destOffset + 1, offsetArr[minPos], Const.INDEX_INTERVAL - 1);
+            destOffset += Const.INDEX_INTERVAL;
 
-            //从变长编码内存中读
-            for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-                nextOffset = VariableUtils.getUnsigned(memory, nextOffset, diffT, 0);
-                destT[destOffset] = destT[destOffset - 1] + diffT[0];
-
-                destOffset++;
-
-                if (nextOffset >= putBitLength) {
-                    //说明读完了
-                    break;
-                }
-            }
             minPos++;
         }
         return destOffset;
@@ -357,17 +344,17 @@ public class MessageFile {
         int[] baseT = new int[1];
         //从变长编码内存中读
         for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
-            t += baseT[0];
-            if (t >= destT) {
-                return tPos;
-            }
-
-            tPos++;
-            if (nextOffset >= putBitLength) {
-                //说明读完了
-                break;
-            }
+//            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
+//            t += baseT[0];
+//            if (t >= destT) {
+//                return tPos;
+//            }
+//
+//            tPos++;
+//            if (nextOffset >= putBitLength) {
+//                //说明读完了
+//                break;
+//            }
         }
         return tPos;
     }
@@ -398,17 +385,17 @@ public class MessageFile {
         int[] baseT = new int[1];
         //从变长编码内存中读
         for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
-            t += baseT[0];
-            if (t > destT) {
-                return tPos;
-            }
-
-            tPos++;
-            if (nextOffset >= putBitLength) {
-                //说明读完了
-                break;
-            }
+//            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
+//            t += baseT[0];
+//            if (t > destT) {
+//                return tPos;
+//            }
+//
+//            tPos++;
+//            if (nextOffset >= putBitLength) {
+//                //说明读完了
+//                break;
+//            }
         }
         //继续从下一个块找
         return findRightOpenIntervalFromMemory(minPos + 1, destT);

@@ -33,6 +33,7 @@ public class Tester {
     }
 
     public static void main(String[] args) {
+        test();
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         byteBuffer.limit(1024);
         while (byteBuffer.hasRemaining()) {
@@ -49,11 +50,17 @@ public class Tester {
     }
 
     private static void test() {
-        int index = 1023, pos = 1024 * 1024;
-        int t = (pos << 10) | index;
+        ByteBuffer buf = ByteBuffer.allocateDirect(1024);
+        Encoder encoder = new Encoder(buf);
+        encoder.encode(1);
+        encoder.encode(1);
+        encoder.encode(0);
+        encoder.encode(2);
+        encoder.flush();
 
-        System.out.println(t & 0x3ff);
-        System.out.println(t >> 10);
+        Decoder decoder = new Decoder();
+        long[] t = new long[10];
+        decoder.decode(buf, t, 1, 0, 4);
     }
 
     private static void VariableUtilsTest() {

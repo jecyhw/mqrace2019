@@ -6,147 +6,163 @@ import java.nio.ByteBuffer;
  * Created by yanghuiwei on 2019-08-24
  */
 public class Decoder {
-    private final ByteBuffer buf;
+    private ByteBuffer buf;
 
     private int bitsAvailable = Integer.SIZE;
-    private int value = 0;
+    private int bitsInValue;
+    private int bits = 0;
 
-    private int delta = 0;
-
-
-    public Decoder(ByteBuffer buf) {
+    public void decode(ByteBuffer buf, long[] t, int tPos, int bitPos, int readLen) {
         this.buf = buf;
+        buf.position(bitPos / 8);
+        bits = buf.getInt();
+        bitsAvailable = Integer.SIZE - bitPos % 8;
+
+        int delta = 0;
+        for (int i = 1; i <= readLen; i++, tPos++) {
+            int deltaOfDelta = 0;
+            if (getBits(1) != 0) {
+                if (getBits(1) == 0) {
+                    deltaOfDelta = 1;
+                } else if (getBits(1) == 0) {
+                    deltaOfDelta = 2;
+                } else if (getBits(1) == 0) {
+                    deltaOfDelta = 3;
+                } else {
+                    int bitsValue = getAdaptive();
+                    deltaOfDelta = getDeltaOfDelta(bitsValue);
+                }
+            }
+            delta += deltaOfDelta;
+            t[tPos] = t[tPos - 1] + delta;
+        }
     }
 
-    public int decode(int baseT, int bitPos, int delta) {
+    private int getDeltaOfDelta(int bitsValue) {
+        return (bitsValue & 1) == 0 ? bitsValue >> 1 : -(bitsValue >> 1);
+    }
 
-        buf.position(bitPos / 8);
-        value = buf.getInt();
-        bitsAvailable = bitPos % 8;
+    private int _decode(long[] t, int pos, int delta) {
 
-        if (get(1) == 0) {
-            return 0;
+        return delta;
+    }
+
+    private int getAdaptive() {
+        if (getBits(1) == 0) {
+            return getBits(3);
         }
-        if (get(1) == 0) {
-            return 1;
+        else  if (getBits(1) == 0) {
+            return getBits(4);
         }
-        if (get(1) == 0) {
-            return 2;
+        else  if (getBits(1) == 0) {
+            return getBits(5);
         }
-        if (get(1) == 0) {
-            return 3;
+        else  if (getBits(1) == 0) {
+            return getBits(6);
         }
-        if (get(1) == 0) {
-            return get(3);
+        else  if (getBits(1) == 0) {
+            return getBits(7);
         }
-        if (get(1) == 0) {
-            return get(4);
+        else  if (getBits(1) == 0) {
+            return getBits(8);
         }
-        if (get(1) == 0) {
-            return get(5);
+        else   if (getBits(1) == 0) {
+            return getBits(9);
         }
-        if (get(1) == 0) {
-            return get(6);
+        else  if (getBits(1) == 0) {
+            return getBits(10);
         }
-        if (get(1) == 0) {
-            return get(7);
+        else  if (getBits(1) == 0) {
+            return getBits(11);
         }
-        if (get(1) == 0) {
-            return get(8);
+        else  if (getBits(1) == 0) {
+            return getBits(12);
         }
-        if (get(1) == 0) {
-            return get(9);
+        else   if (getBits(1) == 0) {
+            return getBits(13);
         }
-        if (get(1) == 0) {
-            return get(10);
+        else  if (getBits(1) == 0) {
+            return getBits(14);
         }
-        if (get(1) == 0) {
-            return get(11);
+        else  if (getBits(1) == 0) {
+            return getBits(15);
         }
-        if (get(1) == 0) {
-            return get(12);
+        else if (getBits(1) == 0) {
+            return getBits(16);
         }
-        if (get(1) == 0) {
-            return get(13);
+        else if (getBits(1) == 0) {
+            return getBits(17);
         }
-        if (get(1) == 0) {
-            return get(14);
+        else if (getBits(1) == 0) {
+            return getBits(18);
         }
-        if (get(1) == 0) {
-            return get(15);
+        else if (getBits(1) == 0) {
+            return getBits(19);
         }
-        if (get(1) == 0) {
-            return get(16);
+        else if (getBits(1) == 0) {
+            return getBits(20);
         }
-        if (get(1) == 0) {
-            return get(17);
+        else if (getBits(1) == 0) {
+            return getBits(21);
         }
-        if (get(1) == 0) {
-            return get(18);
+        else if (getBits(1) == 0) {
+            return getBits(22);
         }
-        if (get(1) == 0) {
-            return get(19);
+        else if (getBits(1) == 0) {
+            return getBits(23);
         }
-        if (get(1) == 0) {
-            return get(20);
+        else if (getBits(1) == 0) {
+            return getBits(24);
         }
-        if (get(1) == 0) {
-            return get(21);
+        else if (getBits(1) == 0) {
+            return getBits(25);
         }
-        if (get(1) == 0) {
-            return get(22);
+        else if (getBits(1) == 0) {
+            return getBits(26);
         }
-        if (get(1) == 0) {
-            return get(23);
+        else if (getBits(1) == 0) {
+            return getBits(27);
         }
-        if (get(1) == 0) {
-            return get(24);
+        if (getBits(1) == 0) {
+            return getBits(28);
         }
-        if (get(1) == 0) {
-            return get(25);
+        if (getBits(1) == 0) {
+            return getBits(29);
         }
-        if (get(1) == 0) {
-            return get(26);
+        if (getBits(1) == 0) {
+            return getBits(30);
         }
-        if (get(1) == 0) {
-            return get(27);
-        }
-        if (get(1) == 0) {
-            return get(28);
-        }
-        if (get(1) == 0) {
-            return get(29);
-        }
-        if (get(1) == 0) {
-            return get(30);
-        }
-        //会执行出错
         return 0;
     }
 
 
-    public int get(int bitsInValue) {
-        int value = 0;
-        while (bitsInValue > 0) {
-            if (bitsInValue >= bitsAvailable) {
-                byte lsb = (byte) (value & ((1 << bitsAvailable) - 1));
-                value = (value << bitsAvailable) + (lsb & 0xff);
-                bitsInValue -= bitsAvailable;
-                bitsAvailable = 0;
-            } else {
-                byte lsb = (byte) ((value >>> (bitsAvailable - bitsInValue)) & ((1 << bitsInValue) - 1));
-                value = (value << bitsInValue) + (lsb & 0xff);
-                bitsAvailable -= bitsInValue;
-                bitsInValue = 0;
-            }
-            readFromByteBuffer();
+    public int getBits(int bitsInValue) {
+        this.bitsInValue = bitsInValue;
+        int res = getOnce(0);
+        if (this.bitsInValue > 0) {
+            res = getOnce(res);
         }
-        return value;
+        return res;
     }
 
-    private void readFromByteBuffer() {
+    private int getOnce(int res) {
+        if (bitsInValue >= bitsAvailable) {
+            int lsb = (bits & ((1 << bitsAvailable) - 1));
+            res = (res << bitsAvailable) + lsb;
+            bitsInValue -= bitsAvailable;
+            getInt();
+        } else {
+            int lsb =  ((bits >>> (bitsAvailable - bitsInValue)) & ((1 << bitsInValue) - 1));
+            res = (res << bitsInValue) + lsb;
+            bitsAvailable -= bitsInValue;
+            bitsInValue = 0;
+        }
+        return res;
+    }
+
+    private void getInt() {
         if (bitsAvailable == 0) {
-            value = buf.getInt();
+            bits = buf.getInt();
             bitsAvailable = Integer.SIZE;
         }
     }

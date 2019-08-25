@@ -31,14 +31,13 @@ public class DefaultMessageStoreImpl extends MessageStore {
     };
 
     private static AtomicInteger getThreadCounter = new AtomicInteger(0);
-    private static List<GetItem> getItems = new ArrayList<>();
     private static FastThreadLocal<GetItem> getBufThreadLocal = new FastThreadLocal<GetItem>() {
         @Override
         public GetItem initialValue() {
             GetItem item = new GetItem();
             getThreadCounter.incrementAndGet();
-            synchronized (DefaultMessageStoreImpl.class) {
-                getItems.add(item);
+            for (int i = messageFiles.size() - 1; i >= 0; i--) {
+                item.tBufs.add(messageFiles.get(i).buf.duplicate());
             }
             return item;
         }
@@ -128,7 +127,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
         int totalMessageSize = 0;
         for (int i = messageFileSize - 1; i >= 0; i--) {
-            List<Message> messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
+            List<Message> messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs.get(i));
             totalMessageSize += messages.size();
             messagesList.add(messages);
         }
@@ -187,7 +186,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem);
+            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem, getItem.tBufs.get(i));
         }
 
 //        long max = Math.min(tMax, aMax);
