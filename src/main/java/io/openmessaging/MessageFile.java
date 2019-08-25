@@ -170,24 +170,41 @@ public class MessageFile {
         List<Message> messages = new ArrayList<>();
 
         int pos = 0;
-        while (minPos < maxPos) {
+        int _minPos = minPos;
+        maxPos--;
+        while (minPos <= maxPos) {
             compressSize = (int)(msgOffsetArr[minPos + 1] - msgOffsetArr[minPos]);
             Snappy.uncompress(compressMsgData, compressMsgDataPos, compressSize, uncompressMsgData, 0);
             compressMsgDataPos += compressSize;
+            if (minPos == _minPos || minPos == maxPos) {
+                for (int i = 0, uncompressMsgDataPos = 0; i < Const.INDEX_INTERVAL && pos < tLen; i++, uncompressMsgDataPos += Const.MSG_BYTES) {
+                    long a = as[pos], t = ts[pos];
 
-            for (int i = 0, uncompressMsgDataPos = 0; i < Const.INDEX_INTERVAL && pos < tLen; i++, uncompressMsgDataPos += Const.MSG_BYTES) {
-                long a = as[pos], t = ts[pos];
-                if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
-                    byte[] body = new byte[Const.MSG_BYTES];
-                    System.arraycopy(uncompressMsgData, uncompressMsgDataPos, body, 0, Const.MSG_BYTES);
-                    messages.add(new Message(a, t, body));
+                    if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
+                        getMessage(uncompressMsgData, messages, uncompressMsgDataPos, a, t);
+                    }
+                    pos++;
                 }
-                pos++;
+            } else {
+                for (int i = 0, uncompressMsgDataPos = 0; i < Const.INDEX_INTERVAL && pos < tLen; i++, uncompressMsgDataPos += Const.MSG_BYTES) {
+                    long a = as[pos];
+                    if (a >= aMin && a <= aMax) {
+                        getMessage(uncompressMsgData, messages, uncompressMsgDataPos, a, ts[pos]);
+                    }
+                    pos++;
+                }
             }
+
 
             minPos++;
         }
         return messages;
+    }
+
+    private void getMessage(byte[] uncompressMsgData, List<Message> messages, int uncompressMsgDataPos, long a, long t) {
+        byte[] body = new byte[Const.MSG_BYTES];
+        System.arraycopy(uncompressMsgData, uncompressMsgDataPos, body, 0, Const.MSG_BYTES);
+        messages.add(new Message(a, t, body));
     }
 
     public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem, ByteBuffer tBuf) {

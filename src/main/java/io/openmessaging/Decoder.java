@@ -5,12 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by yanghuiwei on 2019-08-24
  */
-public class Decoder {
-    private ByteBuffer buf;
-
-    private int bitsAvailable = Integer.SIZE;
-    private int bitsInValue;
-    private int bits = 0;
+public class Decoder extends AbstractDecoder {
 
     public int getFirstGreatOrEqual(ByteBuffer buf, long t, long destT, int pos, int bitPos) {
         reset(buf, bitPos);
@@ -51,14 +46,6 @@ public class Decoder {
             delta += getDeltaOfDelta();
             t[tPos] = t[tPos - 1] + delta;
         }
-    }
-
-    private void reset(ByteBuffer buf, int bitPos) {
-        this.buf = buf;
-        //不能改成除以8，否则会出错
-        buf.position((bitPos / 32) * 4);
-        bits = buf.getInt();
-        bitsAvailable = Integer.SIZE - bitPos % 32;
     }
 
     private int getDeltaOfDelta() {
@@ -167,35 +154,5 @@ public class Decoder {
             return getBits(29);
         }
         return 0;
-    }
-
-
-    public int getBits(int bitsInValue) {
-        this.bitsInValue = bitsInValue;
-        int res = getOnce(0);
-        if (this.bitsInValue > 0) {
-            res = getOnce(res);
-        }
-        return res;
-    }
-
-    private int getOnce(int res) {
-        if (bitsInValue >= bitsAvailable) {
-            int lsb = (bits & ((1 << bitsAvailable) - 1));
-            res = (res << bitsAvailable) + lsb;
-            bitsInValue -= bitsAvailable;
-            getInt();
-        } else {
-            int lsb =  ((bits >>> (bitsAvailable - bitsInValue)) & ((1 << bitsInValue) - 1));
-            res = (res << bitsInValue) + lsb;
-            bitsAvailable -= bitsInValue;
-            bitsInValue = 0;
-        }
-        return res;
-    }
-
-    private void getInt() {
-        bits = buf.getInt();
-        bitsAvailable = Integer.SIZE;
     }
 }

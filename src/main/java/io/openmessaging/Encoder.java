@@ -5,10 +5,8 @@ import java.nio.ByteBuffer;
 /**
  * Created by yanghuiwei on 2019-08-23
  */
-public class Encoder {
-    private final ByteBuffer buf;
-    private int bitsAvailable = Integer.SIZE;
-    private int value = 0;
+public class Encoder extends AbstractEncoder {
+
     private int delta = 0;
 
     public Encoder(ByteBuffer buf) {
@@ -110,45 +108,6 @@ public class Encoder {
         put(bits, bitsInValue);
     }
 
-    private void put(int bits, int bitsInValue) {
-        bitsInValue = putOnce(bits, bitsInValue);
-        if (bitsInValue > 0) {
-            putOnce(bits, bitsInValue);
-        }
-    }
-
-    private int putOnce(int bits, int bitsInValue) {
-        int shift = bitsInValue - bitsAvailable;
-        if (shift >= 0) {
-            value |= ((bits >> shift) & (1 << bitsAvailable) - 1);
-            putInt();
-            return shift;
-        } else {
-            value |= (bits << (-shift));
-            bitsAvailable -= bitsInValue;
-            return 0;
-        }
-    }
-
-    private void putInt() {
-        buf.putInt(value);
-        bitsAvailable = Integer.SIZE;
-        value = 0;
-    }
-
-    public int getBitPosition() {
-        return buf.position() * 8 + (Integer.SIZE - bitsAvailable);
-    }
-
-    public void flush() {
-        if (bitsAvailable != Integer.SIZE) {
-            buf.putInt(value);
-        }
-
-        bitsAvailable = 0;
-        value = 0;
-        buf.clear();
-    }
 
     public void resetDelta() {
         delta = 0;
