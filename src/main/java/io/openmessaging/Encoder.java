@@ -10,7 +10,7 @@ public class Encoder extends AbstractEncoder {
     private int delta = 0;
 
     public Encoder(ByteBuffer buf) {
-        this.buf = buf;
+        super(buf);
     }
 
     public void encode(int newDelta) {

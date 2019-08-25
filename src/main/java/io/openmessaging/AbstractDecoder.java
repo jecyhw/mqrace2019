@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * Created by yanghuiwei on 2019-08-25
  */
 public abstract class AbstractDecoder {
-    ByteBuffer buf;
+    private ByteBuffer buf;
 
     private int bitsAvailable = Integer.SIZE;
     private int bitsInValue;
