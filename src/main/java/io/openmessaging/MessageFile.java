@@ -312,8 +312,9 @@ public class MessageFile {
             maxPos--;
             int destOffset = (maxPos - minPos) * Const.INDEX_INTERVAL;
             destT[destOffset] = tArr[maxPos];
-            lastInterval = putCount % Const.INDEX_INTERVAL;
-            decoder.decode(tBuf, destT, destOffset + 1,  offsetArr[maxPos], lastInterval - 1);
+            lastInterval = (putCount - 1) % Const.INDEX_INTERVAL;
+            decoder.decode(tBuf, destT, destOffset + 1,  offsetArr[maxPos], lastInterval);
+            lastInterval = lastInterval + 1;
         }
 
         int destOffset = 0;
