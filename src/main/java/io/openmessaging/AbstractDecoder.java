@@ -12,7 +12,26 @@ public abstract class AbstractDecoder {
     private int bitsInValue;
     private int bits = 0;
 
-    int getBits(int bitsInValue) {
+    /**
+     * 每次读取前需要重置下buf的开始位置
+     * @param buf
+     * @param bitPos
+     */
+    public void reset(ByteBuffer buf, int bitPos) {
+        //记录buf，准备读取
+        this.buf = buf;
+        //不能改成除以8，否则会出错
+        buf.position((bitPos / 32) * 4);
+        bits = buf.getInt();
+        bitsAvailable = Integer.SIZE - bitPos % 32;
+    }
+
+    /**
+     * 从buf中拿多少比特，bitsInValue=4表示从buf中往后拿4个比特位
+     * @param bitsInValue
+     * @return
+     */
+    public int getBits(int bitsInValue) {
         this.bitsInValue = bitsInValue;
         int res = getOnce(0);
         if (this.bitsInValue > 0) {
@@ -21,7 +40,7 @@ public abstract class AbstractDecoder {
         return res;
     }
 
-    int getOnce(int res) {
+    private int getOnce(int res) {
         if (bitsInValue >= bitsAvailable) {
             int lsb = (bits & ((1 << bitsAvailable) - 1));
             res = (res << bitsAvailable) + lsb;
@@ -36,16 +55,8 @@ public abstract class AbstractDecoder {
         return res;
     }
 
-    void getInt() {
+    private void getInt() {
         bits = buf.getInt();
         bitsAvailable = Integer.SIZE;
-    }
-
-    void reset(ByteBuffer buf, int bitPos) {
-        this.buf = buf;
-        //不能改成除以8，否则会出错
-        buf.position((bitPos / 32) * 4);
-        bits = buf.getInt();
-        bitsAvailable = Integer.SIZE - bitPos % 32;
     }
 }

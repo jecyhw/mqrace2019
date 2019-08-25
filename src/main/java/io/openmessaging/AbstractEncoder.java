@@ -14,14 +14,19 @@ public abstract class AbstractEncoder {
         this.buf = buf;
     }
 
-    void put(int bits, int bitsInValue) {
+    /**
+     * 把bits数放到buf中 example: bits=18 bitsInValue=5
+     * @param bits
+     * @param bitsInValue 数的有效二进制位的个数
+     */
+    public void put(int bits, int bitsInValue) {
         bitsInValue = putOnce(bits, bitsInValue);
         if (bitsInValue > 0) {
             putOnce(bits, bitsInValue);
         }
     }
 
-    int putOnce(int bits, int bitsInValue) {
+    private int putOnce(int bits, int bitsInValue) {
         int shift = bitsInValue - bitsAvailable;
         if (shift >= 0) {
             value |= ((bits >> shift) & (1 << bitsAvailable) - 1);
@@ -34,17 +39,24 @@ public abstract class AbstractEncoder {
         }
     }
 
-    void putInt() {
+    private void putInt() {
         buf.putInt(value);
         bitsAvailable = Integer.SIZE;
         value = 0;
     }
 
-    int getBitPosition() {
+    /**
+     * 获取当前的比特位个数
+     * @return
+     */
+    public int getBitPosition() {
         return buf.position() * 8 + (Integer.SIZE - bitsAvailable);
     }
 
-    void flush() {
+    /**
+     * 不在put时，将value写入到buf中
+     */
+    public void flush() {
         if (bitsAvailable != Integer.SIZE) {
             buf.putInt(value);
         }
