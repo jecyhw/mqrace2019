@@ -14,6 +14,7 @@ public class Decoder {
 
     public void decode(ByteBuffer buf, long[] t, int tPos, int bitPos, int readLen) {
         this.buf = buf;
+        //不能改成除以8，否则会出错
         buf.position((bitPos / 32) * 4);
         bits = buf.getInt();
         bitsAvailable = Integer.SIZE - bitPos % 32;
