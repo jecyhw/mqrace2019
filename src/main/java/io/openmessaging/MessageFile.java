@@ -192,8 +192,8 @@ public class MessageFile {
 
     public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem, ByteBuffer tBuf) {
         if (tMin <= tMax && aMin <= aMax) {
-            int fromPos = findLeftClosedInterval(tMin);
-            int endPos = findRightOpenInterval(tMax);
+            int fromPos = findLeftClosedInterval(tMin, getItem, tBuf);
+            int endPos = findRightOpenInterval(tMax, getItem, tBuf);
             if (fromPos >= endPos) {
                 return;
             }
@@ -201,7 +201,7 @@ public class MessageFile {
         }
     }
 
-    private void sumAInRangeT( int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
+    private void sumAInRangeT(int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
         int len = endPos - fromPos;
 
         long[] as = getItem.as;
@@ -313,7 +313,7 @@ public class MessageFile {
     /**
      * 找左区间，包含[
      */
-    private int findLeftClosedInterval(long destT) {
+    private int findLeftClosedInterval(long destT, GetItem getItem, ByteBuffer tBuf) {
         if (destT <= firstT) {
             return 0;
         }
@@ -326,42 +326,14 @@ public class MessageFile {
             return putCount - 1;
         }
         int minPos = firstLessInPrimaryIndex(destT);
-        return findLeftClosedIntervalFromMemory(minPos, destT);
-    }
-
-    /**
-     * 从内存中查找
-     */
-    private int findLeftClosedIntervalFromMemory(int minPos, long destT) {
         long t = tArr[minPos];
         if (t >= destT) {
             return minPos * Const.INDEX_INTERVAL;
         }
-        return findLeftClosedIntervalFromEncode(minPos, t, destT);
+        return getItem.decoder.getFirstGreatOrEqual(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
     }
 
-    private int findLeftClosedIntervalFromEncode(int minPos, long t, long destT) {
-        int nextOffset = offsetArr[minPos];
-        int tPos = minPos * Const.INDEX_INTERVAL + 1;
-        int[] baseT = new int[1];
-        //从变长编码内存中读
-        for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-//            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
-//            t += baseT[0];
-//            if (t >= destT) {
-//                return tPos;
-//            }
-//
-//            tPos++;
-//            if (nextOffset >= putBitLength) {
-//                //说明读完了
-//                break;
-//            }
-        }
-        return tPos;
-    }
-
-    private int findRightOpenInterval(long destT) {
+    private int findRightOpenInterval(long destT, GetItem getItem, ByteBuffer tBuf) {
         if (destT < firstT) {
             return 0;
         }
@@ -370,40 +342,23 @@ public class MessageFile {
             return putCount;
         }
         int minPos = firstLessInPrimaryIndex(destT);
-        return findRightOpenIntervalFromMemory(minPos, destT);
-    }
-
-    private int findRightOpenIntervalFromMemory(int minPos, long destT) {
         long t = tArr[minPos];
         if (t > destT) {
             return minPos * Const.INDEX_INTERVAL;
         }
-        return findRightOpenIntervalFromEncode(minPos, t, destT);
-    }
 
-    private int findRightOpenIntervalFromEncode(int minPos, long t, long destT) {
-        int nextOffset = offsetArr[minPos];
-        int tPos = minPos * Const.INDEX_INTERVAL + 1;
-        int[] baseT = new int[1];
-        //从变长编码内存中读
-        for (int k = 1 ; k < Const.INDEX_INTERVAL; k++) {
-//            nextOffset = VariableUtils.getUnsigned(memory, nextOffset, baseT, 0);
-//            t += baseT[0];
-//            if (t > destT) {
-//                return tPos;
-//            }
-//
-//            tPos++;
-//            if (nextOffset >= putBitLength) {
-//                //说明读完了
-//                break;
-//            }
+        int pos = getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
+        if (pos < 0) {
+            minPos++;
+            t = tArr[minPos];
+            if (t > destT) {
+                return minPos * Const.INDEX_INTERVAL;
+            }
+            return getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
         }
-        //继续从下一个块找
-        return findRightOpenIntervalFromMemory(minPos + 1, destT);
+
+        return pos;
     }
-
-
 
     private int firstGreatInPrimaryIndex(long val) {
         int low = 0, high = indexBufEleCount, mid;

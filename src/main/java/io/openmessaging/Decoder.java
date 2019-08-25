@@ -12,36 +12,72 @@ public class Decoder {
     private int bitsInValue;
     private int bits = 0;
 
+    public int getFirstGreatOrEqual(ByteBuffer buf, long t, long destT, int pos, int bitPos) {
+        reset(buf, bitPos);
+        int delta = 0;
+        //从一个区间里找
+        for (int i = 0; i < Const.INDEX_INTERVAL - 1; i++) {
+            delta += getDeltaOfDelta();
+            t = t + delta;
+            if (t >= destT) {
+                return pos;
+            }
+            pos++;
+        }
+        //没找到下一个区间的第一个值肯定符合
+        return pos;
+    }
+
+    public int getFirstGreat(ByteBuffer buf, long t, long destT, int pos, int bitPos) {
+        reset(buf, bitPos);
+        int delta = 0;
+        //从一个区间里找
+        for (int i = 0; i < Const.INDEX_INTERVAL - 1; i++) {
+            delta += getDeltaOfDelta();
+            t = t + delta;
+            if (t > destT) {
+                return pos;
+            }
+            pos++;
+        }
+        //没找到继续从下一个区间找
+        return -1;
+    }
+
     public void decode(ByteBuffer buf, long[] t, int tPos, int bitPos, int readLen) {
+        reset(buf, bitPos);
+        int delta = 0;
+        for (int i = 1; i <= readLen; i++, tPos++) {
+            delta += getDeltaOfDelta();
+            t[tPos] = t[tPos - 1] + delta;
+        }
+    }
+
+    private void reset(ByteBuffer buf, int bitPos) {
         this.buf = buf;
         //不能改成除以8，否则会出错
         buf.position((bitPos / 32) * 4);
         bits = buf.getInt();
         bitsAvailable = Integer.SIZE - bitPos % 32;
+    }
 
-        int delta = 0;
-        for (int i = 1; i <= readLen; i++, tPos++) {
-            int deltaOfDelta = 0;
-            if (getBits(1) != 0) {
-                if (getBits(1) == 0) {
-                    deltaOfDelta = -1;
-                } else if (getBits(1) == 0) {
-                    deltaOfDelta = 1;
-                } else if (getBits(1) == 0) {
-                    deltaOfDelta = -2;
-                }  else if (getBits(1) == 0) {
-                    deltaOfDelta = 2;
-                } else {
-                    int bitsValue = getAdaptive();
-                    deltaOfDelta = getDeltaOfDelta(bitsValue);
-                }
-            }
-            delta += deltaOfDelta;
-            t[tPos] = t[tPos - 1] + delta;
+    private int getDeltaOfDelta() {
+        if (getBits(1) == 0) {
+            return 0;
+        } else if (getBits(1) == 0) {
+            return  -1;
+        } else if (getBits(1) == 0) {
+            return  1;
+        } else if (getBits(1) == 0) {
+            return  -2;
+        } else if (getBits(1) == 0) {
+            return  2;
+        } else {
+            return getAdaptiveDeltaOfDelta(getAdaptive());
         }
     }
 
-    private int getDeltaOfDelta(int bitsValue) {
+    private int getAdaptiveDeltaOfDelta(int bitsValue) {
         return (bitsValue & 1) == 0 ? ((bitsValue >> 1) + Const.T_DECREASE) : -((bitsValue >> 1) + Const.T_DECREASE);
     }
 
@@ -162,5 +198,4 @@ public class Decoder {
         bits = buf.getInt();
         bitsAvailable = Integer.SIZE;
     }
-
 }
