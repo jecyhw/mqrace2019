@@ -26,7 +26,7 @@ public abstract class AbstractEncoder {
         }
     }
 
-    private int putOnce(int bits, int bitsInValue) {
+    int putOnce(int bits, int bitsInValue) {
         int shift = bitsInValue - bitsAvailable;
         if (shift >= 0) {
             value |= ((bits >> shift) & (1 << bitsAvailable) - 1);
