@@ -312,6 +312,7 @@ public class MessageFile {
             maxPos--;
             int destOffset = (maxPos - minPos) * Const.INDEX_INTERVAL;
             destT[destOffset] = tArr[maxPos];
+            //需要注意，如果putCount刚好是Const.INDEX_INTERVAL整数倍，还是需要从编码中读取Const.INDEX_INTERVAL-1个数
             lastInterval = (putCount - 1) % Const.INDEX_INTERVAL;
             decoder.decode(tBuf, destT, destOffset + 1,  offsetArr[maxPos], lastInterval);
             lastInterval = lastInterval + 1;
@@ -357,22 +358,16 @@ public class MessageFile {
             return putCount;
         }
         int minPos = firstLessInPrimaryIndex(destT);
+        return findRightOpenIntervalFromMemory(minPos, destT, getItem, tBuf);
+    }
+
+    private int findRightOpenIntervalFromMemory( int minPos, long destT, GetItem getItem, ByteBuffer tBuf) {
         long t = tArr[minPos];
         if (t > destT) {
             return minPos * Const.INDEX_INTERVAL;
         }
-
         int pos = getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
-        while (pos < 0) {
-            minPos++;
-            t = tArr[minPos];
-            if (t > destT) {
-                return minPos * Const.INDEX_INTERVAL;
-            }
-            pos = getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
-        }
-
-        return pos;
+        return pos < 0 ? findRightOpenIntervalFromMemory(minPos + 1, destT, getItem, tBuf) : pos;
     }
 
     private int firstGreatInPrimaryIndex(long val) {
