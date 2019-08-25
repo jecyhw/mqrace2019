@@ -340,9 +340,6 @@ public class MessageFile {
             return putCount;
         }
 
-        if (destT == lastT) {
-            return putCount - 1;
-        }
         int minPos = firstLessInPrimaryIndex(destT);
         long t = tArr[minPos];
         if (t >= destT) {
@@ -366,13 +363,13 @@ public class MessageFile {
         }
 
         int pos = getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
-        if (pos < 0) {
+        while (pos < 0) {
             minPos++;
             t = tArr[minPos];
             if (t > destT) {
                 return minPos * Const.INDEX_INTERVAL;
             }
-            return getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
+            pos = getItem.decoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, offsetArr[minPos]);
         }
 
         return pos;
