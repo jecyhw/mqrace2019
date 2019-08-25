@@ -37,8 +37,6 @@ public class MessageFile {
     private RandomAccessFile aFile;
     private FileChannel aFc;
 
-    private final static AtomicInteger indexBufCounter = new AtomicInteger();
-    private final static AtomicInteger tBufCounter = new AtomicInteger(0);
     private final long[] tArr = new long[Const.INDEX_ELE_LENGTH];
     private final int[] offsetArr = new int[Const.INDEX_ELE_LENGTH];
     private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
@@ -53,8 +51,8 @@ public class MessageFile {
 
 
     public MessageFile() {
+        int fileId = idAllocator.getAndIncrement();
         try {
-            int fileId = idAllocator.getAndIncrement();
             msgFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw");
             msgFc = msgFile.getChannel();
 
@@ -143,8 +141,7 @@ public class MessageFile {
             }
 
             long[] ts = getItem.ts;
-            rangePosInPrimaryIndex(0, indexBufEleCount, ts, getItem.decoder, tBuf);
-            int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem.decoder, tBuf);
+            int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem, tBuf);
 
             int realMinPos = minPos * Const.INDEX_INTERVAL;
             long[] as = getItem.as;
@@ -269,26 +266,30 @@ public class MessageFile {
         msgOffsetArr[indexBufEleCount] = msgFileSize + msgDataPos;
 
         flush(aFc, aBuf);
+        codec.flush();
+
 
         try {
-            Utils.print("MemoryIndex func=flush indexBuf:" + indexBufCounter.get() + " tBuf:" + tBufCounter.get() + " indexBufEleCount:" + indexBufEleCount
-                    + " putCount:" + putCount + " aFilSize:" + aFile.length() + " compressMsgFileSize:" + msgFile.length() + ":" + msgFileSize + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES));
+            Utils.print("MemoryIndex func=flush " + " indexBufEleCount:" + indexBufEleCount
+                    + " putCount:" + putCount + " aFilSize:" + aFile.length() + " compressMsgFileSize:" + msgFile.length()
+                    + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
+                    + " bitPos:" + offsetArr[indexBufEleCount - 1] / 8
+                    + " bufSize:"+ buf.limit());
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        codec.flush();
     }
 
     /**
      *
      * @param minPos >= 在PrimaryIndex的开始位置
      * @param maxPos < 在PrimaryIndex的结束位置
-     * @param decoder
      * @param tBuf
      * @return 返回读取的条数
      */
-    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, Decoder decoder, ByteBuffer tBuf) {
+    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, GetItem getItem, ByteBuffer tBuf) {
+        Decoder decoder = getItem.decoder;
         int lastInterval = 0;
         if (maxPos == indexBufEleCount) {
             maxPos--;
@@ -303,10 +304,10 @@ public class MessageFile {
             destT[destOffset] = tArr[minPos];
             decoder.decode(tBuf, destT, destOffset + 1, offsetArr[minPos], Const.INDEX_INTERVAL - 1);
             destOffset += Const.INDEX_INTERVAL;
-
             minPos++;
         }
         return destOffset + lastInterval;
+
     }
 
     /**

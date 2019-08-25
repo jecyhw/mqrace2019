@@ -14,9 +14,9 @@ public class Decoder {
 
     public void decode(ByteBuffer buf, long[] t, int tPos, int bitPos, int readLen) {
         this.buf = buf;
-        buf.position(bitPos / 8);
+        buf.position((bitPos / 32) * 4);
         bits = buf.getInt();
-        bitsAvailable = Integer.SIZE - bitPos % 8;
+        bitsAvailable = Integer.SIZE - bitPos % 32;
 
         int delta = 0;
         for (int i = 1; i <= readLen; i++, tPos++) {

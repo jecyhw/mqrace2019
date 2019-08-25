@@ -3,6 +3,7 @@ package io.openmessaging;
 import io.netty.util.concurrent.FastThreadLocal;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -30,14 +31,14 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
     };
 
-    private static AtomicInteger getThreadCounter = new AtomicInteger(0);
     private static FastThreadLocal<GetItem> getBufThreadLocal = new FastThreadLocal<GetItem>() {
         @Override
         public GetItem initialValue() {
             GetItem item = new GetItem();
-            getThreadCounter.incrementAndGet();
-            for (int i = messageFiles.size() - 1; i >= 0; i--) {
-                item.tBufs.add(messageFiles.get(i).buf.duplicate());
+            int size = messageFiles.size();
+            item.tBufs = new ByteBuffer[size];
+            for (int i = 0; i < size; i++) {
+                item.tBufs[i] = messageFiles.get(i).buf.duplicate();
             }
             return item;
         }
@@ -82,8 +83,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
                 if (isFirstGet) {
-                    for (MessageFile messageFile : messageFiles) {
-                        messageFile.flush();
+                    for (int i = messageFiles.size() - 1; i >= 0; i--) {
+                        messageFiles.get(i).flush();
                     }
                     Monitor.getMsgStart();
                     isFirstGet = false;
@@ -125,7 +126,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
         int totalMessageSize = 0;
         for (int i = messageFileSize - 1; i >= 0; i--) {
-            List<Message> messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs.get(i));
+            List<Message> messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs[i]);
             totalMessageSize += messages.size();
             messagesList.add(messages);
         }
@@ -184,7 +185,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem, getItem.tBufs.get(i));
+            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem, getItem.tBufs[i]);
         }
 
 //        long max = Math.min(tMax, aMax);

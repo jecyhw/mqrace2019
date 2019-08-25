@@ -10,7 +10,6 @@ public class Encoder {
     private int bitsAvailable = Integer.SIZE;
     private int value = 0;
     private int delta = 0;
-    private int[] stat = new int[20];
 
     public Encoder(ByteBuffer buf) {
         this.buf = buf;
@@ -18,10 +17,6 @@ public class Encoder {
 
     public void encode(int newDelta) {
         int deltaOfDelta = newDelta - delta;
-        if (deltaOfDelta + 8 >= 0 && deltaOfDelta + 8 < 20) {
-            stat[deltaOfDelta + 8]++;
-        }
-
         delta = newDelta;
 
         if (deltaOfDelta == 0) {
@@ -44,77 +39,75 @@ public class Encoder {
             return;
         }
 
-        boolean isNegative = false;
         if (deltaOfDelta < 0) {
-            deltaOfDelta = -deltaOfDelta;
-            isNegative = true;
+            deltaOfDelta = ((-deltaOfDelta - Const.T_DECREASE) << 1) | 1;
+
+        } else {
+            deltaOfDelta = (deltaOfDelta - Const.T_DECREASE) << 1;
         }
-        deltaOfDelta -= Const.T_DECREASE;
 
         if (deltaOfDelta < 0b10) {
-            put(deltaOfDelta, 2, 0b111110, 6, isNegative);
+            put(deltaOfDelta, 2, 0b111110, 6);
         } else if (deltaOfDelta < 0b100) {
-            put(deltaOfDelta, 3, 0b1111110, 7, isNegative);
+            put(deltaOfDelta, 3, 0b1111110, 7);
         } else if (deltaOfDelta < 0b1000) {
-            put(deltaOfDelta, 4, 0b11111110, 8, isNegative);
+            put(deltaOfDelta, 4, 0b11111110, 8);
         } else if (deltaOfDelta < 0b10000) {
-            put(deltaOfDelta, 5, 0b111111110, 9, isNegative);
+            put(deltaOfDelta, 5, 0b111111110, 9);
         } else if (deltaOfDelta < 0b100000) {
-            put(deltaOfDelta, 6, 0b1111111110, 10, isNegative);
+            put(deltaOfDelta, 6, 0b1111111110, 10);
         } else if (deltaOfDelta < 0b1000000) {
-            put(deltaOfDelta, 7, 0b11111111110, 11, isNegative);
+            put(deltaOfDelta, 7, 0b11111111110, 11);
         } else if (deltaOfDelta < 0b10000000) {
-            put(deltaOfDelta, 8, 0b111111111110, 12, isNegative);
+            put(deltaOfDelta, 8, 0b111111111110, 12);
         } else if (deltaOfDelta < 0b100000000) {
-            put(deltaOfDelta, 9, 0b1111111111110, 13, isNegative);
+            put(deltaOfDelta, 9, 0b1111111111110, 13);
         } else if (deltaOfDelta < 0b1000000000) {
-            put(deltaOfDelta, 10, 0b11111111111110, 14, isNegative);
+            put(deltaOfDelta, 10, 0b11111111111110, 14);
         } else if (deltaOfDelta < 0b10000000000) {
-            put(deltaOfDelta, 11, 0b111111111111110, 15, isNegative);
+            put(deltaOfDelta, 11, 0b111111111111110, 15);
         } else if (deltaOfDelta < 0b100000000000) {
-            put(deltaOfDelta, 12, 0b1111111111111110, 16, isNegative);
+            put(deltaOfDelta, 12, 0b1111111111111110, 16);
         } else if (deltaOfDelta < 0b1000000000000) {
-            put(deltaOfDelta, 13, 0b11111111111111110, 17, isNegative);
+            put(deltaOfDelta, 13, 0b11111111111111110, 17);
         } else if (deltaOfDelta < 0b10000000000000) {
-            put(deltaOfDelta, 14, 0b111111111111111110, 18, isNegative);
+            put(deltaOfDelta, 14, 0b111111111111111110, 18);
         } else if (deltaOfDelta < 0b100000000000000) {
-            put(deltaOfDelta, 15, 0b1111111111111111110, 19, isNegative);
+            put(deltaOfDelta, 15, 0b1111111111111111110, 19);
         } else if (deltaOfDelta < 0b1000000000000000) {
-            put(deltaOfDelta, 16, 0b11111111111111111110, 20, isNegative);
+            put(deltaOfDelta, 16, 0b11111111111111111110, 20);
         } else if (deltaOfDelta < 0b10000000000000000) {
-            put(deltaOfDelta, 17, 0b111111111111111111110, 21, isNegative);
+            put(deltaOfDelta, 17, 0b111111111111111111110, 21);
         } else if (deltaOfDelta < 0b100000000000000000) {
-            put(deltaOfDelta, 18, 0b1111111111111111111110, 22, isNegative);
+            put(deltaOfDelta, 18, 0b1111111111111111111110, 22);
         } else if (deltaOfDelta < 0b1000000000000000000) {
-            put(deltaOfDelta, 19, 0b11111111111111111111110, 23, isNegative);
+            put(deltaOfDelta, 19, 0b11111111111111111111110, 23);
         } else if (deltaOfDelta < 0b10000000000000000000) {
-            put(deltaOfDelta, 20, 0b111111111111111111111110, 24, isNegative);
+            put(deltaOfDelta, 20, 0b111111111111111111111110, 24);
         } else if (deltaOfDelta < 0b100000000000000000000) {
-            put(deltaOfDelta, 21, 0b1111111111111111111111110, 25, isNegative);
+            put(deltaOfDelta, 21, 0b1111111111111111111111110, 25);
         } else if (deltaOfDelta < 0b1000000000000000000000) {
-            put(deltaOfDelta, 22, 0b11111111111111111111111110, 26, isNegative);
+            put(deltaOfDelta, 22, 0b11111111111111111111111110, 26);
         } else if (deltaOfDelta < 0b10000000000000000000000) {
-            put(deltaOfDelta, 23, 0b111111111111111111111111110, 27, isNegative);
+            put(deltaOfDelta, 23, 0b111111111111111111111111110, 27);
         } else if (deltaOfDelta < 0b100000000000000000000000) {
-            put(deltaOfDelta, 24, 0b1111111111111111111111111110, 28, isNegative);
+            put(deltaOfDelta, 24, 0b1111111111111111111111111110, 28);
         } else if (deltaOfDelta < 0b1000000000000000000000000) {
-            put(deltaOfDelta, 25, 0b11111111111111111111111111110, 29, isNegative);
+            put(deltaOfDelta, 25, 0b11111111111111111111111111110, 29);
         } else if (deltaOfDelta < 0b10000000000000000000000000) {
-            put(deltaOfDelta, 26, 0b111111111111111111111111111110, 30, isNegative);
+            put(deltaOfDelta, 26, 0b111111111111111111111111111110, 30);
         } else if (deltaOfDelta < 0b100000000000000000000000000) {
-            put(deltaOfDelta, 27, 0b1111111111111111111111111111110, 31, isNegative);
+            put(deltaOfDelta, 27, 0b1111111111111111111111111111110, 31);
         } else if (deltaOfDelta < 0b1000000000000000000000000000) {
-            put(deltaOfDelta, 28, 0b11111111111111111111111111111110, 32, isNegative);
+            put(deltaOfDelta, 28, 0b11111111111111111111111111111110, 32);
+        } else {
+            System.out.println();
         }
     }
 
-    private void put(int bits, int bitsInValue, int controlValue, int controlValueBitLength, boolean isNegative) {
+    private void put(int bits, int bitsInValue, int controlValue, int controlValueBitLength) {
         put(controlValue, controlValueBitLength);
-
-        if (isNegative) {
-            bits = (bits << 1) | 1;
-        }
-        put(bits, bitsInValue + 1);
+        put(bits, bitsInValue);
     }
 
     private void put(int bits, int bitsInValue) {
@@ -152,17 +145,9 @@ public class Encoder {
             buf.putInt(value);
         }
 
-        buf.flip();
-
         bitsAvailable = 0;
         value = 0;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("buf size:").append(buf.limit());
-        for (int i = 0; i < stat.length; i++) {
-            sb.append("[").append(i).append(",").append(stat[i]).append("]");
-        }
-        Utils.print(sb.toString());
+        buf.clear();
     }
 
     public void resetDelta() {
