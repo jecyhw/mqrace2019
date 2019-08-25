@@ -61,6 +61,7 @@ public class Tester {
         Decoder decoder = new Decoder();
         long[] t = new long[10];
         decoder.decode(buf, t, 1, 0, 4);
+        System.out.println();
     }
 
     private static void VariableUtilsTest() {

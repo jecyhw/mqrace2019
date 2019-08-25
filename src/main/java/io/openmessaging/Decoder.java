@@ -23,11 +23,13 @@ public class Decoder {
             int deltaOfDelta = 0;
             if (getBits(1) != 0) {
                 if (getBits(1) == 0) {
+                    deltaOfDelta = -1;
+                } else if (getBits(1) == 0) {
                     deltaOfDelta = 1;
                 } else if (getBits(1) == 0) {
+                    deltaOfDelta = -2;
+                }  else if (getBits(1) == 0) {
                     deltaOfDelta = 2;
-                } else if (getBits(1) == 0) {
-                    deltaOfDelta = 3;
                 } else {
                     int bitsValue = getAdaptive();
                     deltaOfDelta = getDeltaOfDelta(bitsValue);
@@ -39,16 +41,14 @@ public class Decoder {
     }
 
     private int getDeltaOfDelta(int bitsValue) {
-        return (bitsValue & 1) == 0 ? bitsValue >> 1 : -(bitsValue >> 1);
-    }
-
-    private int _decode(long[] t, int pos, int delta) {
-
-        return delta;
+        return (bitsValue & 1) == 0 ? ((bitsValue >> 1) + Const.T_DECREASE) : -((bitsValue >> 1) + Const.T_DECREASE);
     }
 
     private int getAdaptive() {
         if (getBits(1) == 0) {
+            return getBits(2);
+        }
+        else  if (getBits(1) == 0) {
             return getBits(3);
         }
         else  if (getBits(1) == 0) {
@@ -63,10 +63,10 @@ public class Decoder {
         else  if (getBits(1) == 0) {
             return getBits(7);
         }
-        else  if (getBits(1) == 0) {
+        else   if (getBits(1) == 0) {
             return getBits(8);
         }
-        else   if (getBits(1) == 0) {
+        else  if (getBits(1) == 0) {
             return getBits(9);
         }
         else  if (getBits(1) == 0) {
@@ -75,16 +75,16 @@ public class Decoder {
         else  if (getBits(1) == 0) {
             return getBits(11);
         }
-        else  if (getBits(1) == 0) {
+        else   if (getBits(1) == 0) {
             return getBits(12);
         }
-        else   if (getBits(1) == 0) {
+        else  if (getBits(1) == 0) {
             return getBits(13);
         }
         else  if (getBits(1) == 0) {
             return getBits(14);
         }
-        else  if (getBits(1) == 0) {
+        else if (getBits(1) == 0) {
             return getBits(15);
         }
         else if (getBits(1) == 0) {
@@ -120,7 +120,7 @@ public class Decoder {
         else if (getBits(1) == 0) {
             return getBits(26);
         }
-        else if (getBits(1) == 0) {
+        if (getBits(1) == 0) {
             return getBits(27);
         }
         if (getBits(1) == 0) {
@@ -128,9 +128,6 @@ public class Decoder {
         }
         if (getBits(1) == 0) {
             return getBits(29);
-        }
-        if (getBits(1) == 0) {
-            return getBits(30);
         }
         return 0;
     }
@@ -161,10 +158,8 @@ public class Decoder {
     }
 
     private void getInt() {
-        if (bitsAvailable == 0) {
-            bits = buf.getInt();
-            bitsAvailable = Integer.SIZE;
-        }
+        bits = buf.getInt();
+        bitsAvailable = Integer.SIZE;
     }
 
 }

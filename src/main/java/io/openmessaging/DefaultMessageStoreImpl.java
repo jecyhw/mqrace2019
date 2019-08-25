@@ -79,8 +79,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        GetItem getItem = getBufThreadLocal.get();
-
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
                 if (isFirstGet) {
@@ -120,7 +118,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 //                getAvgValue(6740781, 6840781, 6763632, 6778579);
             }
         }
-
+        GetItem getItem = getBufThreadLocal.get();
         int messageFileSize = messageFiles.size();
 
         List<List<Message>> messagesList = new ArrayList<>(messageFileSize);

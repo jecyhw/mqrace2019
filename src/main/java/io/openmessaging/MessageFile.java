@@ -143,6 +143,7 @@ public class MessageFile {
             }
 
             long[] ts = getItem.ts;
+            rangePosInPrimaryIndex(0, indexBufEleCount, ts, getItem.decoder, tBuf);
             int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem.decoder, tBuf);
 
             int realMinPos = minPos * Const.INDEX_INTERVAL;
@@ -288,24 +289,24 @@ public class MessageFile {
      * @return 返回读取的条数
      */
     private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, Decoder decoder, ByteBuffer tBuf) {
+        int lastInterval = 0;
         if (maxPos == indexBufEleCount) {
             maxPos--;
             int destOffset = (maxPos - minPos) * Const.INDEX_INTERVAL;
             destT[destOffset] = tArr[maxPos];
-            decoder.decode(tBuf, destT, destOffset + 1,  offsetArr[maxPos], putCount % Const.INDEX_INTERVAL - 1);
+            lastInterval = putCount % Const.INDEX_INTERVAL;
+            decoder.decode(tBuf, destT, destOffset + 1,  offsetArr[maxPos], lastInterval - 1);
         }
-        //数据可能会存在多个块中
+
         int destOffset = 0;
         while (minPos < maxPos) {
-            //得到索引内存中这个位置的t值
             destT[destOffset] = tArr[minPos];
-            //得到这个t的下一个t在内存块的位置
             decoder.decode(tBuf, destT, destOffset + 1, offsetArr[minPos], Const.INDEX_INTERVAL - 1);
             destOffset += Const.INDEX_INTERVAL;
 
             minPos++;
         }
-        return destOffset;
+        return destOffset + lastInterval;
     }
 
     /**

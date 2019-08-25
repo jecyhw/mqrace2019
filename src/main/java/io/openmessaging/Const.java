@@ -28,6 +28,7 @@ public interface Const {
     //INDEX_INTERVAL 128，INDEX_ELE_LENGTH=1400000
 
     int A_DECREASE = 1;
+    int T_DECREASE = 3; //取值范围 0-3
 
     int MAX_GET_MSG_SIZE = 10 * 10000;
 
