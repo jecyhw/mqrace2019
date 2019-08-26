@@ -22,10 +22,11 @@ public class AEncoder extends AbstractEncoder {
         put(aBitsAvailable - 1, Const.A_BIT_LENGTH);
 
         int diff = aBitsAvailable - lastABitsAvailable;
+        lastABitsAvailable = aBitsAvailable;
         if (diff >= 0) {
             stat[diff]++;
         } else {
-            stat[-diff + 128]++;
+            stat[128 - diff]++;
         }
 
         putData(a, aBitsAvailable);

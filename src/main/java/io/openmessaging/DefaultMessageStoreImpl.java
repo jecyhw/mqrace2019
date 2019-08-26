@@ -109,8 +109,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
                         sb.append("[").append(i).append(",").append(a[i]).append("]");
                     }
                     sb.append("\n");
-                    sb.append("byteLen").append(byteLen / 8).append("shortLen").append(shortLen / 8)
-                            .append("intLen").append(intLen/ 8).append("longLen").append(longLen / 8).append("\n");
+                    sb.append("byteLen").append(byteLen / 96).append("shortLen").append(shortLen / 96)
+                            .append("intLen").append(intLen/ 96).append("longLen").append(longLen / 96).append("\n");
 
 
                     Utils.print(sb.toString());
