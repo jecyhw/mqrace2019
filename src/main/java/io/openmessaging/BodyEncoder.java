@@ -61,22 +61,47 @@ public class BodyEncoder extends AbstractEncoder {
         }
     }
 
+
     public int getBitsAvailable(long val) {
         if (val == 0) {
             return 1;
         }
+        return getABitsAvailable(val) * 2 + 2;
+    }
 
-        val = Math.abs(val) - 1;
-        if (val == 0) {
-            return 4;
+    private int getABitsAvailable(long a) {
+        int t = (int) (a >> 32);
+        if (t == 0) {
+            return 32 - _getABitsAvailable((int) a);
+        } else {
+            return 64 - _getABitsAvailable(t);
         }
+    }
 
-        int cnt = 0;
-        while (val > 0) {
-            cnt++;
-            val >>= 1;
+    private int _getABitsAvailable(int a) {
+        int n;
+        if (a == 0) {
+            return 31;
         }
-        return cnt * 2 + 2;
+        n = 1;
+        if ((a >>> 16) == 0) {
+            n = n + 16;
+            a = a << 16;
+        }
+        if ((a >>> 24) == 0) {
+            n = n + 8;
+            a = a << 8;
+        }
+        if ((a >>> 28) == 0) {
+            n = n + 4;
+            a = a << 4;
+        }
+        if ((a >>> 30) == 0) {
+            n = n + 2;
+            a = a << 2;
+        }
+        n = n - (a >>> 31);
+        return n;
     }
 
     public int getEncodeWithSigh(long val) {
