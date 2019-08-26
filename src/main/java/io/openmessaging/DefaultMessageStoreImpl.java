@@ -85,6 +85,24 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     for (int i = messageFiles.size() - 1; i >= 0; i--) {
                         messageFiles.get(i).flush();
                     }
+
+                    long[] a = new long[256];
+                    for (int i = messageFiles.size() - 1; i >= 0; i--) {
+                        long[] stat = messageFiles.get(i).aEncoder.stat;
+                        for (int j = 0; j < stat.length; j++) {
+                            a[j] += stat[j];
+                        }
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < a.length; i++) {
+                        if (a[i] == 0) {
+                            continue;
+                        }
+                        sb.append("[").append(i).append(",").append(a[i]).append("]");
+                    }
+                    sb.append("\n");
+                    Utils.print(sb.toString());
+
                     Monitor.getMsgStart();
                     isFirstGet = false;
                 }

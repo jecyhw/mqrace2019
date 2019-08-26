@@ -39,7 +39,7 @@ public class MessageFile {
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private RandomAccessFile aFile;
     private FileChannel aFc;
-    private AEncoder aEncoder = new AEncoder(aBuf);
+    AEncoder aEncoder = new AEncoder(aBuf);
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
 

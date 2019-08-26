@@ -12,12 +12,22 @@ public class AEncoder extends AbstractEncoder {
         super(buf);
     }
 
+    public int lastABitsAvailable = 0;
+    public long[] stat = new long[256];
 
     public void encode(long a) {
         int aBitsAvailable;
 
         aBitsAvailable = getABitsAvailable(a);
         put(aBitsAvailable - 1, Const.A_BIT_LENGTH);
+
+        int diff = aBitsAvailable = lastABitsAvailable;
+        if (diff >= 0) {
+            stat[diff]++;
+        } else {
+            stat[-diff + 128]++;
+        }
+
         putData(a, aBitsAvailable);
     }
 
