@@ -34,7 +34,7 @@ public class MessageFile {
     private final byte[] uncompressMsgData = new byte[Const.COMPRESS_MSG_SIZE];
     private int uncompressMsgDataPos = 0;
     private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
-
+    BodyEncoder bodyEncoder = new BodyEncoder();
 
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private RandomAccessFile aFile;

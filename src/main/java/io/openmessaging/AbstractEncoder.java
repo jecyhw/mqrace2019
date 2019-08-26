@@ -6,9 +6,13 @@ import java.nio.ByteBuffer;
  * Created by yanghuiwei on 2019-08-25
  */
 public abstract class AbstractEncoder {
-    final ByteBuffer buf;
+    ByteBuffer buf;
     int bitsAvailable = Integer.SIZE;
     int value = 0;
+
+    public AbstractEncoder() {
+
+    }
 
     public AbstractEncoder(ByteBuffer buf) {
         this.buf = buf;

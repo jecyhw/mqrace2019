@@ -87,11 +87,19 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     }
 
                     long[] a = new long[256];
+                    long byteLen = 0, shortLen = 0, intLen = 0, longLen = 0;
+
                     for (int i = messageFiles.size() - 1; i >= 0; i--) {
-                        long[] stat = messageFiles.get(i).aEncoder.stat;
+                        MessageFile messageFile = messageFiles.get(i);
+                        long[] stat = messageFile.aEncoder.stat;
                         for (int j = 0; j < stat.length; j++) {
                             a[j] += stat[j];
                         }
+                        BodyEncoder bodyEncoder = messageFile.bodyEncoder;
+                        byteLen += bodyEncoder.byteLen;
+                        shortLen += bodyEncoder.shortLen;
+                        intLen += bodyEncoder.intLen;
+                        longLen += bodyEncoder.longLen;
                     }
                     StringBuilder sb = new StringBuilder();
                     for (int i = 0; i < a.length; i++) {
@@ -101,6 +109,10 @@ public class DefaultMessageStoreImpl extends MessageStore {
                         sb.append("[").append(i).append(",").append(a[i]).append("]");
                     }
                     sb.append("\n");
+                    sb.append("byteLen").append(byteLen).append("shortLen").append(shortLen)
+                            .append("intLen").append(intLen).append("longLen").append(longLen).append("\n");
+
+
                     Utils.print(sb.toString());
 
                     Monitor.getMsgStart();
