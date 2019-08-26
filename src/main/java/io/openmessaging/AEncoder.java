@@ -16,10 +16,8 @@ public class AEncoder extends AbstractEncoder {
     public void encode(long a) {
         int aBitsAvailable;
 
-        //符号位长度可以优化
         aBitsAvailable = getABitsAvailable(a);
-        //7位长度+1位符号位
-        put(aBitsAvailable, 7);
+        put(aBitsAvailable - 1, Const.A_BIT_LENGTH);
         putData(a, aBitsAvailable);
     }
 
@@ -46,7 +44,7 @@ public class AEncoder extends AbstractEncoder {
     private int _getABitsAvailable(int a) {
         int n;
         if (a == 0) {
-            return 32;
+            return 31;
         }
         n = 1;
         if ((a >>> 16) == 0) {

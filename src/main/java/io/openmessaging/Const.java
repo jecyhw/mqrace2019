@@ -37,5 +37,7 @@ public interface Const {
 
     boolean PRINT_LOG = true;
 
+    int A_BIT_LENGTH = 6;
+
     int DEST = 27000;
 }

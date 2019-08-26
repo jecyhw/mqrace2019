@@ -59,12 +59,4 @@ public abstract class AbstractDecoder {
         bits = buf.getInt();
         bitsAvailable = Integer.SIZE;
     }
-
-    /**
-     * 获取当前的比特位个数
-     * @return
-     */
-    public int getBitPosition() {
-        return buf.position() * 8 + (Integer.SIZE - bitsAvailable);
-    }
 }

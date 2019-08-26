@@ -8,7 +8,7 @@ public class ADecoder extends AbstractDecoder {
     public void decode(long[] a, int aPos, int readLen) {
         //先读第一个
         for (int i = 0; i < readLen; i++, aPos++) {
-            int aBitsAvailable = getBits(7);
+            int aBitsAvailable = getBits(Const.A_BIT_LENGTH) + 1;
             a[aPos] = getData(aBitsAvailable);
         }
     }
