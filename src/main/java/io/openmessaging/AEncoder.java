@@ -1,19 +1,18 @@
 package io.openmessaging;
 
 import java.nio.ByteBuffer;
-import java.util.Random;
 
 /**
  * Created by yanghuiwei on 2019-08-25
  */
 public class AEncoder extends AbstractEncoder {
+    long aLenBits = 0;
 
     public AEncoder(ByteBuffer buf) {
         super(buf);
     }
 
     public int lastABitsAvailable = 0;
-    public long[] stat = new long[256];
 
     public void encode(long a) {
         int aBitsAvailable;
@@ -23,13 +22,37 @@ public class AEncoder extends AbstractEncoder {
 
         int diff = aBitsAvailable - lastABitsAvailable;
         lastABitsAvailable = aBitsAvailable;
-        if (diff >= 0) {
-            stat[diff]++;
-        } else {
-            stat[128 - diff]++;
-        }
+
+        aLenBits += getBits(diff);
 
         putData(a, aBitsAvailable);
+    }
+
+    private int getBits(int diff) {
+        if (diff == 0) {
+            return 1;
+        }
+        if (diff == -1) {
+            return 2;
+        }
+        if (diff == 1) {
+            return 3;
+        }
+        if (diff == -2) {
+            return 4;
+        } else if (diff == 2) {
+            return 5;
+        } else if (diff == -3) {
+            return 6;
+        } else if (diff == 3) {
+            return 7;
+        } else {
+            if (diff < 0) {
+                diff = -diff;
+            }
+            diff -= 4;
+            return getABitsAvailable(diff) * 2 + 8;
+        }
     }
 
     private void putData(long a, int aBitsAvailable) {

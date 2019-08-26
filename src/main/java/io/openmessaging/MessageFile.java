@@ -44,7 +44,7 @@ public class MessageFile {
     private int aLastBitPosition = 0;
 
     //put计数
-    private int putCount = 0;
+    int putCount = 0;
 
     //索引内存数组
     //indexBufs存的元素个数

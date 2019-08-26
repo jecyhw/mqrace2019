@@ -86,28 +86,21 @@ public class DefaultMessageStoreImpl extends MessageStore {
                         messageFiles.get(i).flush();
                     }
 
-                    long[] a = new long[256];
-                    long byteLen = 0, shortLen = 0, intLen = 0, longLen = 0;
+                    long aLenBits = 0, aAcLenBits = 0;
+                    long intLen = 0, longLen = 0;
 
                     for (int i = messageFiles.size() - 1; i >= 0; i--) {
                         MessageFile messageFile = messageFiles.get(i);
-                        long[] stat = messageFile.aEncoder.stat;
-                        for (int j = 0; j < stat.length; j++) {
-                            a[j] += stat[j];
-                        }
+                        aLenBits += messageFile.aEncoder.aLenBits;
+                        aAcLenBits += messageFile.putCount * 6;
+
                         BodyEncoder bodyEncoder = messageFile.bodyEncoder;
                         intLen += bodyEncoder.intLen;
                         longLen += bodyEncoder.longLen;
                     }
                     StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < a.length; i++) {
-                        if (a[i] == 0) {
-                            continue;
-                        }
-                        sb.append("[").append(i).append(",").append(a[i]).append("]");
-                    }
-                    sb.append("\n");
-                    sb.append(" byteLen").append(byteLen / 96).append(" shortLen").append(shortLen / 96)
+
+                    sb.append(" aLenBits").append(aLenBits / 8).append(" aAcLenBits").append(aAcLenBits / 8)
                             .append(" intLen").append(intLen/ 96).append(" longLen").append(longLen / 96).append("\n");
 
 

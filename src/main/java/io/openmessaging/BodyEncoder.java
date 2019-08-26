@@ -33,7 +33,6 @@ public class BodyEncoder extends AbstractEncoder {
 
     private void statShort(ByteBuffer bodyBuf) {
         bodyBuf.clear();
-        prevBodyBuf.clear();
         while (bodyBuf.remaining() > 8) {
             long diff = Math.abs(bodyBuf.getLong());
             intLen += getABitsAvailable(diff) + 7;
