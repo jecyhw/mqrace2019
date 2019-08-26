@@ -27,20 +27,20 @@ public class BodyEncoder extends AbstractEncoder {
         bodyBuf.clear();
         prevBodyBuf.clear();
         while (bodyBuf.remaining() > 8) {
-            long diff = bodyBuf.getLong() - prevBodyBuf.getLong();
-            longLen += getBitsAvailable(diff);
+            long diff = Math.abs(bodyBuf.getLong() - prevBodyBuf.getLong());
+            longLen += getABitsAvailable(diff) + 7;
         }
-        intLen += getBitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort());
+        intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 7;
     }
 
     private void statInt(ByteBuffer bodyBuf) {
         bodyBuf.clear();
         prevBodyBuf.clear();
         while (bodyBuf.remaining() > 4) {
-            long diff = bodyBuf.getInt() - prevBodyBuf.getInt();
-            intLen += getBitsAvailable(diff);
+            long diff = Math.abs(bodyBuf.getInt() - prevBodyBuf.getInt());
+            intLen += getABitsAvailable(diff) + 5;
         }
-        intLen += getBitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort());
+        intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 5;
     }
 
     private void statShort(ByteBuffer bodyBuf) {
