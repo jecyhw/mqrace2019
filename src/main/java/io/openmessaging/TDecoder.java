@@ -52,13 +52,13 @@ public class TDecoder extends AbstractDecoder {
         if (getBits(1) == 0) {
             return 0;
         } else if (getBits(1) == 0) {
-            return  -1;
+            return -1;
         } else if (getBits(1) == 0) {
-            return  1;
+            return 1;
         } else if (getBits(1) == 0) {
-            return  -2;
+            return -2;
         } else if (getBits(1) == 0) {
-            return  2;
+            return 2;
         } else {
             return getAdaptiveDeltaOfDelta(getAdaptive());
         }
@@ -71,86 +71,59 @@ public class TDecoder extends AbstractDecoder {
     private int getAdaptive() {
         if (getBits(1) == 0) {
             return getBits(2);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(3);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(4);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(5);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(6);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(7);
-        }
-        else   if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(8);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(9);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(10);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(11);
-        }
-        else   if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(12);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(13);
-        }
-        else  if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(14);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(15);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(16);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(17);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(18);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(19);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(20);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(21);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(22);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(23);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(24);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(25);
-        }
-        else if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(26);
-        }
-        if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(27);
-        }
-        if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(28);
-        }
-        if (getBits(1) == 0) {
+        } else if (getBits(1) == 0) {
             return getBits(29);
         }
         return 0;

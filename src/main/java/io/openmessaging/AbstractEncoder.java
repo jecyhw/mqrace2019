@@ -79,4 +79,39 @@ public abstract class AbstractEncoder {
         value = 0;
         buf.clear();
     }
+
+    int getNumBitsAvailable(long num) {
+        int t = (int) (num >> 32);
+        if (t == 0) {
+            return 32 - _getNumBitsAvailable((int) num);
+        } else {
+            return 64 - _getNumBitsAvailable(t);
+        }
+    }
+
+    private int _getNumBitsAvailable(int a) {
+        int n;
+        if (a == 0) {
+            return 31;
+        }
+        n = 1;
+        if ((a >>> 16) == 0) {
+            n = n + 16;
+            a = a << 16;
+        }
+        if ((a >>> 24) == 0) {
+            n = n + 8;
+            a = a << 8;
+        }
+        if ((a >>> 28) == 0) {
+            n = n + 4;
+            a = a << 4;
+        }
+        if ((a >>> 30) == 0) {
+            n = n + 2;
+            a = a << 2;
+        }
+        n = n - (a >>> 31);
+        return n;
+    }
 }

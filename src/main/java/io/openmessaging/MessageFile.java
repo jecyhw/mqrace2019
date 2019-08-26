@@ -34,7 +34,6 @@ public class MessageFile {
     private final byte[] uncompressMsgData = new byte[Const.COMPRESS_MSG_SIZE];
     private int uncompressMsgDataPos = 0;
     private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
-    BodyEncoder bodyEncoder = new BodyEncoder();
 
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private RandomAccessFile aFile;
@@ -87,7 +86,7 @@ public class MessageFile {
                 aLastBitPosition = bitPosition;
             }
             //把第一个a也编码进去，省掉一个数组
-            aEncoder.encode(a);
+            aEncoder.encodeFirst(a);
 
             if (uncompressMsgDataPos == Const.COMPRESS_MSG_SIZE) {
                 compressMsgBody();
@@ -118,7 +117,6 @@ public class MessageFile {
 
         System.arraycopy(message.getBody(), 0, uncompressMsgData, uncompressMsgDataPos, Const.MSG_BYTES);
         uncompressMsgDataPos += Const.MSG_BYTES;
-        bodyEncoder.encode(message.getBody());
         lastT = t;
     }
 

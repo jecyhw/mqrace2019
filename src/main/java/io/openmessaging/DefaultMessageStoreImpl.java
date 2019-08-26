@@ -85,27 +85,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     for (int i = messageFiles.size() - 1; i >= 0; i--) {
                         messageFiles.get(i).flush();
                     }
-
-                    long aLenBits = 0, aAcLenBits = 0;
-                    long intLen = 0, longLen = 0;
-
-                    for (int i = messageFiles.size() - 1; i >= 0; i--) {
-                        MessageFile messageFile = messageFiles.get(i);
-                        aLenBits += messageFile.aEncoder.aLenBits;
-                        aAcLenBits += messageFile.putCount * 6;
-
-                        BodyEncoder bodyEncoder = messageFile.bodyEncoder;
-                        intLen += bodyEncoder.intLen;
-                        longLen += bodyEncoder.longLen;
-                    }
-                    StringBuilder sb = new StringBuilder();
-
-                    sb.append(" aLenBits").append(aLenBits / 8).append(" aAcLenBits").append(aAcLenBits / 8)
-                            .append(" intLen").append(intLen/ 96).append(" longLen").append(longLen / 96).append("\n");
-
-
-                    Utils.print(sb.toString());
-
                     Monitor.getMsgStart();
                     isFirstGet = false;
                 }

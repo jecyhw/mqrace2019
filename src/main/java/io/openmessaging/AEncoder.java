@@ -6,99 +6,97 @@ import java.nio.ByteBuffer;
  * Created by yanghuiwei on 2019-08-25
  */
 public class AEncoder extends AbstractEncoder {
-    long aLenBits = 0;
 
     public AEncoder(ByteBuffer buf) {
         super(buf);
     }
 
-    public int lastABitsAvailable = 0;
+    private int lastABitsAvailable = 0;
+
+    public void encodeFirst(long a) {
+        lastABitsAvailable = 0;
+        encode(a);
+    }
+
 
     public void encode(long a) {
-        int aBitsAvailable;
+        int aBitsAvailable = getNumBitsAvailable(a);
+        int deltaOfABitsAvailable = aBitsAvailable - lastABitsAvailable;
 
-        aBitsAvailable = getABitsAvailable(a);
-        put(aBitsAvailable - 1, Const.A_BIT_LENGTH);
+        encodeLength(deltaOfABitsAvailable);
+        putLong(a, aBitsAvailable);
 
-        int diff = aBitsAvailable - lastABitsAvailable;
         lastABitsAvailable = aBitsAvailable;
-
-        aLenBits += getBits(diff);
-
-        putData(a, aBitsAvailable);
     }
 
-    private int getBits(int diff) {
-        if (diff == 0) {
-            return 1;
+    private void encodeLength(int deltaOfABitsAvailable) {
+        if (deltaOfABitsAvailable == 0) {
+            putOnce(0, 1);
+            return;
         }
-        if (diff == -1) {
-            return 2;
+        if (deltaOfABitsAvailable == -1) {
+            put(0b10, 2);
+            return;
         }
-        if (diff == 1) {
-            return 3;
+        if (deltaOfABitsAvailable == 1) {
+            put(0b110, 3);
+            return;
         }
-        if (diff == -2) {
-            return 4;
-        } else if (diff == 2) {
-            return 5;
-        } else if (diff == -3) {
-            return 6;
-        } else if (diff == 3) {
-            return 7;
+        if (deltaOfABitsAvailable == -2) {
+            put(0b1110, 4);
+            return;
+        } else if (deltaOfABitsAvailable == 2) {
+            put(0b11110, 5);
+            return;
+        } else if (deltaOfABitsAvailable == -3) {
+            put(0b111110, 6);
+            return;
+        } else if (deltaOfABitsAvailable == 3) {
+            put(0b1111110, 7);
+            return;
         } else {
-            if (diff < 0) {
-                diff = -diff;
+            int sign = 0;
+            if (deltaOfABitsAvailable < 0) {
+                deltaOfABitsAvailable = -deltaOfABitsAvailable;
+                sign = 1;
             }
-            diff -= 4;
-            return getABitsAvailable(diff) * 2 + 8;
+            deltaOfABitsAvailable = deltaOfABitsAvailable - 4;
+            int deltaOfABitsAvailableSign = (deltaOfABitsAvailable << 1) | sign;
+
+            if (deltaOfABitsAvailable < 0b10) {
+                put(deltaOfABitsAvailableSign, 2, 0b11111110, 8);
+            } else if (deltaOfABitsAvailable < 0b100) {
+                put(deltaOfABitsAvailableSign, 3, 0b111111110, 9);
+            } else if (deltaOfABitsAvailable < 0b1000) {
+                put(deltaOfABitsAvailableSign, 4, 0b1111111110, 10);
+            } else if (deltaOfABitsAvailable < 0b10000) {
+                put(deltaOfABitsAvailableSign, 5, 0b11111111110, 11);
+            } else if (deltaOfABitsAvailable < 0b100000) {
+                put(deltaOfABitsAvailableSign, 6, 0b111111111110, 12);
+            } else if (deltaOfABitsAvailable < 0b1000000) {
+                put(deltaOfABitsAvailableSign, 7, 0b1111111111110, 13);
+            } else if (deltaOfABitsAvailable < 0b10000000) {
+                put(deltaOfABitsAvailableSign, 8, 0b11111111111110, 14);
+            } else if (deltaOfABitsAvailable < 0b100000000) {
+                put(deltaOfABitsAvailableSign, 9, 0b111111111111110, 15);
+            }
         }
     }
 
-    private void putData(long a, int aBitsAvailable) {
+    private void put(int bits, int bitsInValue, int controlValue, int controlValueBitLength) {
+        put(controlValue, controlValueBitLength);
+        put(bits, bitsInValue);
+    }
+
+    private void putLong(long a, int aBitsAvailable) {
         if (aBitsAvailable < 32) {
             put((int)a, aBitsAvailable);
         } else {
             //低31位
             int lowBit31 = ((int)a) & 0x7fffffff;
             put(lowBit31, 31);
-            putData(a >>> 31, aBitsAvailable - 31);
+            putLong(a >>> 31, aBitsAvailable - 31);
         }
-    }
-
-    private int getABitsAvailable(long a) {
-        int t = (int) (a >> 32);
-        if (t == 0) {
-            return 32 - _getABitsAvailable((int) a);
-        } else {
-            return 64 - _getABitsAvailable(t);
-        }
-    }
-
-    private int _getABitsAvailable(int a) {
-        int n;
-        if (a == 0) {
-            return 31;
-        }
-        n = 1;
-        if ((a >>> 16) == 0) {
-            n = n + 16;
-            a = a << 16;
-        }
-        if ((a >>> 24) == 0) {
-            n = n + 8;
-            a = a << 8;
-        }
-        if ((a >>> 28) == 0) {
-            n = n + 4;
-            a = a << 4;
-        }
-        if ((a >>> 30) == 0) {
-            n = n + 2;
-            a = a << 2;
-        }
-        n = n - (a >>> 31);
-        return n;
     }
 
     public boolean hasRemaining() {
