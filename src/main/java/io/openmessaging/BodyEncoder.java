@@ -30,7 +30,7 @@ public class BodyEncoder extends AbstractEncoder {
             long diff = Math.abs(bodyBuf.getLong() - prevBodyBuf.getLong());
             longLen += getABitsAvailable(diff) + 7;
         }
-        intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 7;
+        intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 5;
     }
 
     private void statInt(ByteBuffer bodyBuf) {
@@ -38,7 +38,7 @@ public class BodyEncoder extends AbstractEncoder {
         prevBodyBuf.clear();
         while (bodyBuf.remaining() > 4) {
             long diff = Math.abs(bodyBuf.getInt() - prevBodyBuf.getInt());
-            intLen += getABitsAvailable(diff) + 5;
+            intLen += getABitsAvailable(diff) + 6;
         }
         intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 5;
     }
@@ -47,8 +47,8 @@ public class BodyEncoder extends AbstractEncoder {
         bodyBuf.clear();
         prevBodyBuf.clear();
         while (bodyBuf.hasRemaining()) {
-            long diff = bodyBuf.getShort() - prevBodyBuf.getShort();
-            shortLen += getBitsAvailable(diff);
+            long diff = Math.abs(bodyBuf.getShort() - prevBodyBuf.getShort());
+            shortLen += getABitsAvailable(diff) + 5;
         }
     }
 
