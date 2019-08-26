@@ -26,19 +26,21 @@ public class BodyEncoder extends AbstractEncoder {
     private void statLong(ByteBuffer bodyBuf) {
         bodyBuf.clear();
         prevBodyBuf.clear();
-        while (bodyBuf.hasRemaining()) {
+        while (bodyBuf.remaining() > 8) {
             long diff = bodyBuf.getLong() - prevBodyBuf.getLong();
             longLen += getBitsAvailable(diff);
         }
+        intLen += getBitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort());
     }
 
     private void statInt(ByteBuffer bodyBuf) {
         bodyBuf.clear();
         prevBodyBuf.clear();
-        while (bodyBuf.hasRemaining()) {
+        while (bodyBuf.remaining() > 4) {
             long diff = bodyBuf.getInt() - prevBodyBuf.getInt();
             intLen += getBitsAvailable(diff);
         }
+        intLen += getBitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort());
     }
 
     private void statShort(ByteBuffer bodyBuf) {
