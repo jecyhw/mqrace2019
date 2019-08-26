@@ -56,7 +56,7 @@ public class AEncoder extends AbstractEncoder {
     }
 
     public boolean hasRemaining() {
-        return buf.remaining() > 8;
+        return buf.remaining() > 16;
     }
 
     public void clear() {
