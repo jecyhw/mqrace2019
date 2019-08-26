@@ -67,6 +67,10 @@ public class MessageFile {
     }
 
     public final void put(Message message) {
+        if (putCount % (1024 * 1024) == 0 || putCount < 128) {
+            print("func=putStat t=" + message.getT() + " " + Long.toHexString(message.getT()) + " a=" + message.getA() + " " + Long.toHexString(message.getA()) + " msg=" + Utils.bytesToHex(message.getBody()));
+        }
+
         long t = message.getT(), a = message.getA();
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
         if (putCount % Const.INDEX_INTERVAL == 0) {
