@@ -279,26 +279,12 @@ public class MessageFile {
         int cnt = 0;
         aDecoder.reset(readBuf, (int) (aOffsetArr[minPos] % 32));
 
-        int last = aDecoder.getBitPosition();
         while (minPos < maxPos) {
             as[cnt++] = aArr[minPos];
             int readLen = Math.min(len - cnt, Const.INDEX_INTERVAL - 1);
             aDecoder.decode(as, cnt, readLen);
-
-            if (aOffsetArr[minPos] + aDecoder.getBitPosition() - last != aOffsetArr[minPos + 1]) {
-                Utils.print("minPos:" + minPos + ",maxPos:" + maxPos + " len:" + len + " aOffsetArr[minPos]:" + aOffsetArr[minPos] + " diff:" + (aDecoder.getBitPosition() - last));
-            }
-            last = aDecoder.getBitPosition();
-
             cnt += readLen;
             minPos++;
-        }
-
-        Utils.print(Thread.currentThread().getName() + " minPos:" + minPos + ",maxPos:" + maxPos + " len:" + len + " cnt:" + cnt);
-        for (int i = 0; i < len; i++) {
-            if (as[i] < 0) {
-                Utils.print("minPos:" + minPos + ",maxPos:" + maxPos + " len:" + len + " i:" + i + " as[i]" + as[i]);
-            }
         }
     }
 

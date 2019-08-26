@@ -6,11 +6,11 @@ import java.nio.ByteBuffer;
  * Created by yanghuiwei on 2019-08-25
  */
 public abstract class AbstractDecoder {
-    private ByteBuffer buf;
+    ByteBuffer buf;
 
-    private int bitsAvailable = Integer.SIZE;
-    private int bitsInValue;
-    private int bits = 0;
+    int bitsAvailable = Integer.SIZE;
+    int bitsInValue;
+    int bits = 0;
 
     /**
      * 每次读取前需要重置下buf的开始位置
@@ -28,7 +28,7 @@ public abstract class AbstractDecoder {
 
     /**
      * 从buf中拿多少比特，bitsInValue=4表示从buf中往后拿4个比特位
-     * @param bitsInValue
+     * @param bitsInValue 最大31位
      * @return
      */
     public int getBits(int bitsInValue) {

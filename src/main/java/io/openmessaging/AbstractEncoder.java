@@ -7,8 +7,8 @@ import java.nio.ByteBuffer;
  */
 public abstract class AbstractEncoder {
     final ByteBuffer buf;
-    private int bitsAvailable = Integer.SIZE;
-    private int value = 0;
+    int bitsAvailable = Integer.SIZE;
+    int value = 0;
 
     public AbstractEncoder(ByteBuffer buf) {
         this.buf = buf;
@@ -17,7 +17,7 @@ public abstract class AbstractEncoder {
     /**
      * 把bits数放到buf中 example: bits=18 bitsInValue=5
      * @param bits
-     * @param bitsInValue 数的有效二进制位的个数
+     * @param bitsInValue 数的有效二进制位的个数，最大31位
      */
     public void put(int bits, int bitsInValue) {
         bitsInValue = putOnce(bits, bitsInValue);

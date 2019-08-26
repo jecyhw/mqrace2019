@@ -122,7 +122,6 @@ public class Monitor {
                 getMaxMsgNum = msgNum;
             }
             getMsgCount++;
-            Utils.print("getMsgCount:" + getMsgCount);
         }
     }
 

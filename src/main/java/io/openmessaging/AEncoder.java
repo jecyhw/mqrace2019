@@ -11,7 +11,7 @@ public class AEncoder extends AbstractEncoder {
         super(buf);
     }
     public void encode(long a) {
-        int bitsAvailable;
+        int aBitsNum;
         int signFlag = 0;
         if (a < 0) {
             a = -a;
@@ -19,17 +19,20 @@ public class AEncoder extends AbstractEncoder {
             signFlag = 1;
         }
         //符号位长度可以优化
-        bitsAvailable = getABitsAvailable(a);
+        aBitsNum = getABitsAvailable(a);
         //7位长度+1位符号位
-        put((bitsAvailable << 1) | signFlag, 8);
+        put((aBitsNum << 1) | signFlag, 8);
+        putData(a, aBitsNum);
+    }
 
-        if (bitsAvailable <= 32) {
-            put((int)a, bitsAvailable);
+    private void putData(long a, int aBitsNum) {
+        if (aBitsNum < 32) {
+            put((int)a, aBitsNum);
         } else {
-            int highBit32 = (int) (a >>> 32);
-            //先放高位，再放低位
-            put(highBit32, bitsAvailable - 32);
-            put((int)a, 32);
+            //低31位
+            int lowBit31 = ((int)a) & 0x7fffffff;
+            put(lowBit31, 31);
+            putData(a >>> 31, aBitsNum - 31);
         }
     }
 
