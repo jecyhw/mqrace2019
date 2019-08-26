@@ -14,11 +14,9 @@ public class BodyEncoder extends AbstractEncoder {
 
     public void encode(byte[] body) {
         ByteBuffer bodyBuf = ByteBuffer.wrap(body);
+        statShort(bodyBuf);
         if (prevBodyBuf != null) {
             statLong(bodyBuf);
-            statInt(bodyBuf);
-            statShort(bodyBuf);
-            statByte(bodyBuf);
         }
         prevBodyBuf = bodyBuf;
     }
@@ -33,40 +31,14 @@ public class BodyEncoder extends AbstractEncoder {
         intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 5;
     }
 
-    private void statInt(ByteBuffer bodyBuf) {
-        bodyBuf.clear();
-        prevBodyBuf.clear();
-        while (bodyBuf.remaining() > 4) {
-            long diff = Math.abs(bodyBuf.getInt() - prevBodyBuf.getInt());
-            intLen += getABitsAvailable(diff) + 6;
-        }
-        intLen += Math.abs(getABitsAvailable(bodyBuf.getShort() - prevBodyBuf.getShort())) + 5;
-    }
-
     private void statShort(ByteBuffer bodyBuf) {
         bodyBuf.clear();
         prevBodyBuf.clear();
-        while (bodyBuf.hasRemaining()) {
-            long diff = Math.abs(bodyBuf.getShort() - prevBodyBuf.getShort());
-            shortLen += getABitsAvailable(diff) + 5;
+        while (bodyBuf.remaining() > 8) {
+            long diff = Math.abs(bodyBuf.getLong());
+            longLen += getABitsAvailable(diff) + 7;
         }
-    }
-
-    private void statByte(ByteBuffer bodyBuf) {
-        bodyBuf.clear();
-        prevBodyBuf.clear();
-        while (bodyBuf.hasRemaining()) {
-            long diff = bodyBuf.get() - prevBodyBuf.get();
-            byteLen += getBitsAvailable(diff);
-        }
-    }
-
-
-    public int getBitsAvailable(long val) {
-        if (val == 0) {
-            return 1;
-        }
-        return getABitsAvailable(val) * 2 + 2;
+        intLen += Math.abs(getABitsAvailable(bodyBuf.getShort())) + 5;
     }
 
     private int getABitsAvailable(long a) {
