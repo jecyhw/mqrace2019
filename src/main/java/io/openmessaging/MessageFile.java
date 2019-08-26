@@ -118,7 +118,7 @@ public class MessageFile {
 
         System.arraycopy(message.getBody(), 0, uncompressMsgData, uncompressMsgDataPos, Const.MSG_BYTES);
         uncompressMsgDataPos += Const.MSG_BYTES;
-
+        bodyEncoder.encode(message.getBody());
         lastT = t;
     }
 
