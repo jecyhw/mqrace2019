@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 /**
  * Created by yanghuiwei on 2019-08-24
  */
-public class Decoder extends AbstractDecoder {
+public class TDecoder extends AbstractDecoder {
 
     public int getFirstGreatOrEqual(ByteBuffer buf, long t, long destT, int pos, int bitPos) {
         reset(buf, bitPos);

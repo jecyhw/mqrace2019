@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.openmessaging.Utils.print;
 
@@ -122,19 +121,13 @@ public class DefaultMessageStoreImpl extends MessageStore {
         GetItem getItem = getBufThreadLocal.get();
         int messageFileSize = messageFiles.size();
 
-        List<List<Message>> messagesList = new ArrayList<>(messageFileSize);
-
-        int totalMessageSize = 0;
+        List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);
+        getItem.messages = messages;
         for (int i = messageFileSize - 1; i >= 0; i--) {
-            List<Message> messages = messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs[i]);
-            totalMessageSize += messages.size();
-            messagesList.add(messages);
+            messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs[i]);
         }
 
-        List<Message> messages = new ArrayList<>(totalMessageSize);
-        for (int i = 0; i < messageFileSize; i++) {
-            messages.addAll(messagesList.get(i));
-        }
+
         messages.sort(messageComparator);
 //        long min = Math.max(aMin, tMin), max= Math.min(aMax, tMax);
 //        int count = (int) (max - min + 1);

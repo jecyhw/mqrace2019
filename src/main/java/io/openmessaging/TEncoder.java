@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 /**
  * Created by yanghuiwei on 2019-08-23
  */
-public class Encoder extends AbstractEncoder {
+public class TEncoder extends AbstractEncoder {
 
     private int delta = 0;
 
-    public Encoder(ByteBuffer buf) {
+    public TEncoder(ByteBuffer buf) {
         super(buf);
     }
 

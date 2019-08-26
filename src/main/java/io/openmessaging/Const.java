@@ -11,7 +11,7 @@ public interface Const {
 
     int MSG_BYTES = 34;
 
-    int PUT_BUFFER_SIZE = 1024 * 4096; // 16k写入
+    int PUT_BUFFER_SIZE = 1024 * 1024; // 16k写入
     int GET_BUFFER_SIZE = 1024 * 1024 * 4; //一次最多读取
     int MAX_MSG_CAPACITY = GET_BUFFER_SIZE / MSG_BYTES;
     int LONG_BYTES = 8;
@@ -30,7 +30,8 @@ public interface Const {
     int A_DECREASE = 1;
     int T_DECREASE = 3; //取值范围 0-3
 
-    int MAX_GET_MSG_SIZE = 10 * 10000;
+    int MAX_GET_AT_SIZE = 10 * 10000;
+    int MAX_GET_MESSAGE_SIZE = 7 * 10000;
 
     int COMPRESS_MSG_SIZE = INDEX_INTERVAL * Const.MSG_BYTES;
 

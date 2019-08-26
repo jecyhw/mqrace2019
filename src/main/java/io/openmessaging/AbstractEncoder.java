@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
  * Created by yanghuiwei on 2019-08-25
  */
 public abstract class AbstractEncoder {
-    private final ByteBuffer buf;
+    final ByteBuffer buf;
     private int bitsAvailable = Integer.SIZE;
     private int value = 0;
 
@@ -54,13 +54,23 @@ public abstract class AbstractEncoder {
     }
 
     /**
-     * 不在put时，将value写入到buf中
+     * 将最后一个数据刷到buf中
      */
     public void flush() {
         if (bitsAvailable != Integer.SIZE) {
             buf.putInt(value);
         }
+    }
 
+    /**
+     * 不在put时，将value写入到buf中
+     */
+    public void flushAndClear() {
+        flush();
+        reset();
+    }
+
+    private void reset() {
         bitsAvailable = 0;
         value = 0;
         buf.clear();

@@ -14,7 +14,7 @@ public class DemoTester {
     public static void main(String args[]) throws Exception {
         //评测相关配置
         //发送阶段的发送数量，也即发送阶段必须要在规定时间内把这些消息发送完毕方可
-        int msgNum  = 10000000;
+        int msgNum  = 1000000;
         //发送阶段的最大持续时间，也即在该时间内，如果消息依然没有发送完毕，则退出评测
         int sendTime = 10 * 60 * 1000;
         //查询阶段的最大持续时间，也即在该时间内，如果消息依然没有消费完毕，则退出评测
@@ -23,13 +23,13 @@ public class DemoTester {
         //正确性检测的次数
         int checkTimes = 10000;
         //发送的线程数量
-        int sendTsNum = 10;
+        int sendTsNum = 1;
         //查询的线程数量
-        int checkTsNum = 10;
+        int checkTsNum = 1;
         // 每次查询消息的最大跨度
-        int maxMsgCheckSize = 100000;
+        int maxMsgCheckSize = 50000;
         // 每次查询求平均的最大跨度
-        int maxValueCheckSize = 100000;
+        int maxValueCheckSize = 50000;
 
         MessageStore messageStore = null;
 
@@ -172,11 +172,11 @@ public class DemoTester {
                         tIndex1 = 0;
                     }
                     int tIndex2 = random.nextInt(maxCheckSize) + tIndex1;
-
-//                    aIndex1 = 9967593;
-//                    aIndex2 = 9999999;
-//                    tIndex1 = 9968852;
-//                    tIndex2 = 10037674;
+//
+//                    aIndex1 = 26081;
+//                    aIndex2 = 49999;
+//                    tIndex1 = 37298;
+//                    tIndex2 = 67463;
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);
 
@@ -266,10 +266,10 @@ public class DemoTester {
                     }
                     int tIndex2 = random.nextInt(maxCheckSize) + tIndex1;
 
-//                    aIndex1 = 41565;
+//                    aIndex1 = 26644;
 //                    aIndex2 = 49999;
-//                    tIndex1 = 44577;
-//                    tIndex2 = 48946;
+//                    tIndex1 = 29988;
+//                    tIndex2 = 62484;
 
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);

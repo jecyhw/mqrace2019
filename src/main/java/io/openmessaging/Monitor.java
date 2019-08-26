@@ -115,11 +115,14 @@ public class Monitor {
         gcBuilder.append(System.lineSeparator());
     }
 
+    static int getMsgCount = 0;
     public static void updateMaxMsgNum(int msgNum) {
         synchronized (Monitor.class) {
             if (msgNum > getMaxMsgNum) {
                 getMaxMsgNum = msgNum;
             }
+            getMsgCount++;
+            Utils.print("getMsgCount:" + getMsgCount);
         }
     }
 
@@ -143,7 +146,8 @@ public class Monitor {
                 .append(",get avg cost time:").append(getAvgTimes[getAvgCounter.get()] - getAvgTimes[0])
                 .append(",get avg cost time1:").append(System.currentTimeMillis() - getAvgTimes[0]);
 
-        sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum).append("\n");
+        sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum)
+                .append(",getMsgCount:").append(getMsgCount).append("\n");
         sb.append("[gc]---------------------------------------------" + System.lineSeparator());
         sb.append(gcBuilder.toString() + System.lineSeparator());
         Utils.print(sb.toString());
