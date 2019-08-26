@@ -7,8 +7,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -42,7 +40,6 @@ public class MessageFile {
     private RandomAccessFile aFile;
     private FileChannel aFc;
     private AEncoder aEncoder = new AEncoder(aBuf);
-    private final long[] aArr = new long[Const.INDEX_ELE_LENGTH];
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
     private long lastA;
@@ -81,12 +78,13 @@ public class MessageFile {
             tEncoder.resetDelta();
 
             //记录区间a的开始信息
-            aArr[pos] = a;
             if (pos > 0) {
                 int bitPosition = aEncoder.getBitPosition();
                 aOffsetArr[pos] = aOffsetArr[pos - 1] + (bitPosition - aLastBitPosition);
                 aLastBitPosition = bitPosition;
             }
+            //把第一个a也编码进去，省掉一个数组
+            aEncoder.encodeFirst(a);
 
             if (uncompressMsgDataPos == Const.COMPRESS_MSG_SIZE) {
                 compressMsgBody();
@@ -280,8 +278,7 @@ public class MessageFile {
         aDecoder.reset(readBuf, (int) (aOffsetArr[minPos] % 32));
 
         while (minPos < maxPos) {
-            as[cnt++] = aArr[minPos];
-            int readLen = Math.min(len - cnt, Const.INDEX_INTERVAL - 1);
+            int readLen = Math.min(len - cnt, Const.INDEX_INTERVAL);
             aDecoder.decode(as, cnt, readLen);
             cnt += readLen;
             minPos++;
@@ -432,7 +429,8 @@ public class MessageFile {
                     + " putCount:" + putCount + " aFilSize:" + aFile.length() + " compressMsgFileSize:" + msgFile.length()
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[indexBufEleCount - 1] / 8
-                    + " bufSize:"+ buf.limit());
+                    + " bufSize:"+ buf.limit()
+                    + " msgOffsetArr:" + msgOffsetArr[indexBufEleCount]);
         } catch (IOException e) {
             e.printStackTrace();
         }

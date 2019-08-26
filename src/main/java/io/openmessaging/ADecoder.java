@@ -6,7 +6,9 @@ package io.openmessaging;
 public class ADecoder extends AbstractDecoder {
 
     public void decode(long[] a, int aPos, int readLen) {
-        for (int i = 0; i < readLen; i++, aPos++) {
+        //先读第一个
+        a[aPos++] = getData(getBits(7));
+        for (int i = 1; i < readLen; i++, aPos++) {
             int aBitsAvailable = getBits(8);
             int signed = aBitsAvailable & 1;
             aBitsAvailable = aBitsAvailable >> 1;
