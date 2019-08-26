@@ -42,7 +42,6 @@ public class MessageFile {
     private AEncoder aEncoder = new AEncoder(aBuf);
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
-    private long lastA;
 
     //put计数
     private int putCount = 0;
@@ -88,7 +87,7 @@ public class MessageFile {
                 aLastBitPosition = bitPosition;
             }
             //把第一个a也编码进去，省掉一个数组
-            aEncoder.encodeFirst(a);
+            aEncoder.encode(a);
 
             if (uncompressMsgDataPos == Const.COMPRESS_MSG_SIZE) {
                 compressMsgBody();
@@ -112,7 +111,7 @@ public class MessageFile {
                 //aEncoder里面还有剩下的需要减掉
                 aLastBitPosition += aEncoder.getBitPosition();
             }
-            aEncoder.encode(a - lastA);
+            aEncoder.encode(a);
         }
 
         putCount++;
@@ -121,7 +120,6 @@ public class MessageFile {
         uncompressMsgDataPos += Const.MSG_BYTES;
 
         lastT = t;
-        lastA = a;
     }
 
     private void compressMsgBody() {

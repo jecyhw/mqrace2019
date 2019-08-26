@@ -11,24 +11,14 @@ public class AEncoder extends AbstractEncoder {
         super(buf);
     }
 
-    public void encodeFirst(long a) {
-        int aBitsAvailable = getABitsAvailable(a);
-        put(aBitsAvailable, 7);
-        putData(a, aBitsAvailable);
-    }
 
     public void encode(long a) {
         int aBitsAvailable;
-        int signFlag = 0;
-        if (a < 0) {
-            a = -a;
-            //最后一位记录符号位
-            signFlag = 1;
-        }
+
         //符号位长度可以优化
         aBitsAvailable = getABitsAvailable(a);
         //7位长度+1位符号位
-        put((aBitsAvailable << 1) | signFlag, 8);
+        put(aBitsAvailable, 7);
         putData(a, aBitsAvailable);
     }
 
