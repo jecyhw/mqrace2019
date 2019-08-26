@@ -96,8 +96,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
                             a[j] += stat[j];
                         }
                         BodyEncoder bodyEncoder = messageFile.bodyEncoder;
-                        byteLen += bodyEncoder.byteLen;
-                        shortLen += bodyEncoder.shortLen;
                         intLen += bodyEncoder.intLen;
                         longLen += bodyEncoder.longLen;
                     }

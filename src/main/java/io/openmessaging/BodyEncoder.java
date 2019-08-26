@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
  */
 public class BodyEncoder extends AbstractEncoder {
     private ByteBuffer prevBodyBuf = null;
-    long byteLen = 0, shortLen = 0, intLen = 0, longLen = 0;
+    long intLen = 0, longLen = 0;
 
     public BodyEncoder() {
     }
@@ -36,7 +36,7 @@ public class BodyEncoder extends AbstractEncoder {
         prevBodyBuf.clear();
         while (bodyBuf.remaining() > 8) {
             long diff = Math.abs(bodyBuf.getLong());
-            longLen += getABitsAvailable(diff) + 7;
+            intLen += getABitsAvailable(diff) + 7;
         }
         intLen += Math.abs(getABitsAvailable(bodyBuf.getShort())) + 5;
     }
