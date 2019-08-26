@@ -35,11 +35,13 @@ public class Tester {
     }
 
     public static void main(String[] args) {
-        testA();
         long a = 0x3ffffffffffffff3L;
         System.out.println(a);
-        int b = (int) (a >> 32), c = (int)a;
-        System.out.println(((long)b << 32) | (c & 0xffffffffL));
+        int  c = (int)a;
+        System.out.println(c);
+        System.out.println((c & 0xffffffffL));
+
+        testA();
         test();
         ByteBuffer byteBuffer = ByteBuffer.allocateDirect(1024);
         byteBuffer.limit(1024);

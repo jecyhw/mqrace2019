@@ -33,7 +33,7 @@ public class MessageFile {
     private FileChannel msgFc;
     private final byte[] uncompressMsgData = new byte[Const.COMPRESS_MSG_SIZE];
     private int uncompressMsgDataPos = 0;
-    private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
+    private final int[] msgOffsetArr = new int[Const.INDEX_ELE_LENGTH];
 
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private RandomAccessFile aFile;
@@ -92,7 +92,7 @@ public class MessageFile {
                 compressMsgBody();
             }
             //需要先压缩在赋值
-            msgOffsetArr[pos] = msgFileSize + msgDataPos;
+            msgOffsetArr[pos] = (int)(msgFileSize + msgDataPos);
 
             indexBufEleCount++;
 
@@ -199,8 +199,8 @@ public class MessageFile {
         ByteBuffer readBuf = getItem.buf;
 
         //计算要读取的msg
-        long startOffset = msgOffsetArr[minPos];
-        int len = (int)(msgOffsetArr[maxPos] - startOffset);
+        long startOffset = msgOffsetArr[minPos] & 0xffffffffL;
+        int len = (int)((msgOffsetArr[maxPos] & 0xffffffffL) - startOffset);
         readBuf.position(0);
         readBuf.limit(len);
         readInBuf(startOffset, readBuf, msgFc);
@@ -215,7 +215,7 @@ public class MessageFile {
         int _minPos = minPos;
         maxPos--;
         while (minPos <= maxPos) {
-            compressSize = (int)(msgOffsetArr[minPos + 1] - msgOffsetArr[minPos]);
+            compressSize = (int)((msgOffsetArr[minPos + 1] & 0xffffffffL) - (msgOffsetArr[minPos] & 0xffffffffL));
             Snappy.uncompress(compressMsgData, compressMsgDataPos, compressSize, uncompressMsgData, 0);
             compressMsgDataPos += compressSize;
             if (minPos == _minPos || minPos == maxPos) {
@@ -414,7 +414,7 @@ public class MessageFile {
         //最后一块进行压缩
         msgDataPos += Snappy.compress(uncompressMsgData, 0, Const.COMPRESS_MSG_SIZE, msgData, msgDataPos);
         flushMsg();
-        msgOffsetArr[indexBufEleCount] = msgFileSize + msgDataPos;
+        msgOffsetArr[indexBufEleCount] = (int) (msgFileSize + msgDataPos);
 
         aOffsetArr[indexBufEleCount] = aOffsetArr[indexBufEleCount - 1] + (aEncoder.getBitPosition() - aLastBitPosition);
         aEncoder.flush();
@@ -430,7 +430,7 @@ public class MessageFile {
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[indexBufEleCount - 1] / 8
                     + " bufSize:"+ buf.limit()
-                    + " msgOffsetArr:" + msgOffsetArr[indexBufEleCount]);
+                    + " msgOffsetArr:" + (msgOffsetArr[indexBufEleCount] & 0xffffffffL));
         } catch (IOException e) {
             e.printStackTrace();
         }
