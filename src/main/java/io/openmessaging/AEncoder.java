@@ -21,7 +21,7 @@ public class AEncoder extends AbstractEncoder {
         aBitsAvailable = getABitsAvailable(a);
         put(aBitsAvailable - 1, Const.A_BIT_LENGTH);
 
-        int diff = aBitsAvailable = lastABitsAvailable;
+        int diff = aBitsAvailable - lastABitsAvailable;
         if (diff >= 0) {
             stat[diff]++;
         } else {
