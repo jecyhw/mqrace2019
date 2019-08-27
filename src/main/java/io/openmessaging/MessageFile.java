@@ -42,6 +42,8 @@ public class MessageFile {
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
 
+    long readATime = 0;
+
     //put计数
     int putCount = 0;
 
@@ -265,7 +267,10 @@ public class MessageFile {
         int readBytes = (int) (endPos - startPos);
         readBuf.limit(readBytes);
         //必须是一次性拿
+        long start = System.currentTimeMillis();
         readInBuf(startPos, readBuf, aFc);
+        readATime += (System.currentTimeMillis() - start);
+
         readBuf.position(0);
         //放一个4字节的哨兵
         readBuf.limit(readBytes + 4);

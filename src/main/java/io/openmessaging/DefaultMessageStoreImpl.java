@@ -210,6 +210,12 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            StringBuilder sb = new StringBuilder();
+            for (MessageFile messageFile : messageFiles) {
+                sb.append("[readATime:").append(messageFile.readATime).append("]");
+            }
+            sb.append("\n");
+            Utils.print(sb.toString());
             Monitor.log();
         }));
     }
