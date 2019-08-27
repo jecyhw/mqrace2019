@@ -36,6 +36,9 @@ public class MessageFile {
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private FileChannel aFc;
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
+    private final long[] aMaxArr = new long[Const.INDEX_ELE_LENGTH];
+    private final long[] aMinArr = new long[Const.INDEX_ELE_LENGTH];
+    private final long[] aSumArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
     private ByteBuffer aCacheBlockBuf = AMemory.getCacheBuf();
     private boolean isCacheMode = true;
@@ -78,6 +81,10 @@ public class MessageFile {
             tOffsetArr[blockNum] = tEncoder.getBitPosition();
             tEncoder.resetDelta();
 
+            aMaxArr[blockNum] = a;
+            aMinArr[blockNum] = a;
+            aSumArr[blockNum] = a;
+
             //记录区间a的开始信息
             if (blockNum > 0) {
                 //更新a的块
@@ -97,6 +104,15 @@ public class MessageFile {
 
             blockNums++;
         } else {
+            int blockNum = blockNums;
+            if (aMaxArr[blockNum] < a) {
+                aMaxArr[blockNum] = a;
+            }
+            if (aMinArr[blockNum] > a) {
+                aMinArr[blockNum] = a;
+            }
+            aSumArr[blockNum] += a;
+
             tEncoder.encode((int) (t - lastT));
             aEncoder.encode(a);
             //检查body的buf是否还有空间
@@ -390,6 +406,10 @@ public class MessageFile {
         }
     }
 
+    static final AtomicInteger allCounter = new AtomicInteger(0);
+    static final AtomicInteger inCounter = new AtomicInteger(0);
+    static final AtomicInteger outCounter = new AtomicInteger(0);
+
     private void sumAInRangeT(int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
         int len = endPos - fromPos;
         long[] as = getItem.as;
@@ -406,6 +426,17 @@ public class MessageFile {
         long sum = 0;
         int count = 0;
         for (int i = filterNum; i < len; i++) {
+            if (i > 0 && i % Const.INDEX_INTERVAL == 0) {
+                minPos++;
+            }
+            if (aMaxArr[minPos] < aMin || aMinArr[minPos] > aMax) {
+                outCounter.incrementAndGet();
+            } else if (aMinArr[minPos] >= aMin && aMaxArr[minPos] <= aMax) {
+                inCounter.incrementAndGet();
+            } else {
+                allCounter.incrementAndGet();
+            }
+
             long a = as[i];
             if (a >= aMin && a <= aMax) {
                 sum += a;

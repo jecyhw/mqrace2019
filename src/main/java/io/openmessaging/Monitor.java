@@ -65,6 +65,8 @@ public class Monitor {
         sb.append("[log] score:").append(score).append(" putScore:").append(putScore).append(" getMsgScore:")
                 .append(getMsgScore).append(" getAvgScore:").append(getAvgScore).append("\n");
 
+        sb.append("in:").append(MessageFile.inCounter.get()).append(",out").append(MessageFile.outCounter.get())
+                .append(",all:").append(MessageFile.allCounter.get());
         Utils.print(sb.toString());
 
         if (getAvgTimes[getAvgCounter.get()] - getAvgTimes[0] > Const.DEST) {
