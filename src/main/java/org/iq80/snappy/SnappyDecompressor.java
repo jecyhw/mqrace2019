@@ -274,9 +274,6 @@ final class SnappyDecompressor
     private static void copyLiteral(byte[] input, int ipIndex, byte[] output, int opIndex, int length)
             throws CorruptionException
     {
-        assert length > 0;
-        assert ipIndex >= 0;
-        assert opIndex >= 0;
 
         int spaceLeft = output.length - opIndex;
         int readableBytes = input.length - ipIndex;

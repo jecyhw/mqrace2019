@@ -110,14 +110,11 @@ final class SnappyCompressor
             final short[] table)
     {
         int ipIndex = inputOffset;
-        assert inputSize <= BLOCK_SIZE;
         final int ipEndIndex = inputOffset + inputSize;
 
         int hashTableSize = getHashTableSize(inputSize);
         // todo given that hashTableSize is required to be a power of 2, this is overly complex
         final int shift = 32 - log2Floor(hashTableSize);
-        assert (hashTableSize & (hashTableSize - 1)) == 0 : "table must be power of two";
-        assert 0xFFFFFFFF >>> shift == hashTableSize - 1;
 
         // Bytes in [nextEmitIndex, ipIndex) will be emitted as literal bytes.  Or
         // [nextEmitIndex, ipEndIndex) after the main loop.
@@ -126,7 +123,6 @@ final class SnappyCompressor
         if (inputSize >= INPUT_MARGIN_BYTES) {
             final int ipLimit = inputOffset + inputSize - INPUT_MARGIN_BYTES;
             while (ipIndex <= ipLimit) {
-                assert nextEmitIndex <= ipIndex;
 
                 // The body of this loop calls EmitLiteral once and then EmitCopy one or
                 // more times.  (The exception is that when we're close to exhausting
@@ -166,7 +162,6 @@ final class SnappyCompressor
                 // Step 2: A 4-byte match has been found.  We'll later see if more
                 // than 4 bytes match.  But, prior to the match, input
                 // bytes [nextEmit, ip) are unmatched.  Emit them as "literal bytes."
-                assert nextEmitIndex + 16 <= ipEndIndex;
                 outputIndex = emitLiteral(output, outputIndex, input, nextEmitIndex, ipIndex - nextEmitIndex, true);
 
                 // Step 3: Call EmitCopy, and then see if another EmitCopy could
@@ -203,8 +198,6 @@ final class SnappyCompressor
 
             // get the position of a 4 bytes sequence with the same hash
             candidateIndex = inputOffset + table[hash];
-            assert candidateIndex >= 0;
-            assert candidateIndex < ipIndex;
 
             // update the hash to point to the current position
             table[hash] = (short) (ipIndex - inputOffset);
@@ -248,7 +241,6 @@ final class SnappyCompressor
             // "literal bytes" prior to ip.
             int matched = 4 + findMatchLength(input, candidateIndex + 4, input, ipIndex + 4, inputOffset + inputSize);
             int offset = ipIndex - candidateIndex;
-            assert SnappyInternalUtils.equals(input, ipIndex, input, candidateIndex, matched);
             ipIndex += matched;
 
             // emit the copy operation for this chunk
@@ -354,14 +346,9 @@ final class SnappyCompressor
             int offset,
             int length)
     {
-        assert offset >= 0;
-        assert length <= 64;
-        assert length >= 4;
-        assert offset < 65536;
 
         if ((length < 12) && (offset < 2048)) {
             int lenMinus4 = length - 4;
-            assert (lenMinus4 < 8);            // Must fit in 3 bits
             output[outputIndex++] = (byte) (COPY_1_BYTE_OFFSET | ((lenMinus4) << 2) | ((offset >>> 8) << 5));
             output[outputIndex++] = (byte) (offset);
         }
@@ -403,7 +390,6 @@ final class SnappyCompressor
             final int s2Index,
             int s2Limit)
     {
-        assert (s2Limit >= s2Index);
 
         if (SnappyInternalUtils.HAS_UNSAFE) {
             int matched = 0;
@@ -441,14 +427,11 @@ final class SnappyCompressor
         // fill the table, incurring O(hash table size) overhead for
         // compression, and if the input is short, we won't need that
         // many hash table entries anyway.
-        assert (MAX_HASH_TABLE_SIZE >= 256);
 
         int hashTableSize = 256;
         while (hashTableSize < MAX_HASH_TABLE_SIZE && hashTableSize < inputSize) {
             hashTableSize <<= 1;
         }
-        assert 0 == (hashTableSize & (hashTableSize - 1)) : "hash must be power of two";
-        assert hashTableSize <= MAX_HASH_TABLE_SIZE : "hash table too large";
         return hashTableSize;
 
 //        // todo should be faster but is not
