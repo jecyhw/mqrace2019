@@ -1,4 +1,4 @@
-package io.openmessaging;
+package io.openmessaging.codec;
 
 /**
  * Created by yanghuiwei on 2019-08-25

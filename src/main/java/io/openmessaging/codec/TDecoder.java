@@ -1,4 +1,7 @@
-package io.openmessaging;
+package io.openmessaging.codec;
+
+import io.openmessaging.Const;
+import io.openmessaging.codec.AbstractDecoder;
 
 import java.nio.ByteBuffer;
 

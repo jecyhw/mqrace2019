@@ -2,10 +2,13 @@ package io.openmessaging;
 
 
 import io.netty.util.concurrent.FastThreadLocal;
+import io.openmessaging.codec.ADecoder;
+import io.openmessaging.codec.AEncoder;
+import io.openmessaging.codec.TDecoder;
+import io.openmessaging.codec.TEncoder;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Random;
 
 /**
  * Created by yanghuiwei on 2019-07-28
@@ -54,7 +57,6 @@ public class Tester {
 
         System.out.println(upperBound(nums, 0, 3, 0));
 
-        VariableUtilsTest();
 
     }
 
@@ -119,42 +121,4 @@ public class Tester {
         System.out.println();
     }
 
-    private static void VariableUtilsTest() {
-        int[] dest = new int[1];
-
-        for (int i = 0; i < 1024 * 1024 * 10; i++) {
-            byte[] data = new byte[64];
-            VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, i);
-            int unsigned = VariableUtils.getUnsigned(ByteBuffer.wrap(data), 0, dest, 0);
-            if (dest[0] != i) {
-                System.out.println(false);
-            }
-        }
-
-        for (int i = -3615850; i < 3615850; i++) {
-            byte[] data = new byte[50];
-            VariableUtils.putSigned(ByteBuffer.wrap(data), 0, i);
-            VariableUtils.getSigned(ByteBuffer.wrap(data), 0, dest, 0);
-            if (dest[0] != i) {
-                System.out.println(false);
-            }
-        }
-
-        long startTime = System.currentTimeMillis();
-        byte[] data = new byte[50];
-        for (long i = 0L; i < 1024L * 1024 * 1024 * 2; i += 10) {
-            for (int j = 0; j < 10; j++) {
-                VariableUtils.putUnsigned(ByteBuffer.wrap(data), 0, j);
-            }
-        }
-        System.out.println(System.currentTimeMillis() - startTime);
-
-        System.out.println(new FastThreadLocal<String>() {
-            @Override
-            public String initialValue()
-            {
-                return "test";
-            }
-        }.get());
-    }
 }

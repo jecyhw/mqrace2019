@@ -1,4 +1,4 @@
-package io.openmessaging;
+package io.openmessaging.codec;
 
 import java.nio.ByteBuffer;
 
@@ -58,5 +58,14 @@ public abstract class AbstractDecoder {
     private void getInt() {
         bits = buf.getInt();
         bitsAvailable = Integer.SIZE;
+    }
+
+    long getLong(int valBitsAvailable) {
+        if (valBitsAvailable < 32) {
+            return getBits(valBitsAvailable);
+        } else {
+            long lowBit31 = getBits(31);
+            return (getLong(valBitsAvailable - 31) << 31) | lowBit31;
+        }
     }
 }

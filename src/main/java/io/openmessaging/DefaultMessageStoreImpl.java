@@ -1,6 +1,7 @@
 package io.openmessaging;
 
 import io.netty.util.concurrent.FastThreadLocal;
+import io.openmessaging.util.Utils;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -9,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.openmessaging.Utils.print;
+import static io.openmessaging.util.Utils.print;
 
 /**
  * 这是一个简单的基于内存的实现，以方便选手理解题意；

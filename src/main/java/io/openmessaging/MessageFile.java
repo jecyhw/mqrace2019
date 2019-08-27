@@ -1,6 +1,7 @@
 package io.openmessaging;
 
-import org.iq80.snappy.Snappy;
+import io.openmessaging.codec.*;
+import io.openmessaging.util.Utils;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -10,7 +11,7 @@ import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static io.openmessaging.Utils.print;
+import static io.openmessaging.util.Utils.print;
 
 /**
  * Created by yanghuiwei on 2019-07-26
@@ -25,22 +26,21 @@ public class MessageFile {
     private long firstT, lastT;
 
     //直接压缩到这个字节数组上
-    private final byte[] msgData = new byte[Const.PUT_BUFFER_SIZE];
-    private int msgDataPos = 0;
-    private final ByteBuffer msgBuf = ByteBuffer.wrap(msgData);
-    private RandomAccessFile msgFile;
-    private long msgFileSize = 0;
+    private int msgLastBitPosition = 0;
+    private final ByteBuffer msgBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private FileChannel msgFc;
-    private final byte[] uncompressMsgData = new byte[Const.COMPRESS_MSG_SIZE];
-    private int uncompressMsgDataPos = 0;
     private final int[] msgOffsetArr = new int[Const.INDEX_ELE_LENGTH];
+    private final MsgEncoder msgEncoder = new MsgEncoder(msgBuf);
+
 
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
-    private RandomAccessFile aFile;
     private FileChannel aFc;
     AEncoder aEncoder = new AEncoder(aBuf);
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
+    private ByteBuffer aCacheBlockBuf = AMemory.getCacheBuf();
+    private boolean isCacheMode = true;
+    private int aCacheBlockNums = 0;
 
     long readATime = 0;
 
@@ -49,17 +49,14 @@ public class MessageFile {
 
     //索引内存数组
     //indexBufs存的元素个数
-    private int indexBufEleCount = 0;
+    private int blockNums = 0;
 
 
     public MessageFile() {
         int fileId = idAllocator.getAndIncrement();
         try {
-            msgFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw");
-            msgFc = msgFile.getChannel();
-
-            aFile = new RandomAccessFile(Const.STORE_PATH + fileId + Const.A_FILE_SUFFIX, "rw");
-            aFc = aFile.getChannel();
+            msgFc = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw").getChannel();
+            aFc = new RandomAccessFile(Const.STORE_PATH + fileId + Const.A_FILE_SUFFIX, "rw").getChannel();
         } catch (FileNotFoundException e) {
             print("MessageFile constructor error " + e.getMessage());
         }
@@ -68,31 +65,36 @@ public class MessageFile {
 
     public final void put(Message message) {
         long t = message.getT(), a = message.getA();
+        byte[] body = message.getBody();
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
         if (putCount % Const.INDEX_INTERVAL == 0) {
-            int pos = indexBufEleCount;
+            int blockNum = blockNums;
+
             //每隔INDEX_INTERVAL记录t（在indexBuf中记录了t就不会在memory中记录）
-            tArr[pos] = t;
+            tArr[blockNum] = t;
             //下一个t的起始位置，先写在哪个块中，再写块的便宜位置
-            tOffsetArr[pos] = tEncoder.getBitPosition();
+            tOffsetArr[blockNum] = tEncoder.getBitPosition();
             tEncoder.resetDelta();
 
             //记录区间a的开始信息
-            if (pos > 0) {
-                int bitPosition = aEncoder.getBitPosition();
-                aOffsetArr[pos] = aOffsetArr[pos - 1] + (bitPosition - aLastBitPosition);
-                aLastBitPosition = bitPosition;
+            if (blockNum > 0) {
+                //更新a的块
+                updateABlock(blockNum);
+                //更新body的块
+                updateMsgBlock(blockNum);
             }
-            //把第一个a也编码进去，省掉一个数组
+            blockNums++;
+            //简单处理，a放多少次主动落盘，不通过hasRemaining判断
+            if (blockNums % Const.A_FLUSH_BLOCK_NUMS == 0) {
+                flushAEncode();
+            }
+
+            //把第一个a也编码进去，省掉一个数组，注意这里没有判断encoder的buf是否剩余，这个通过预留保证的
             aEncoder.encodeFirst(a);
+            msgEncoder.encodeFirst(body);
 
-            if (uncompressMsgDataPos == Const.COMPRESS_MSG_SIZE) {
-                compressMsgBody();
-            }
-            //需要先压缩在赋值
-            msgOffsetArr[pos] = (int)(msgFileSize + msgDataPos);
 
-            indexBufEleCount++;
+
 
             if (putCount == 0) {
                 firstT = message.getT();
@@ -101,44 +103,52 @@ public class MessageFile {
 
         } else {
             tEncoder.encode((int) (t - lastT));
-            if (!aEncoder.hasRemaining()) {
-                aLastBitPosition = aLastBitPosition - aEncoder.getBitPosition();
-                flush(aFc, aBuf);
-                aEncoder.clear();
-                //aEncoder里面还有剩下的需要减掉
-                aLastBitPosition += aEncoder.getBitPosition();
-            }
             aEncoder.encode(a);
+            //检查body的buf是否还有空间
+            checkAndFlushMsgBuf();
+            msgEncoder.encode(body);
         }
 
         putCount++;
-
-        System.arraycopy(message.getBody(), 0, uncompressMsgData, uncompressMsgDataPos, Const.MSG_BYTES);
-        uncompressMsgDataPos += Const.MSG_BYTES;
         lastT = t;
     }
 
-    private void compressMsgBody() {
-        //判断是否要刷落盘
-        if (msgDataPos + Const.COMPRESS_MSG_SIZE > Const.PUT_BUFFER_SIZE) {
-            flushMsg();
-            msgFileSize += msgDataPos;
-            msgDataPos = 0;
+    private void checkAndFlushMsgBuf() {
+        if (!msgEncoder.hasRemaining()) {
+            msgLastBitPosition = msgLastBitPosition - msgEncoder.getBitPosition();
+            flush(msgFc, msgBuf);
+            msgLastBitPosition += msgEncoder.getBitPosition();
         }
-        msgDataPos += Snappy.compress(uncompressMsgData, 0, Const.COMPRESS_MSG_SIZE, msgData, msgDataPos);
-        uncompressMsgDataPos = 0;
     }
 
-    private void flushMsg() {
-        msgBuf.limit(msgDataPos);
-        try {
-            while (msgBuf.hasRemaining()) {
-                msgFc.write(msgBuf);
+    private void flushAEncode() {
+        //落盘
+        flush(aFc, aBuf);
+        //aEncoder里面还有剩下需要记录下位置
+        aLastBitPosition = aEncoder.getBitPosition();
+    }
+
+    private void updateABlock(int blockNum) {
+        int aBitPosition = aEncoder.getBitPosition();
+        int aBlockSize = aBitPosition - aLastBitPosition;
+        aOffsetArr[blockNum] = aOffsetArr[blockNum - 1] + aBlockSize;
+        aLastBitPosition = aBitPosition;
+    }
+
+    private void checkAndCacheABlock(int aBlockSize) {
+        if (isCacheMode) {
+            if (aCacheBlockBuf.remaining() < aBlockSize) {
+                isCacheMode = false;
+            } else {
+
             }
-        } catch (Exception e) {
-            Utils.print("func=flush error");
         }
-        msgBuf.position(0);
+    }
+
+    private void updateMsgBlock(int pos) {
+        int msgBitPosition = msgEncoder.getBitPosition();
+        msgOffsetArr[pos] = msgOffsetArr[pos - 1] + (msgBitPosition - msgLastBitPosition);
+        msgLastBitPosition = msgBitPosition;
     }
 
 
@@ -171,7 +181,7 @@ public class MessageFile {
     private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, GetItem getItem, ByteBuffer tBuf) {
         TDecoder decoder = getItem.tDecoder;
         int lastInterval = 0;
-        if (maxPos == indexBufEleCount) {
+        if (maxPos == blockNums) {
             maxPos--;
             int destOffset = (maxPos - minPos) * Const.INDEX_INTERVAL;
             destT[destOffset] = tArr[maxPos];
@@ -193,57 +203,94 @@ public class MessageFile {
     }
 
 
-    private void readMsgs(int minPos, int maxPos, GetItem getItem, long[] as, long[] ts, int tLen, long aMin, long aMax, long tMin, long tMax) {
+    private void readMsgs(int minPos, int maxPos, GetItem getItem, long[] as, long[] ts, int len, long aMin, long aMax, long tMin, long tMax) {
         ByteBuffer readBuf = getItem.buf;
-
-        //计算要读取的msg
         long startOffset = msgOffsetArr[minPos] & 0xffffffffL;
-        int len = (int)((msgOffsetArr[maxPos] & 0xffffffffL) - startOffset);
+        long endOffset = msgOffsetArr[maxPos] & 0xffffffffL;
+
+        long startPos = (startOffset / 32) * 4;
+        long endPos = (endOffset / 32) * 4;
+        if (endOffset % 32 > 0) {
+            endPos += 4;
+        }
         readBuf.position(0);
-        readBuf.limit(len);
-        readInBuf(startOffset, readBuf, msgFc);
+        int readBytes = (int) (endPos - startPos);
+        readBuf.limit(readBytes);
+        //必须是一次性拿
+        readInBuf(startPos, readBuf, msgFc);
 
-        byte[] compressMsgData = readBuf.array();
-        int compressMsgDataPos = 0, compressSize;
-        byte[] uncompressMsgData = getItem.uncompressMsgData;
+        readBuf.position(0);
+        //放一个4字节的哨兵
+        readBuf.limit(readBytes + 4);
 
+        MsgDecoder msgDecoder = getItem.msgDecoder;
+        msgDecoder.reset(readBuf, (int) (startOffset % 32));
         List<Message> messages = getItem.messages;
+        int readLen = Math.min(len, Const.INDEX_INTERVAL);
+        readFirstOrLastBlockMsgs(messages, msgDecoder, as, ts, 0, readLen, aMin, aMax, tMin, tMax);
 
-        int pos = 0;
-        int _minPos = minPos;
+        minPos++;
+        if (maxPos == minPos) {//说明读完了
+            return;
+        }
+
         maxPos--;
-        while (minPos <= maxPos) {
-            compressSize = (int)((msgOffsetArr[minPos + 1] & 0xffffffffL) - (msgOffsetArr[minPos] & 0xffffffffL));
-            Snappy.uncompress(compressMsgData, compressMsgDataPos, compressSize, uncompressMsgData, 0);
-            compressMsgDataPos += compressSize;
-            if (minPos == _minPos || minPos == maxPos) {
-                for (int i = 0, uncompressMsgDataPos = 0; i < Const.INDEX_INTERVAL && pos < tLen; i++, uncompressMsgDataPos += Const.MSG_BYTES) {
-                    long a = as[pos], t = ts[pos];
-
-                    if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
-                        getMessage(uncompressMsgData, messages, uncompressMsgDataPos, a, t);
-                    }
-                    pos++;
-                }
+        while (minPos < maxPos) {
+            //中间只需要判断a
+            long a = as[readLen], t = ts[readLen];
+            //先读区间的第一个数
+            if (a >= aMin && a <= aMax) {
+                byte[] body = new byte[Const.MSG_BYTES];
+                msgDecoder.decodeFirst(body);
+                messages.add(new Message(a, t, body));
             } else {
-                for (int i = 0, uncompressMsgDataPos = 0; i < Const.INDEX_INTERVAL && pos < tLen; i++, uncompressMsgDataPos += Const.MSG_BYTES) {
-                    long a = as[pos];
-                    if (a >= aMin && a <= aMax) {
-                        getMessage(uncompressMsgData, messages, uncompressMsgDataPos, a, ts[pos]);
-                    }
-                    pos++;
+                msgDecoder.decodeFirstDiscard();
+            }
+            readLen++;
+
+            for (int i = 1; i < Const.INDEX_INTERVAL; i++, readLen++) {
+                a = as[readLen];
+                t = ts[readLen];
+
+                if (a >= aMin && a <= aMax) {
+                    byte[] body = new byte[Const.MSG_BYTES];
+                    msgDecoder.decode(body);
+                    messages.add(new Message(a, t, body));
+                } else {
+                    msgDecoder.decodeDiscard();
                 }
             }
-
-
             minPos++;
         }
+        //读最后一块
+        readFirstOrLastBlockMsgs(messages, msgDecoder, as, ts, readLen, len, aMin, aMax, tMin, tMax);
     }
 
-    private void getMessage(byte[] uncompressMsgData, List<Message> messages, int uncompressMsgDataPos, long a, long t) {
-        byte[] body = new byte[Const.MSG_BYTES];
-        System.arraycopy(uncompressMsgData, uncompressMsgDataPos, body, 0, Const.MSG_BYTES);
-        messages.add(new Message(a, t, body));
+    private void readFirstOrLastBlockMsgs(List<Message> messages, MsgDecoder msgDecoder, long[] as, long[] ts, int pos, int len, long aMin, long aMax, long tMin, long tMax) {
+
+        //两头a和t都需要判断
+        long a = as[pos], t = ts[pos];
+        //先读区间的第一个数
+        if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
+            byte[] body = new byte[Const.MSG_BYTES];
+            msgDecoder.decodeFirst(body);
+            messages.add(new Message(a, t, body));
+        } else {
+            msgDecoder.decodeFirstDiscard();
+        }
+        //在读区间剩下的数
+        for (pos++; pos < len; pos++) {
+            a = as[pos];
+            t = ts[pos];
+
+            if (a >= aMin && a <= aMax && t >= tMin && t <= tMax) {
+                byte[] body = new byte[Const.MSG_BYTES];
+                msgDecoder.decode(body);
+                messages.add(new Message(a, t, body));
+            } else {
+                msgDecoder.decodeDiscard();
+            }
+        }
     }
 
     public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem, ByteBuffer tBuf) {
@@ -377,7 +424,7 @@ public class MessageFile {
     }
 
     private int firstGreatInPrimaryIndex(long val) {
-        int low = 0, high = indexBufEleCount, mid;
+        int low = 0, high = blockNums, mid;
         while(low < high){
             mid = low + (high - low) / 2;
 
@@ -395,7 +442,7 @@ public class MessageFile {
      * 查找第一个小于val的数字位置，如果没有将返回PrimaryIndex的第一个位置
      */
     private int firstLessInPrimaryIndex(long val) {
-        int low = 0, high = indexBufEleCount, mid;
+        int low = 0, high = blockNums, mid;
 
         //先找第一个大于等于val的位置，减1就是第一个小于val的位置
         while (low < high) {
@@ -413,25 +460,24 @@ public class MessageFile {
 
     public final void flush() {
         //最后一块进行压缩
-        msgDataPos += Snappy.compress(uncompressMsgData, 0, Const.COMPRESS_MSG_SIZE, msgData, msgDataPos);
-        flushMsg();
-        msgOffsetArr[indexBufEleCount] = (int) (msgFileSize + msgDataPos);
 
-        aOffsetArr[indexBufEleCount] = aOffsetArr[indexBufEleCount - 1] + (aEncoder.getBitPosition() - aLastBitPosition);
+        msgOffsetArr[blockNums] = msgOffsetArr[blockNums - 1] + (msgEncoder.getBitPosition() - msgLastBitPosition);
+        msgEncoder.flush();
+        flush(msgFc, msgBuf);
+
+        aOffsetArr[blockNums] = aOffsetArr[blockNums - 1] + (aEncoder.getBitPosition() - aLastBitPosition);
         aEncoder.flush();
         flush(aFc, aBuf);
 
-
         tEncoder.flushAndClear();
 
-
         try {
-            Utils.print("MemoryIndex func=flush " + " indexBufEleCount:" + indexBufEleCount
-                    + " putCount:" + putCount + " aFilSize:" + aFile.length() + " compressMsgFileSize:" + msgFile.length()
+            Utils.print("MemoryIndex func=flush " + " blockNums:" + blockNums
+                    + " putCount:" + putCount + " aFilSize:" + aFc.size() + " compressMsgFileSize:" + msgFc.size()
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
-                    + " bitPos:" + tOffsetArr[indexBufEleCount - 1] / 8
+                    + " bitPos:" + tOffsetArr[blockNums - 1] / 8
                     + " bufSize:"+ buf.limit()
-                    + " msgOffsetArr:" + (msgOffsetArr[indexBufEleCount] & 0xffffffffL));
+                    + " msgOffsetArr:" + (msgOffsetArr[blockNums] & 0xffffffffL));
         } catch (IOException e) {
             e.printStackTrace();
         }

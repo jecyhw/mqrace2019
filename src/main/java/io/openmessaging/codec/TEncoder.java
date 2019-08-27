@@ -1,4 +1,4 @@
-package io.openmessaging;
+package io.openmessaging.codec;
 
 import java.nio.ByteBuffer;
 

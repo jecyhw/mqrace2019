@@ -172,11 +172,11 @@ public class DemoTester {
                         tIndex1 = 0;
                     }
                     int tIndex2 = random.nextInt(maxCheckSize) + tIndex1;
-//
-//                    aIndex1 = 26081;
-//                    aIndex2 = 49999;
-//                    tIndex1 = 37298;
-//                    tIndex2 = 67463;
+
+//                    aIndex1 = 332092;
+//                    aIndex2 = 382092;
+//                    tIndex1 = 367276;
+//                    tIndex2 = 403663;
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);
 

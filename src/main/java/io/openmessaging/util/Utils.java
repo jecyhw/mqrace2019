@@ -1,4 +1,6 @@
-package io.openmessaging;
+package io.openmessaging.util;
+
+import io.openmessaging.Const;
 
 import java.util.Date;
 

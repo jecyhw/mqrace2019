@@ -1,5 +1,7 @@
 package io.openmessaging;
 
+import io.openmessaging.util.Utils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

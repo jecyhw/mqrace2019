@@ -1,4 +1,4 @@
-package io.openmessaging;
+package io.openmessaging.codec;
 
 import java.nio.ByteBuffer;
 
@@ -88,22 +88,7 @@ public class AEncoder extends AbstractEncoder {
         put(bits, bitsInValue);
     }
 
-    private void putLong(long a, int aBitsAvailable) {
-        if (aBitsAvailable < 32) {
-            put((int)a, aBitsAvailable);
-        } else {
-            //低31位
-            int lowBit31 = ((int)a) & 0x7fffffff;
-            put(lowBit31, 31);
-            putLong(a >>> 31, aBitsAvailable - 31);
-        }
-    }
-
     public boolean hasRemaining() {
-        return buf.remaining() > 16;
-    }
-
-    public void clear() {
-        buf.clear();
+        return buf.remaining() > 32;
     }
 }
