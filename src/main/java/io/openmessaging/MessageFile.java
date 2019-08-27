@@ -29,7 +29,7 @@ public class MessageFile {
     private int msgLastBitPosition = 0;
     private final ByteBuffer msgBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private FileChannel msgFc;
-    private final int[] msgOffsetArr = new int[Const.INDEX_ELE_LENGTH];
+    private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private final MsgEncoder msgEncoder = new MsgEncoder(msgBuf);
 
 
@@ -147,7 +147,7 @@ public class MessageFile {
 
     private void updateMsgBlock(int pos) {
         int msgBitPosition = msgEncoder.getBitPosition();
-        msgOffsetArr[pos] = (int) ((msgOffsetArr[pos - 1]  & 0xffffffffL) + (msgBitPosition - msgLastBitPosition));
+        msgOffsetArr[pos] = msgOffsetArr[pos - 1] + (msgBitPosition - msgLastBitPosition);
         msgLastBitPosition = msgBitPosition;
     }
 
@@ -205,8 +205,8 @@ public class MessageFile {
 
     private void readMsgs(int minPos, int maxPos, GetItem getItem, long[] as, long[] ts, int len, long aMin, long aMax, long tMin, long tMax) {
         ByteBuffer readBuf = getItem.buf;
-        long startOffset = msgOffsetArr[minPos] & 0xffffffffL;
-        long endOffset = msgOffsetArr[maxPos] & 0xffffffffL;
+        long startOffset = msgOffsetArr[minPos];
+        long endOffset = msgOffsetArr[maxPos];
 
         long startPos = (startOffset / 32) * 4;
         long endPos = (endOffset / 32) * 4;
@@ -460,7 +460,7 @@ public class MessageFile {
     public final void flush() {
         //最后一块进行压缩
 
-        msgOffsetArr[blockNums] = (int) ((msgOffsetArr[blockNums - 1]  & 0xffffffffL) + (msgEncoder.getBitPosition() - msgLastBitPosition));
+        msgOffsetArr[blockNums] = msgOffsetArr[blockNums - 1] + (msgEncoder.getBitPosition() - msgLastBitPosition);
         msgEncoder.flush();
         flush(msgFc, msgBuf);
 
@@ -476,7 +476,7 @@ public class MessageFile {
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[blockNums - 1] / 8
                     + " bufSize:"+ buf.limit()
-                    + " msgOffsetArr:" + (msgOffsetArr[blockNums] & 0xffffffffL));
+                    + " msgOffsetArr:" + msgOffsetArr[blockNums]);
         } catch (IOException e) {
             e.printStackTrace();
         }
