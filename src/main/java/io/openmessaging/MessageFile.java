@@ -47,7 +47,6 @@ public class MessageFile {
     //先往缓存内存中写，写满为止
     AEncoder aEncoder = new AEncoder(aCacheBlockBuf);
 
-
     long readATime = 0;
 
     //put计数
@@ -105,7 +104,7 @@ public class MessageFile {
 
             blockNums++;
         } else {
-            int blockNum = blockNums;
+            int blockNum = blockNums - 1;
             if (aMaxArr[blockNum] < a) {
                 aMaxArr[blockNum] = a;
             }
