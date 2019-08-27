@@ -10,18 +10,23 @@ public class MsgDecoder extends AbstractDecoder {
     private int v5;
 
     public void decodeFirst(byte[] body) {
-        v1 = getLongVal();
-        v2 = getLongVal();
-        v3 = getLongVal();
-        v4 = getLongVal();
-        v5 = getShortVal();
+        long dv1 = getLongVal();
+        long dv2 = getLongVal();
+        long dv3 = getLongVal();
+        long dv4 = getLongVal();
+        int dv5 = getShortVal();
 
-        ByteUtil.putLong(body, v1, 0);
-        ByteUtil.putLong(body, v2, 8);
-        ByteUtil.putLong(body, v3, 16);
-        ByteUtil.putLong(body, v4, 24);
-        ByteUtil.putShort(body, v5, 32);
+        ByteUtil.putLong(body, dv1, 0);
+        ByteUtil.putLong(body, dv2, 8);
+        ByteUtil.putLong(body, dv3, 16);
+        ByteUtil.putLong(body, dv4, 24);
+        ByteUtil.putShort(body, dv5, 32);
 
+        v1 = dv1;
+        v2 = dv2;
+        v3 = dv3;
+        v4 = dv4;
+        v5 = dv5;
     }
 
     public void decodeFirstDiscard() {

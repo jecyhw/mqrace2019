@@ -147,7 +147,7 @@ public class MessageFile {
 
     private void updateMsgBlock(int pos) {
         int msgBitPosition = msgEncoder.getBitPosition();
-        msgOffsetArr[pos] = msgOffsetArr[pos - 1] + (msgBitPosition - msgLastBitPosition);
+        msgOffsetArr[pos] = (int) ((msgOffsetArr[pos - 1]  & 0xffffffffL) + (msgBitPosition - msgLastBitPosition));
         msgLastBitPosition = msgBitPosition;
     }
 
@@ -267,7 +267,6 @@ public class MessageFile {
     }
 
     private void readFirstOrLastBlockMsgs(List<Message> messages, MsgDecoder msgDecoder, long[] as, long[] ts, int pos, int len, long aMin, long aMax, long tMin, long tMax) {
-
         //两头a和t都需要判断
         long a = as[pos], t = ts[pos];
         //先读区间的第一个数
@@ -461,7 +460,7 @@ public class MessageFile {
     public final void flush() {
         //最后一块进行压缩
 
-        msgOffsetArr[blockNums] = msgOffsetArr[blockNums - 1] + (msgEncoder.getBitPosition() - msgLastBitPosition);
+        msgOffsetArr[blockNums] = (int) ((msgOffsetArr[blockNums - 1]  & 0xffffffffL) + (msgEncoder.getBitPosition() - msgLastBitPosition));
         msgEncoder.flush();
         flush(msgFc, msgBuf);
 
