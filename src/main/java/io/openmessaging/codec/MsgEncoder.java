@@ -66,7 +66,7 @@ public class MsgEncoder extends AbstractEncoder {
             val = -val;
         }
         int bitsAvailable = getNumBitsAvailable(val);
-        put(((bitsAvailable - 1) << 1) | signed, 5);
+        put(((bitsAvailable - 1) << 1) | signed, 6);
         put(val, bitsAvailable);
     }
 

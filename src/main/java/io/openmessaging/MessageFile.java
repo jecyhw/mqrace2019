@@ -41,6 +41,7 @@ public class MessageFile {
     private ByteBuffer aCacheBlockBuf = AMemory.getCacheBuf();
     private boolean isCacheMode = true;
     private int aCacheBlockNums = 0;
+    private int ramainAValue = 0;
 
     long readATime = 0;
 
@@ -76,18 +77,8 @@ public class MessageFile {
             tOffsetArr[blockNum] = tEncoder.getBitPosition();
             tEncoder.resetDelta();
 
-            //记录区间a的开始信息
-            if (blockNum > 0) {
-                //更新a的块
-                updateABlock(blockNum);
-                //更新body的块
-                updateMsgBlock(blockNum);
-            }
             blockNums++;
-            //简单处理，a放多少次主动落盘，不通过hasRemaining判断
-            if (blockNums % Const.A_FLUSH_BLOCK_NUMS == 0) {
-                flushAEncode();
-            }
+            updateBlock(blockNum);
 
             //把第一个a也编码进去，省掉一个数组，注意这里没有判断encoder的buf是否剩余，这个通过预留保证的
             aEncoder.encodeFirst(a);
@@ -113,6 +104,23 @@ public class MessageFile {
         lastT = t;
     }
 
+    private void updateBlock(int blockNum) {
+        //记录区间a的开始信息
+        if (blockNum > 0) {
+            //更新a的块
+            updateABlock(blockNum);
+
+            //简单处理，a放多少次主动落盘，不通过hasRemaining判断
+            if (blockNums % Const.A_FLUSH_BLOCK_NUMS == 0) {
+                flushAEncode();
+            }
+
+            //更新body的块
+            updateMsgBlock(blockNum);
+        }
+
+    }
+
     private void checkAndFlushMsgBuf() {
         if (!msgEncoder.hasRemaining()) {
             msgLastBitPosition = msgLastBitPosition - msgEncoder.getBitPosition();
@@ -123,7 +131,12 @@ public class MessageFile {
 
     private void flushAEncode() {
         //落盘
-        flush(aFc, aBuf);
+        aBuf.flip();
+//        if (!checkAndCacheABlock(aBuf)) {
+//        }
+        write(aFc, aBuf);
+
+        aBuf.clear();
         //aEncoder里面还有剩下需要记录下位置
         aLastBitPosition = aEncoder.getBitPosition();
     }
@@ -135,14 +148,22 @@ public class MessageFile {
         aLastBitPosition = aBitPosition;
     }
 
-    private void checkAndCacheABlock(int aBlockSize) {
+    private boolean checkAndCacheABlock(ByteBuffer aBuf) {
         if (isCacheMode) {
-            if (aCacheBlockBuf.remaining() < aBlockSize) {
+            if (aCacheBlockBuf.remaining() < aBuf.remaining()) {
                 isCacheMode = false;
+                //把最后一个值放入到cache中，保证完整性
+                aCacheBlockBuf.putInt(ramainAValue);
+                return false;
             } else {
-
+                aCacheBlockBuf.put(aBuf);
+                aBuf.position(0);
+                //把这个块最后剩余在encode中的值记录下来
+                ramainAValue = aEncoder.getValue();
+                return true;
             }
         }
+        return false;
     }
 
     private void updateMsgBlock(int pos) {
@@ -346,6 +367,11 @@ public class MessageFile {
 
     private void flush(FileChannel fc, ByteBuffer buf) {
         buf.flip();
+        write(fc, buf);
+        buf.clear();
+    }
+
+    private void write(FileChannel fc, ByteBuffer buf) {
         try {
             while (buf.hasRemaining()) {
                 fc.write(buf);
@@ -353,7 +379,6 @@ public class MessageFile {
         } catch (Exception e) {
             Utils.print("func=flush error");
         }
-        buf.clear();
     }
 
     private void sumAInRangeT(int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {

@@ -54,6 +54,10 @@ public abstract class AbstractEncoder {
         return buf.position() * 8 + (Integer.SIZE - bitsAvailable);
     }
 
+    public int getValue() {
+        return value;
+    }
+
     /**
      * 将最后一个数据刷到buf中
      */
