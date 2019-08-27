@@ -30,10 +30,8 @@ public interface Const {
     int MAX_GET_AT_SIZE = 10 * 10000;
     int MAX_GET_MESSAGE_SIZE = 7 * 10000;
 
-    int COMPRESS_MSG_SIZE = INDEX_INTERVAL * Const.MSG_BYTES;
-
-    int A_MEMORY_IN_HEAP_SIZE = 1024*1024 * 150;
-    int A_MEMORY_IN_HEAP_NUM = 8;
+    int A_MEMORY_IN_HEAP_SIZE = 1024*1024 * 223;
+    int A_MEMORY_IN_HEAP_NUM = 6;
     int A_MEMORY_OUT_HEAP_SIZE = 1024*1024*250;
 
     boolean PRINT_LOG = true;
