@@ -17,7 +17,7 @@ public interface Const {
 
 
     //固定成一块
-    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 50;
+    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 42;
 
     int INDEX_INTERVAL = 64;
     int INDEX_ELE_LENGTH = 3700000;//需要和INDEX_INTERVAL一起调
@@ -32,12 +32,12 @@ public interface Const {
 
     int COMPRESS_MSG_SIZE = INDEX_INTERVAL * Const.MSG_BYTES;
 
-    int A_MEMORY_IN_HEAP_SIZE = 1024*1024 * 200;
+    int A_MEMORY_IN_HEAP_SIZE = 1024*1024 * 150;
     int A_MEMORY_IN_HEAP_NUM = 8;
-    int A_MEMORY_OUT_HEAP_SIZE = 1024*1024*200;
+    int A_MEMORY_OUT_HEAP_SIZE = 1024*1024*250;
     int A_FLUSH_BLOCK_NUMS = PUT_BUFFER_SIZE / (LONG_BYTES * INDEX_INTERVAL) - 1;
 
     boolean PRINT_LOG = true;
 
-    int DEST = 27000;
+    int DEST = 20000;
 }
