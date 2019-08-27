@@ -117,6 +117,10 @@ public class MessageFile {
     }
 
     private void updateABlock(int blockNum) {
+        int aBitPosition = aEncoder.getBitPosition();
+        aOffsetArr[blockNum] = aOffsetArr[blockNum - 1] + aBitPosition - aLastBitPosition;
+        aLastBitPosition = aBitPosition;
+
         if (isCacheMode) {
             if (!aEncoder.hasRemaining()) {
                 isCacheMode = false;
@@ -132,17 +136,12 @@ public class MessageFile {
             }
         } else {
             if (!aEncoder.hasRemaining()) {
-                aLastBitPosition -= aEncoder.getBitPosition();
                 //落盘
                 flush(aFc, aBuf);
                 //aEncoder里面还有剩下需要记录下位置
-                aLastBitPosition += aEncoder.getBitPosition();
+                aLastBitPosition = aEncoder.getBitPosition();
             }
         }
-
-        int aBitPosition = aEncoder.getBitPosition();
-        aOffsetArr[blockNum] = aOffsetArr[blockNum - 1] + aBitPosition - aLastBitPosition;
-        aLastBitPosition = aBitPosition;
     }
 
 
@@ -308,14 +307,15 @@ public class MessageFile {
         if (maxPos < aCacheBlockNums) {
             //全在内存里
             readAFromMemory(minPos, maxPos, len, aDecoder, as, ts);
-        } if (minPos >= aCacheBlockNums) {
+        } else if (minPos >= aCacheBlockNums) {
             //全在文件中
             readAFromFile(minPos, maxPos, 0, len, aDecoder, readBuf, as, ts);
         } else {
             int readLen = readAFromMemory(minPos, aCacheBlockNums, len, aDecoder, as, ts);
-            readAFromFile(aCacheBlockNums, maxPos, readLen, len, aDecoder, readBuf, as, ts);
+            if (readLen < len) {
+                readAFromFile(aCacheBlockNums, maxPos, readLen, len, aDecoder, readBuf, as, ts);
+            }
         }
-
     }
 
     private int readAFromMemory(int minPos, int maxPos, int len, ADecoder aDecoder, long[] as, long[] ts) {
@@ -332,6 +332,7 @@ public class MessageFile {
     }
 
     private void readAFromFile(int minPos, int maxPos, int pos, int len, ADecoder aDecoder, ByteBuffer readBuf, long[] as, long[] ts) {
+
         long startPos = (aOffsetArr[minPos] / 32) * 4;
         long endPos = (aOffsetArr[maxPos] / 32) * 4;
         if (aOffsetArr[maxPos] % 32 > 0) {
@@ -342,12 +343,7 @@ public class MessageFile {
         readBuf.limit(readBytes);
         //必须是一次性拿
         long start = System.currentTimeMillis();
-        try {
-            readInBuf(startPos, readBuf, aFc);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        readInBuf(startPos, readBuf, aFc);
         readATime += (System.currentTimeMillis() - start);
 
         readBuf.position(0);
@@ -504,7 +500,11 @@ public class MessageFile {
 
         aOffsetArr[blockNums] = aOffsetArr[blockNums - 1] + (aEncoder.getBitPosition() - aLastBitPosition);
         aEncoder.flush();
-        flush(aFc, aBuf);
+        if (isCacheMode) {
+            aCacheBlockNums = blockNums;
+        } else {
+            flush(aFc, aBuf);
+        }
 
         tEncoder.flushAndClear();
 

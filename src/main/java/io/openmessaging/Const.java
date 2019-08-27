@@ -35,7 +35,6 @@ public interface Const {
     int A_MEMORY_IN_HEAP_SIZE = 1024*1024 * 150;
     int A_MEMORY_IN_HEAP_NUM = 8;
     int A_MEMORY_OUT_HEAP_SIZE = 1024*1024*250;
-    int A_FLUSH_BLOCK_NUMS = PUT_BUFFER_SIZE / (LONG_BYTES * INDEX_INTERVAL) - 1;
 
     boolean PRINT_LOG = true;
 
