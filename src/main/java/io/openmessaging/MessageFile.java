@@ -10,6 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import static io.openmessaging.util.Utils.print;
 
@@ -218,7 +219,6 @@ public class MessageFile {
 
     }
 
-
     private void readMsgs(int minPos, int maxPos, GetItem getItem, long[] as, long[] ts, int len, long aMin, long aMax, long tMin, long tMax) {
         ByteBuffer readBuf = getItem.buf;
         long startOffset = msgOffsetArr[minPos];
@@ -319,15 +319,21 @@ public class MessageFile {
         }
     }
 
+    static AtomicInteger readAFromFile = new AtomicInteger();
+    static AtomicInteger readAFromMemory = new AtomicInteger();
     private void readAArray(int minPos, int maxPos, int len, ADecoder aDecoder, ByteBuffer readBuf, long[] as, long[] ts) {
         if (maxPos < aCacheBlockNums) {
+            readAFromMemory.addAndGet(len);
             //全在内存里
             readAFromMemory(minPos, maxPos, len, aDecoder, as, ts);
         } else if (minPos >= aCacheBlockNums) {
+            readAFromFile.addAndGet(len);
             //全在文件中
             readAFromFile(minPos, maxPos, 0, len, aDecoder, readBuf, as, ts);
         } else {
             int readLen = readAFromMemory(minPos, aCacheBlockNums, len, aDecoder, as, ts);
+            readAFromMemory.addAndGet(len);
+            readAFromFile.addAndGet(len - readLen);
             if (readLen < len) {
                 readAFromFile(aCacheBlockNums, maxPos, readLen, len, aDecoder, readBuf, as, ts);
             }

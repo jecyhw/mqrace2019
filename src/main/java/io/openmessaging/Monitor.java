@@ -66,7 +66,9 @@ public class Monitor {
                 .append(getMsgScore).append(" getAvgScore:").append(getAvgScore).append("\n");
 
         sb.append("in:").append(MessageFile.inCounter.get()).append(",out").append(MessageFile.outCounter.get())
-                .append(",all:").append(MessageFile.allCounter.get());
+                .append(",all:").append(MessageFile.allCounter.get()).append("\n");
+        sb.append("getMsg readAFromFile:").append(MessageFile.readAFromFile.get()).append(",readAFromMemory:").append(MessageFile.readAFromMemory.get()).append("\n");
+
         Utils.print(sb.toString());
 
         if (getAvgTimes[getAvgCounter.get()] - getAvgTimes[0] > Const.DEST) {

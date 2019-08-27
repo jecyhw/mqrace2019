@@ -131,6 +131,9 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     for (MessageFile messageFile : messageFiles) {
                         messageFile.readATime = 0;
                     }
+                    Utils.print("getMsg readAFromFile:" + MessageFile.readAFromFile.get() + ",readAFromMemory:" + MessageFile.readAFromMemory.get());
+                    MessageFile.readAFromFile.set(0);
+                    MessageFile.readAFromMemory.set(0);
                     isFirstGetAvg = false;
                 }
             }
