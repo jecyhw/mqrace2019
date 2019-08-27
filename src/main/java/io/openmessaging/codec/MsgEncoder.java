@@ -63,6 +63,7 @@ public class MsgEncoder extends AbstractEncoder {
     private void putShortVal(int val) {
         int signed = 0;
         if (val < 0) {
+            signed = -1;
             val = -val;
         }
         int bitsAvailable = getNumBitsAvailable(val);
