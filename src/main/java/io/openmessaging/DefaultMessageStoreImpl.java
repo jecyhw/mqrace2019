@@ -167,11 +167,22 @@ public class DefaultMessageStoreImpl extends MessageStore {
         return messages;
     }
 
+    private static volatile boolean isFirstGetAvg = true;
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         Monitor.getAvgStat();
 
+        if (isFirstGetAvg) {
+            synchronized (DefaultMessageStoreImpl.class) {
+                if (isFirstGetAvg) {
+                    for (MessageFile messageFile : messageFiles) {
+                        messageFile.readATime = 0;
+                    }
+                    isFirstGetAvg = false;
+                }
+            }
+        }
 
         GetItem getItem = getBufThreadLocal.get();
 
