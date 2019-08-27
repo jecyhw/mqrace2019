@@ -71,7 +71,7 @@ public class MsgEncoder extends AbstractEncoder {
     }
 
     public boolean hasRemaining() {
-        return buf.remaining() - Const.MSG_BYTES * 2 > 0;
+        return buf.remaining() - Const.MSG_BYTES * 4 > 0;
     }
 
 }
