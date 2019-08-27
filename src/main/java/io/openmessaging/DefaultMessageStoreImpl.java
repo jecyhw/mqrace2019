@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.openmessaging.Utils.print;
 
@@ -30,7 +31,10 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
     };
 
-    private static FastThreadLocal<GetItem> getBufThreadLocal = new FastThreadLocal<GetItem>() {
+    private static AtomicInteger getCounter = new AtomicInteger(0);
+    private static GetItem[] items = new GetItem[12];
+
+    private static FastThreadLocal<GetItem> getMsgItemThreadLocal = new FastThreadLocal<GetItem>() {
         @Override
         public GetItem initialValue() {
             GetItem item = new GetItem();
@@ -39,7 +43,16 @@ public class DefaultMessageStoreImpl extends MessageStore {
             for (int i = 0; i < size; i++) {
                 item.tBufs[i] = messageFiles.get(i).buf.duplicate();
             }
+
+            items[getCounter.incrementAndGet() - 1] = item;
             return item;
+        }
+    };
+
+    private static FastThreadLocal<GetItem> getAvgItemThreadLocal = new FastThreadLocal<GetItem>() {
+        @Override
+        public GetItem initialValue() {
+            return items[getCounter.decrementAndGet()];
         }
     };
 
@@ -88,37 +101,9 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     Monitor.getMsgStart();
                     isFirstGet = false;
                 }
-//                List<Message> messages = new ArrayList<>();
-//                for (int i = messageFiles.size() - 1; i >= 0; i--) {
-//                    messages.addAll(messageFiles.get(i).get(0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE, getItem));
-//                }
-//                messages.sort(messageComparator);
-//                for (int i = 0; i < messages.size(); i++) {
-//                    Message message = messages.get(i);
-//                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
-//                        System.err.println("1.error");
-//                    }
-//                    if ((message.getT() & 1) == 0) {
-//                        if (message.getT() != messages.get(i + 1).getT()) {
-//                            System.err.println("2.error");
-//                        }
-//                        if (i > 0) {
-//                            if (message.getT() != messages.get(i - 1).getT() + 1) {
-//                                System.err.println("3.error");
-//                            }
-//                        }
-//                        i++;
-//                    } else {
-//                        if ( i > 0 && message.getT() != messages.get(i - 1).getT() + 1) {
-//                            System.err.println("4.error");
-//                        }
-//                    }
-//                }
-//                System.out.println();
-//                getAvgValue(6740781, 6840781, 6763632, 6778579);
             }
         }
-        GetItem getItem = getBufThreadLocal.get();
+        GetItem getItem = getMsgItemThreadLocal.get();
         int messageFileSize = messageFiles.size();
 
         List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);
@@ -127,41 +112,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
             messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs[i]);
         }
 
-
         messages.sort(messageComparator);
-//        long min = Math.max(aMin, tMin), max= Math.min(aMax, tMax);
-//        int count = (int) (max - min + 1);
-//        while (min <= max) {
-//            if ((min & 1) == 0) {
-//                count++;
-//            }
-//            min++;
-//        }
-//                for (int i = 0; i < messages.size(); i++) {
-//                    Message message = messages.get(i);
-//                    if (message.getT() != message.getA() || message.getT() != ByteBuffer.wrap(message.getBody()).getLong()) {
-//                        System.err.println("1.error");
-//                    }
-//                    if ((message.getT() & 1) == 0) {
-//                        if (message.getT() != messages.get(i + 1).getT()) {
-//                            System.err.println("2.error");
-//                        }
-//                        if (i > 0) {
-//                            if (message.getT() != messages.get(i - 1).getT() + 1) {
-//                                System.err.println("3.error");
-//                            }
-//                        }
-//                        i++;
-//                    } else {
-//                        if ( i > 0 && message.getT() != messages.get(i - 1).getT() + 1) {
-//                            System.err.println("4.error");
-//                        }
-//                    }
-//                }
-//
-//        if (messages.size() != count) {
-//            System.err.println("6.error");
-//        }
 
         Monitor.updateMaxMsgNum(messages.size());
         return messages;
@@ -184,37 +135,13 @@ public class DefaultMessageStoreImpl extends MessageStore {
             }
         }
 
-        GetItem getItem = getBufThreadLocal.get();
+        GetItem getItem = getAvgItemThreadLocal.get();
 
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
         for (int i = messageFiles.size() - 1; i >= 0; i--) {
             messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem, getItem.tBufs[i]);
         }
-
-//        long max = Math.min(tMax, aMax);
-//        long min = Math.max(tMin, aMin);
-//        long count = 0;
-//        long sum = 0;
-//
-//        if (min <= max) {
-//            count = max - min + 1;
-//            while (min <= max) {
-//                if ((min & 1) == 0) {
-//                    count++;
-//                    sum += min;
-//                }
-//                sum += min;
-//                min++;
-//            }
-//        }
-//
-//        if (count != intervalSum.count || sum != intervalSum.sum) {
-//            System.err.println(Thread.currentThread().getName() + " value check count:" + count + " sum:" + sum + " c:" + intervalSum.count + " s:" + intervalSum.sum + " aMin:" + aMin
-//            + " aMax:" + aMax + " tMin:" + tMin + " tMax:" + tMax);
-//        }
-
-
 
         return intervalSum.avg();
     }
