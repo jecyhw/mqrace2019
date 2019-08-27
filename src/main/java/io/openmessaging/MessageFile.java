@@ -35,13 +35,14 @@ public class MessageFile {
 
     private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
     private FileChannel aFc;
-    AEncoder aEncoder = new AEncoder(aBuf);
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private int aLastBitPosition = 0;
     private ByteBuffer aCacheBlockBuf = AMemory.getCacheBuf();
     private boolean isCacheMode = true;
     private int aCacheBlockNums = 0;
-    private int ramainAValue = 0;
+    //先往缓存内存中写，写满为止
+    AEncoder aEncoder = new AEncoder(aCacheBlockBuf);
+
 
     long readATime = 0;
 
@@ -77,21 +78,24 @@ public class MessageFile {
             tOffsetArr[blockNum] = tEncoder.getBitPosition();
             tEncoder.resetDelta();
 
-            blockNums++;
-            updateBlock(blockNum);
+            //记录区间a的开始信息
+            if (blockNum > 0) {
+                //更新a的块
+                updateABlock(blockNum);
+                //更新body的块
+                updateMsgBlock(blockNum);
+            }
 
-            //把第一个a也编码进去，省掉一个数组，注意这里没有判断encoder的buf是否剩余，这个通过预留保证的
+
             aEncoder.encodeFirst(a);
+            //msg不判断是由hasRemaining保证的
             msgEncoder.encodeFirst(body);
-
-
-
 
             if (putCount == 0) {
                 firstT = message.getT();
             }
 
-
+            blockNums++;
         } else {
             tEncoder.encode((int) (t - lastT));
             aEncoder.encode(a);
@@ -104,67 +108,43 @@ public class MessageFile {
         lastT = t;
     }
 
-    private void updateBlock(int blockNum) {
-        //记录区间a的开始信息
-        if (blockNum > 0) {
-            //更新a的块
-            updateABlock(blockNum);
-
-            //简单处理，a放多少次主动落盘，不通过hasRemaining判断
-            if (blockNums % Const.A_FLUSH_BLOCK_NUMS == 0) {
-                flushAEncode();
-            }
-
-            //更新body的块
-            updateMsgBlock(blockNum);
-        }
-
-    }
-
     private void checkAndFlushMsgBuf() {
         if (!msgEncoder.hasRemaining()) {
-            msgLastBitPosition = msgLastBitPosition - msgEncoder.getBitPosition();
+            msgLastBitPosition -= msgEncoder.getBitPosition();
             flush(msgFc, msgBuf);
             msgLastBitPosition += msgEncoder.getBitPosition();
         }
     }
 
-    private void flushAEncode() {
-        //落盘
-        aBuf.flip();
-//        if (!checkAndCacheABlock(aBuf)) {
-//        }
-        write(aFc, aBuf);
-
-        aBuf.clear();
-        //aEncoder里面还有剩下需要记录下位置
-        aLastBitPosition = aEncoder.getBitPosition();
-    }
-
     private void updateABlock(int blockNum) {
+        if (isCacheMode) {
+            if (!aEncoder.hasRemaining()) {
+                isCacheMode = false;
+                aCacheBlockBuf.putInt(aEncoder.getValue());
+                aEncoder.resetBuf(aBuf);
+                isCacheMode = false;
+                aCacheBlockNums = blockNums;
+
+                //重新开始
+                aOffsetArr[blockNums] = 0;
+                aLastBitPosition = 0;
+                return;
+            }
+        } else {
+            if (!aEncoder.hasRemaining()) {
+                aLastBitPosition -= aEncoder.getBitPosition();
+                //落盘
+                flush(aFc, aBuf);
+                //aEncoder里面还有剩下需要记录下位置
+                aLastBitPosition += aEncoder.getBitPosition();
+            }
+        }
+
         int aBitPosition = aEncoder.getBitPosition();
-        int aBlockSize = aBitPosition - aLastBitPosition;
-        aOffsetArr[blockNum] = aOffsetArr[blockNum - 1] + aBlockSize;
+        aOffsetArr[blockNum] = aOffsetArr[blockNum - 1] + aBitPosition - aLastBitPosition;
         aLastBitPosition = aBitPosition;
     }
 
-    private boolean checkAndCacheABlock(ByteBuffer aBuf) {
-        if (isCacheMode) {
-            if (aCacheBlockBuf.remaining() < aBuf.remaining()) {
-                isCacheMode = false;
-                //把最后一个值放入到cache中，保证完整性
-                aCacheBlockBuf.putInt(ramainAValue);
-                return false;
-            } else {
-                aCacheBlockBuf.put(aBuf);
-                aBuf.position(0);
-                //把这个块最后剩余在encode中的值记录下来
-                ramainAValue = aEncoder.getValue();
-                return true;
-            }
-        }
-        return false;
-    }
 
     private void updateMsgBlock(int pos) {
         int msgBitPosition = msgEncoder.getBitPosition();
@@ -186,7 +166,7 @@ public class MessageFile {
             int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem, tBuf);
 
             long[] as = getItem.as;
-            readAArray(minPos, maxPos, tLen, getItem.aDecoder, getItem.buf, as);
+            readAArray(minPos, maxPos, tLen, getItem.aDecoder, getItem.buf, as, ts);
             //minPos，maxPos是在主内存索引的位置
             readMsgs(minPos, maxPos, getItem, as, ts, tLen, aMin, aMax, tMin, tMax);
         }
@@ -324,7 +304,34 @@ public class MessageFile {
         }
     }
 
-    private void readAArray(int minPos, int maxPos, int len, ADecoder aDecoder, ByteBuffer readBuf, long[] as) {
+    private void readAArray(int minPos, int maxPos, int len, ADecoder aDecoder, ByteBuffer readBuf, long[] as, long[] ts) {
+        if (maxPos < aCacheBlockNums) {
+            //全在内存里
+            readAFromMemory(minPos, maxPos, len, aDecoder, as, ts);
+        } if (minPos >= aCacheBlockNums) {
+            //全在文件中
+            readAFromFile(minPos, maxPos, 0, len, aDecoder, readBuf, as, ts);
+        } else {
+            int readLen = readAFromMemory(minPos, aCacheBlockNums, len, aDecoder, as, ts);
+            readAFromFile(aCacheBlockNums, maxPos, readLen, len, aDecoder, readBuf, as, ts);
+        }
+
+    }
+
+    private int readAFromMemory(int minPos, int maxPos, int len, ADecoder aDecoder, long[] as, long[] ts) {
+        ByteBuffer readBuf = aCacheBlockBuf.duplicate();
+        int cnt = 0;
+        aDecoder.reset(readBuf, (int) aOffsetArr[minPos]);
+        while (minPos < maxPos) {
+            int readLen = Math.min(len - cnt, Const.INDEX_INTERVAL);
+            aDecoder.decode(as, cnt, readLen);
+            cnt += readLen;
+            minPos++;
+        }
+        return cnt;
+    }
+
+    private void readAFromFile(int minPos, int maxPos, int pos, int len, ADecoder aDecoder, ByteBuffer readBuf, long[] as, long[] ts) {
         long startPos = (aOffsetArr[minPos] / 32) * 4;
         long endPos = (aOffsetArr[maxPos] / 32) * 4;
         if (aOffsetArr[maxPos] % 32 > 0) {
@@ -335,23 +342,29 @@ public class MessageFile {
         readBuf.limit(readBytes);
         //必须是一次性拿
         long start = System.currentTimeMillis();
-        readInBuf(startPos, readBuf, aFc);
+        try {
+            readInBuf(startPos, readBuf, aFc);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         readATime += (System.currentTimeMillis() - start);
 
         readBuf.position(0);
         //放一个4字节的哨兵
         readBuf.limit(readBytes + 4);
 
-        int cnt = 0;
         aDecoder.reset(readBuf, (int) (aOffsetArr[minPos] % 32));
 
         while (minPos < maxPos) {
-            int readLen = Math.min(len - cnt, Const.INDEX_INTERVAL);
-            aDecoder.decode(as, cnt, readLen);
-            cnt += readLen;
+            int readLen = Math.min(len - pos, Const.INDEX_INTERVAL);
+            aDecoder.decode(as, pos, readLen);
+            pos += readLen;
             minPos++;
         }
     }
+
+
 
     private void readInBuf(long pos, ByteBuffer bb, FileChannel fc) {
         try {
@@ -392,7 +405,7 @@ public class MessageFile {
             maxPos++;
         }
         len += filterNum;
-        readAArray(minPos, maxPos, len, getItem.aDecoder, getItem.buf, as);
+        readAArray(minPos, maxPos, len, getItem.aDecoder, getItem.buf, as, null);
 
         long sum = 0;
         int count = 0;
@@ -501,6 +514,7 @@ public class MessageFile {
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[blockNums - 1] / 8
                     + " bufSize:"+ buf.limit()
+                    + " aCacheNums:" + aCacheBlockNums * Const.INDEX_INTERVAL
                     + " msgOffsetArr:" + msgOffsetArr[blockNums]);
         } catch (IOException e) {
             e.printStackTrace();

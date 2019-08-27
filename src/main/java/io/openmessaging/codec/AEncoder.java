@@ -1,5 +1,7 @@
 package io.openmessaging.codec;
 
+import io.openmessaging.Const;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -89,6 +91,11 @@ public class AEncoder extends AbstractEncoder {
     }
 
     public boolean hasRemaining() {
-        return buf.remaining() > 32;
+        return buf.remaining() > Const.INDEX_INTERVAL * Const.LONG_BYTES;
+    }
+
+    public void resetBuf(ByteBuffer buf) {
+        this.buf = buf;
+        this.reset();
     }
 }

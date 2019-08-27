@@ -73,17 +73,14 @@ public abstract class AbstractEncoder {
     public void flushAndClear() {
         flush();
         reset();
+        buf.clear();
     }
 
-    private void reset() {
-        bitsAvailable = 0;
+    void reset() {
+        bitsAvailable = Integer.SIZE;
         value = 0;
-        buf.clear();
     }
 
-    public void bufClear() {
-        buf.clear();
-    }
 
     void putLong(long val, int valBitsAvailable) {
         if (valBitsAvailable < 32) {

@@ -76,7 +76,7 @@ public class MsgDecoder extends AbstractDecoder {
     }
 
     private int getShortVal() {
-        int bitsAvailable = getBits(6);
+        int bitsAvailable = getBits(5);
         int signed = bitsAvailable & 1;
         bitsAvailable = bitsAvailable >> 1;
         int val = getBits(bitsAvailable + 1);
