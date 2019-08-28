@@ -27,7 +27,6 @@ public abstract class AbstractDecoder {
     }
 
     public void reset(ByteBuffer buf, long bitPos) {
-        System.out.println("pos:" + ((int)(bitPos / 32)) * 4 + ",pos1:" + (bitPos / 32) * 4 + ",limit:" + buf.limit() + " ca:" + buf.capacity());
         //记录buf，准备读取
         this.buf = buf;
         //不能改成除以8，否则会出错

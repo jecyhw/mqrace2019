@@ -39,7 +39,7 @@ public class MessageFile {
     private final long[] aMaxArr = new long[Const.INDEX_ELE_LENGTH];
     private final long[] aMinArr = new long[Const.INDEX_ELE_LENGTH];
     private final long[] aSumArr = new long[Const.INDEX_ELE_LENGTH];
-    private int aLastBitPosition = 0;
+    private long aLastBitPosition = 0;
     private ByteBuffer aCacheBlockBuf = AMemory.getCacheBuf();
     private boolean isCacheMode = true;
     private int aCacheBlockNums = 0;
@@ -143,7 +143,7 @@ public class MessageFile {
     }
 
     private void updateABlock(int blockNum) {
-        int aBitPosition = aEncoder.getBitPosition();
+        long aBitPosition = aEncoder.getLongBitPosition();
         aOffsetArr[blockNum] = aOffsetArr[blockNum - 1] + aBitPosition - aLastBitPosition;
         aLastBitPosition = aBitPosition;
 
@@ -165,7 +165,7 @@ public class MessageFile {
                 //落盘
                 flush(aFc, aBuf);
                 //aEncoder里面还有剩下需要记录下位置
-                aLastBitPosition = aEncoder.getBitPosition();
+                aLastBitPosition = aEncoder.getLongBitPosition();
             }
         }
     }
@@ -521,7 +521,7 @@ public class MessageFile {
         msgEncoder.flush();
         flush(msgFc, msgBuf);
 
-        aOffsetArr[blockNums] = aOffsetArr[blockNums - 1] + (aEncoder.getBitPosition() - aLastBitPosition);
+        aOffsetArr[blockNums] = aOffsetArr[blockNums - 1] + (aEncoder.getLongBitPosition() - aLastBitPosition);
         aEncoder.flush();
         if (isCacheMode) {
             aCacheBlockNums = blockNums;

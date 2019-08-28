@@ -98,4 +98,9 @@ public class AEncoder extends AbstractEncoder {
         this.buf = buf;
         this.reset();
     }
+
+    public long getLongBitPosition() {
+        return buf.position() * 8L + (Integer.SIZE - bitsAvailable);
+    }
+
 }
