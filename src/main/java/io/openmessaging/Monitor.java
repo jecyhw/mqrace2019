@@ -2,11 +2,6 @@ package io.openmessaging;
 
 import io.openmessaging.util.Utils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.lang.management.ManagementFactory;
-import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -64,10 +59,6 @@ public class Monitor {
         long score = putScore + getMsgScore + getAvgScore;
         sb.append("[log] score:").append(score).append(" putScore:").append(putScore).append(" getMsgScore:")
                 .append(getMsgScore).append(" getAvgScore:").append(getAvgScore).append("\n");
-
-        sb.append("in:").append(MessageFile.inCounter.get()).append(",out").append(MessageFile.outCounter.get())
-                .append(",all:").append(MessageFile.allCounter.get()).append("\n");
-        sb.append("getMsg readAFromFile:").append(MessageFile.readAFromFile.get()).append(",readAFromMemory:").append(MessageFile.readAFromMemory.get()).append("\n");
 
         Utils.print(sb.toString());
 

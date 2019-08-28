@@ -328,21 +328,15 @@ public class MessageFile {
         }
     }
 
-    static AtomicInteger readAFromFile = new AtomicInteger();
-    static AtomicInteger readAFromMemory = new AtomicInteger();
     private void readAArray(int minPos, int maxPos, int len, ADecoder aDecoder, ByteBuffer readBuf, long[] as, long[] ts) {
         if (maxPos < aCacheBlockNums) {
-            readAFromMemory.addAndGet(len);
             //全在内存里
             readAFromMemory(minPos, maxPos, len, aDecoder, as, ts);
         } else if (minPos >= aCacheBlockNums) {
-            readAFromFile.addAndGet(len);
             //全在文件中
             readAFromFile(minPos, maxPos, 0, len, aDecoder, readBuf, as, ts);
         } else {
             int readLen = readAFromMemory(minPos, aCacheBlockNums, len, aDecoder, as, ts);
-            readAFromMemory.addAndGet(len);
-            readAFromFile.addAndGet(len - readLen);
             if (readLen < len) {
                 readAFromFile(aCacheBlockNums, maxPos, readLen, len, aDecoder, readBuf, as, ts);
             }
@@ -419,10 +413,6 @@ public class MessageFile {
         }
     }
 
-    static final AtomicInteger allCounter = new AtomicInteger(0);
-    static final AtomicInteger inCounter = new AtomicInteger(0);
-    static final AtomicInteger outCounter = new AtomicInteger(0);
-
     private void sumAInRangeT(int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
         int len = endPos - fromPos;
         long[] as = getItem.as;
@@ -435,16 +425,6 @@ public class MessageFile {
         }
         len += filterNum;
         readAArray(minPos, maxPos, len, getItem.aDecoder, getItem.buf, as, null);
-
-        for (int i = minPos; i < maxPos; i++) {
-            if (aMaxArr[minPos] < aMin || aMinArr[minPos] > aMax) {
-                outCounter.incrementAndGet();
-            } else if (aMinArr[minPos] >= aMin && aMaxArr[minPos] <= aMax) {
-                inCounter.incrementAndGet();
-            } else {
-                allCounter.incrementAndGet();
-            }
-        }
 
         long sum = 0;
         int count = 0;
