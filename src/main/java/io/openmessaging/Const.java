@@ -11,8 +11,7 @@ public interface Const {
 
     int MSG_BYTES = 34;
 
-    int PUT_BUFFER_SIZE = 1024 * 1024; // 16k写入
-    int GET_BUFFER_SIZE = 1024 * 1024 * 4; //一次最多读取
+    int PUT_BUFFER_SIZE = 1024 * 1024 * 2; // 16k写入
     int LONG_BYTES = 8;
 
 
