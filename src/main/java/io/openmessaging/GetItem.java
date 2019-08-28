@@ -1,6 +1,5 @@
 package io.openmessaging;
 
-import io.openmessaging.codec.ADecoder;
 import io.openmessaging.codec.MsgDecoder;
 import io.openmessaging.codec.TDecoder;
 
@@ -18,6 +17,5 @@ public class GetItem {
     List<Message> messages;
     ByteBuffer[] tBufs;
     TDecoder tDecoder = new TDecoder();
-    ADecoder aDecoder = new ADecoder();
     MsgDecoder msgDecoder = new MsgDecoder();
 }
