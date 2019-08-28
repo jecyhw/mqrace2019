@@ -62,7 +62,7 @@ public class Monitor {
 
         Utils.print(sb.toString());
 
-        if (score > Const.DEST) {
+        if (score <= Const.DEST) {
             System.err.println("func=shutdownHook stop");
         }
     }
