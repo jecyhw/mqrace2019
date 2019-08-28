@@ -346,7 +346,7 @@ public class MessageFile {
     private int readAFromMemory(int minPos, int maxPos, int len, ADecoder aDecoder, long[] as, long[] ts) {
         ByteBuffer readBuf = aCacheBlockBuf.duplicate();
         int cnt = 0;
-        aDecoder.reset(readBuf, (int) aOffsetArr[minPos]);
+        aDecoder.reset(readBuf, aOffsetArr[minPos]);
         while (minPos < maxPos) {
             int readLen = Math.min(len - cnt, Const.INDEX_INTERVAL);
             aDecoder.decode(as, cnt, readLen);

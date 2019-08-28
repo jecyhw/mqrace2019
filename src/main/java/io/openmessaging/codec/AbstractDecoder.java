@@ -26,6 +26,15 @@ public abstract class AbstractDecoder {
         bitsAvailable = Integer.SIZE - bitPos % 32;
     }
 
+    public void reset(ByteBuffer buf, long bitPos) {
+        //记录buf，准备读取
+        this.buf = buf;
+        //不能改成除以8，否则会出错
+        buf.position(((int)(bitPos / 32)) * 4);
+        bits = buf.getInt();
+        bitsAvailable = Integer.SIZE - ((int)(bitPos % 32));
+    }
+
     /**
      * 从buf中拿多少比特，bitsInValue=4表示从buf中往后拿4个比特位
      * @param bitsInValue 最大31位
