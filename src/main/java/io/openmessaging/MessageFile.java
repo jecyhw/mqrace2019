@@ -481,7 +481,7 @@ public class MessageFile {
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[blockNums - 1] / 8
                     + " bufSize:"+ tBuf.limit()
-                    + " aCacheNums:" + aCacheNums * Const.INDEX_INTERVAL
+                    + " aCacheNums:" + aCacheNums
                     + " msgOffsetArr:" + msgOffsetArr[blockNums]);
         } catch (IOException e) {
             e.printStackTrace();
