@@ -94,7 +94,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
         Utils.print("getAvg aMin:" + Long.toBinaryString(aMin) + " aMax:" + Long.toBinaryString(aMax)
-                + " tMin:" + Long.toBinaryString(tMin) + " tMax:" + Long.toBinaryString(tMax));
+                + " tMin:" + Long.toBinaryString(tMin) + " tMax:" + Long.toBinaryString(tMax)
+                + " diffA:" + (aMax - aMin) + " diffT:" + (tMax - tMin));
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
                 if (isFirstGet) {
@@ -126,8 +127,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         Utils.print("getAvg aMin:" + Long.toBinaryString(aMin) + " aMax:" + Long.toBinaryString(aMax)
-                + " tMin:" + Long.toBinaryString(tMin) + " tMax:" + Long.toBinaryString(tMax));
-        Monitor.getAvgStat();
+                + " tMin:" + Long.toBinaryString(tMin) + " tMax:" + Long.toBinaryString(tMax)
+                + " diffA:" + (aMax - aMin) + " diffT:" + (tMax - tMin));
 
         if (isFirstGetAvg) {
             synchronized (DefaultMessageStoreImpl.class) {
