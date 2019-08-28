@@ -201,6 +201,7 @@ public class MessageFile {
             if (fromPos >= endPos) {
                 return;
             }
+
             sumAInRangeT(fromPos, endPos, aMin, aMax, tMin, tMax, intervalSum, getItem);
         }
     }
@@ -277,6 +278,19 @@ public class MessageFile {
 
         readAArray(fromPos, endPos, len, getItem.buf, as);
 
+        StringBuilder sb = new StringBuilder();
+        sb.append("[s:").append(fromPos / Const.INDEX_INTERVAL).append("][e:").append(endPos / Const.INDEX_INTERVAL);
+        int begin = fromPos % Const.INDEX_INTERVAL;
+        sb.append("][sL:").append(begin).append("][sE:").append(endPos % Const.INDEX_INTERVAL).append("]");
+        int edge = 0;
+        if (begin > 0) {
+            edge += Const.INDEX_INTERVAL - begin;
+        }
+        edge += endPos % Const.INDEX_INTERVAL;
+        sb.append("[edge:").append(edge).append("]");
+
+        int max = 0; int min = 0;
+
         long sum = 0;
         int count = 0;
         for (int i = 0; i < len; i++) {
@@ -284,8 +298,17 @@ public class MessageFile {
             if (a >= aMin && a <= aMax) {
                 sum += a;
                 count++;
+            } else {
+                if (a > aMax) {
+                    max++;
+                } else {
+                    min++;
+                }
             }
         }
+        sb.append("[max:").append(max).append("][min:").append(min).append("]").append("[cnt:").append(count).append("]").append("\n");
+        Utils.print(sb.toString());
+
         intervalSum.add(sum, count);
     }
 
