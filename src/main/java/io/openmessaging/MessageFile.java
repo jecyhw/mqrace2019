@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static io.openmessaging.util.Utils.print;
 
@@ -69,6 +68,9 @@ public class MessageFile {
     }
 
     public final void put(Message message) {
+        if (putCount % (1024 * 1024 * 8) == 0) {
+            Utils.print("putCount:" + putCount);
+        }
         long t = message.getT(), a = message.getA();
         byte[] body = message.getBody();
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5

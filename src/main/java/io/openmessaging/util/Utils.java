@@ -8,7 +8,7 @@ import java.util.Date;
  * Created by yanghuiwei on 2019-07-28
  */
 public abstract class Utils {
-    public static void print(String msg) {
+    public static void print(Object msg) {
         if (Const.PRINT_LOG) {
             System.out.println(new Date().toString() + " " + msg);
         }
