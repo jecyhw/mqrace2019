@@ -31,9 +31,9 @@ public interface Const {
 
     int A_MEMORY_IN_HEAP_SIZE = 1024 * 1024 * 300;
     int A_MEMORY_IN_HEAP_NUM = 6;
-    int A_MEMORY_OUT_HEAP_SIZE = 1024 * 1024 * 254;
+    int A_MEMORY_OUT_HEAP_SIZE = 1024 * 1024 * 252;
     int A_MEMORY_IN_NUM = 11;
-    int A_MEMORY_LAST_OUT_HEAP_SIZE = (1024 * 1024 * 262);
+    int A_MEMORY_LAST_OUT_HEAP_SIZE = 1024 * 1024 * 260;
 
     boolean PRINT_LOG = true;
 
