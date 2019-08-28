@@ -279,15 +279,20 @@ public class MessageFile {
         readAArray(fromPos, endPos, len, getItem.buf, as);
 
         StringBuilder sb = new StringBuilder();
-        sb.append("[s:").append(fromPos / Const.INDEX_INTERVAL).append("][e:").append(endPos / Const.INDEX_INTERVAL);
+        int sPos = fromPos / Const.INDEX_INTERVAL;
+        int ePos = endPos / Const.INDEX_INTERVAL;
+
+        sb.append("[s:").append(sPos).append("][e:").append(ePos);
         int begin = fromPos % Const.INDEX_INTERVAL;
         sb.append("][sL:").append(begin).append("][sE:").append(endPos % Const.INDEX_INTERVAL).append("]");
-        int edge = 0;
+        int edge = 0 ;
         if (begin > 0) {
             edge += Const.INDEX_INTERVAL - begin;
+            sPos++;
         }
         edge += endPos % Const.INDEX_INTERVAL;
-        sb.append("[edge:").append(edge).append("]");
+
+        sb.append("[edge:").append(edge).append("]").append("[in:").append(ePos - sPos).append("]");
 
         int max = 0; int min = 0;
 
