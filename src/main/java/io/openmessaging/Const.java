@@ -30,10 +30,10 @@ public interface Const {
     int MAX_GET_MESSAGE_SIZE = 7 * 10000;
 
     int A_MEMORY_IN_HEAP_SIZE = 1024 * 1024 * 300;
-    int A_MEMORY_IN_HEAP_NUM = 6;
-    int A_MEMORY_OUT_HEAP_SIZE = 1024 * 1024 * 252;
+    int A_MEMORY_IN_HEAP_NUM = 7;
+    int A_MEMORY_OUT_HEAP_SIZE = 1024 * 1024 * 304;
     int A_MEMORY_IN_NUM = 11;
-    int A_MEMORY_LAST_OUT_HEAP_SIZE = 1024 * 1024 * 260;
+    int A_MEMORY_LAST_OUT_HEAP_SIZE = 1024 * 1024 * 304;
 
     boolean PRINT_LOG = true;
 
