@@ -428,12 +428,7 @@ public class MessageFile {
         len += filterNum;
         readAArray(minPos, maxPos, len, getItem.aDecoder, getItem.buf, as, null);
 
-        long sum = 0;
-        int count = 0;
-        for (int i = filterNum; i < len; i++) {
-            if (i > 0 && i % Const.INDEX_INTERVAL == 0) {
-                minPos++;
-            }
+        for (int i = minPos; i < maxPos; i++) {
             if (aMaxArr[minPos] < aMin || aMinArr[minPos] > aMax) {
                 outCounter.incrementAndGet();
             } else if (aMinArr[minPos] >= aMin && aMaxArr[minPos] <= aMax) {
@@ -441,7 +436,11 @@ public class MessageFile {
             } else {
                 allCounter.incrementAndGet();
             }
+        }
 
+        long sum = 0;
+        int count = 0;
+        for (int i = filterNum; i < len; i++) {
             long a = as[i];
             if (a >= aMin && a <= aMax) {
                 sum += a;
