@@ -17,7 +17,7 @@ public interface Const {
 
 
     //固定成一块
-    int MEMORY_BUFFER_SIZE = (int) (1024 * 1024 * 41.5);
+    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 42;
 
     int INDEX_INTERVAL = 128;
     int INDEX_ELE_LENGTH = 1500000;//需要和INDEX_INTERVAL一起调
