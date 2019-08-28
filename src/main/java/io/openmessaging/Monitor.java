@@ -62,7 +62,7 @@ public class Monitor {
 
         Utils.print(sb.toString());
 
-        if (getAvgTimes[getAvgCounter.get()] - getAvgTimes[0] < Const.DEST) {
+        if (score > Const.DEST) {
             System.err.println("func=shutdownHook stop");
         }
     }
