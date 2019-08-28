@@ -1,7 +1,6 @@
 package io.openmessaging;
 
 import io.netty.util.concurrent.FastThreadLocal;
-import io.openmessaging.util.Utils;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -33,7 +32,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     };
 
     private static AtomicInteger getCounter = new AtomicInteger(0);
-    private static GetItem[] items = new GetItem[12];
+    private static GetItem[] items;
 
     private static FastThreadLocal<GetItem> getMsgItemThreadLocal = new FastThreadLocal<GetItem>() {
         @Override
@@ -42,10 +41,11 @@ public class DefaultMessageStoreImpl extends MessageStore {
             int size = messageFiles.size();
             item.tBufs = new ByteBuffer[size];
             for (int i = 0; i < size; i++) {
-                item.tBufs[i] = messageFiles.get(i).buf.duplicate();
+                item.tBufs[i] = messageFiles.get(i).tBuf.duplicate();
             }
-
-            items[getCounter.incrementAndGet() - 1] = item;
+            int index = getCounter.incrementAndGet() - 1;
+            item.buf = messageFiles.get(index).buf;
+            items[index] = item;
             return item;
         }
     };
@@ -93,9 +93,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        Utils.print("getAvg aMin:" + Long.toBinaryString(aMin) + " aMax:" + Long.toBinaryString(aMax)
-                + " tMin:" + Long.toBinaryString(tMin) + " tMax:" + Long.toBinaryString(tMax)
-                + " diffA:" + (aMax - aMin) + " diffT:" + (tMax - tMin));
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
                 if (isFirstGet) {
@@ -103,6 +100,8 @@ public class DefaultMessageStoreImpl extends MessageStore {
                         messageFiles.get(i).flush();
                     }
                     Monitor.getMsgStart();
+                    items = new GetItem[messageFiles.size()];
+
                     isFirstGet = false;
                 }
             }
@@ -122,28 +121,10 @@ public class DefaultMessageStoreImpl extends MessageStore {
         return messages;
     }
 
-    private static volatile boolean isFirstGetAvg = true;
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
-        Utils.print("getAvg aMin:" + Long.toBinaryString(aMin) + " aMax:" + Long.toBinaryString(aMax)
-                + " tMin:" + Long.toBinaryString(tMin) + " tMax:" + Long.toBinaryString(tMax)
-                + " diffA:" + (aMax - aMin) + " diffT:" + (tMax - tMin));
-
-        if (isFirstGetAvg) {
-            synchronized (DefaultMessageStoreImpl.class) {
-                if (isFirstGetAvg) {
-                    for (MessageFile messageFile : messageFiles) {
-                        messageFile.readATime = 0;
-                    }
-                    Utils.print("getMsg readAFromFile:" + MessageFile.readAFromFile.get() + ",readAFromMemory:" + MessageFile.readAFromMemory.get());
-                    MessageFile.readAFromFile.set(0);
-                    MessageFile.readAFromMemory.set(0);
-                    isFirstGetAvg = false;
-                }
-            }
-        }
-
+        Monitor.getAvgStat();
         GetItem getItem = getAvgItemThreadLocal.get();
 
         IntervalSum intervalSum = getItem.intervalSum;
@@ -157,12 +138,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            StringBuilder sb = new StringBuilder();
-            for (MessageFile messageFile : messageFiles) {
-                sb.append("[readATime:").append(messageFile.readATime).append("]");
-            }
-            sb.append("\n");
-            Utils.print(sb.toString());
             Monitor.log();
         }));
     }

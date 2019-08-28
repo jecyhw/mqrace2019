@@ -17,23 +17,23 @@ import static io.openmessaging.util.Utils.print;
  * Created by yanghuiwei on 2019-07-26
  */
 public class MessageFile {
-    private static final AtomicInteger idAllocator = new AtomicInteger(0);
-    final ByteBuffer buf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
+    final ByteBuffer buf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE * 2);
 
-    private TEncoder tEncoder = new TEncoder(buf);
+    private static final AtomicInteger idAllocator = new AtomicInteger(0);
+    final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
+    private TEncoder tEncoder = new TEncoder(tBuf);
     private final long[] tArr = new long[Const.INDEX_ELE_LENGTH];
     private final int[] tOffsetArr = new int[Const.INDEX_ELE_LENGTH];
     private long firstT, lastT;
 
     //直接压缩到这个字节数组上
     private int msgLastBitPosition = 0;
-    private final ByteBuffer msgBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
+    private final ByteBuffer msgBuf;
     private FileChannel msgFc;
     private final long[] msgOffsetArr = new long[Const.INDEX_ELE_LENGTH];
-    private final MsgEncoder msgEncoder = new MsgEncoder(msgBuf);
+    private final MsgEncoder msgEncoder;
 
-
-    private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
+    private final ByteBuffer aBuf;
     private FileChannel aFc;
     private final long[] aOffsetArr = new long[Const.INDEX_ELE_LENGTH];
     private final long[] aMaxArr = new long[Const.INDEX_ELE_LENGTH];
@@ -44,12 +44,10 @@ public class MessageFile {
     private boolean isCacheMode = true;
     private int aCacheBlockNums = 0;
     //先往缓存内存中写，写满为止
-    AEncoder aEncoder = new AEncoder(aCacheBlockBuf);
-
-    long readATime = 0;
+    private AEncoder aEncoder = new AEncoder(aCacheBlockBuf);
 
     //put计数
-    int putCount = 0;
+    private int putCount = 0;
 
     //索引内存数组
     //indexBufs存的元素个数
@@ -57,6 +55,15 @@ public class MessageFile {
 
 
     public MessageFile() {
+        buf.limit(Const.PUT_BUFFER_SIZE);
+        msgBuf = buf.slice();
+        msgEncoder = new MsgEncoder(msgBuf);
+
+        buf.position(Const.PUT_BUFFER_SIZE);
+        buf.limit(Const.PUT_BUFFER_SIZE * 2);
+        aBuf = buf.slice();
+
+
         int fileId = idAllocator.getAndIncrement();
         try {
             msgFc = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw").getChannel();
@@ -68,9 +75,6 @@ public class MessageFile {
     }
 
     public final void put(Message message) {
-        if (putCount % (1024 * 1024 * 8) == 0) {
-            Utils.print("putCount:" + putCount);
-        }
         long t = message.getT(), a = message.getA();
         byte[] body = message.getBody();
         //比如对于1 2 3 4 5 6，间隔为2，会存 1 3 5
@@ -124,6 +128,10 @@ public class MessageFile {
 
         putCount++;
         lastT = t;
+
+        if (putCount % (1024 * 1024 * 8) == 0) {
+            Utils.print("putCount:" + putCount);
+        }
     }
 
     private void checkAndFlushMsgBuf() {
@@ -365,9 +373,7 @@ public class MessageFile {
         int readBytes = (int) (endPos - startPos);
         readBuf.limit(readBytes);
         //必须是一次性拿
-        long start = System.currentTimeMillis();
         readInBuf(startPos, readBuf, aFc);
-        readATime += (System.currentTimeMillis() - start);
 
         readBuf.position(0);
         //放一个4字节的哨兵
@@ -550,7 +556,7 @@ public class MessageFile {
                     + " putCount:" + putCount + " aFilSize:" + aFc.size() + " compressMsgFileSize:" + msgFc.size()
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[blockNums - 1] / 8
-                    + " bufSize:"+ buf.limit()
+                    + " bufSize:"+ tBuf.limit()
                     + " aCacheNums:" + aCacheBlockNums * Const.INDEX_INTERVAL
                     + " msgOffsetArr:" + msgOffsetArr[blockNums]);
         } catch (IOException e) {

@@ -17,7 +17,7 @@ public interface Const {
 
 
     //固定成一块
-    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 42;
+    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 43;
 
     int INDEX_INTERVAL = 128;
     int INDEX_ELE_LENGTH = 1500000;//需要和INDEX_INTERVAL一起调
@@ -27,7 +27,7 @@ public interface Const {
 
     int T_DECREASE = 3; //取值范围 0-3
 
-    int MAX_GET_AT_SIZE = 10 * 10000;
+    int MAX_GET_AT_SIZE = 8 * 10000;
     int MAX_GET_MESSAGE_SIZE = 7 * 10000;
 
     int A_MEMORY_IN_HEAP_SIZE = 1024*1024 * 300;
@@ -36,5 +36,5 @@ public interface Const {
 
     boolean PRINT_LOG = true;
 
-    int DEST = 20000;
+    int DEST = 22439;
 }
