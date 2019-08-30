@@ -1,9 +1,10 @@
 package io.openmessaging;
 
 import io.netty.util.concurrent.FastThreadLocal;
+import io.openmessaging.index.TAIndex;
+import io.openmessaging.manager.FileManager;
 
 import java.io.File;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -32,28 +33,14 @@ public class DefaultMessageStoreImpl extends MessageStore {
     };
 
     private static AtomicInteger getCounter = new AtomicInteger(0);
-    private static GetItem[] items;
 
     private static FastThreadLocal<GetItem> getMsgItemThreadLocal = new FastThreadLocal<GetItem>() {
         @Override
         public GetItem initialValue() {
             GetItem item = new GetItem();
-            int size = messageFiles.size();
-            item.tBufs = new ByteBuffer[size];
-            for (int i = 0; i < size; i++) {
-                item.tBufs[i] = messageFiles.get(i).tBuf.duplicate();
-            }
             int index = getCounter.incrementAndGet() - 1;
             item.buf = messageFiles.get(index).buf;
-            items[index] = item;
             return item;
-        }
-    };
-
-    private static FastThreadLocal<GetItem> getAvgItemThreadLocal = new FastThreadLocal<GetItem>() {
-        @Override
-        public GetItem initialValue() {
-            return items[getCounter.decrementAndGet()];
         }
     };
 
@@ -77,6 +64,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
                 file.delete();
             }
         }
+        FileManager.init();
         Monitor.putStart();
         print("func=init success");
     }
@@ -96,23 +84,29 @@ public class DefaultMessageStoreImpl extends MessageStore {
         if (isFirstGet) {
             synchronized (DefaultMessageStoreImpl.class) {
                 if (isFirstGet) {
+                    MessageFile.Iterator[] iterators = new MessageFile.Iterator[messageFiles.size()];
                     for (int i = messageFiles.size() - 1; i >= 0; i--) {
                         messageFiles.get(i).flush();
+                        iterators[i] = messageFiles.get(i).iterator();
                     }
-                    Monitor.getMsgStart();
-                    items = new GetItem[messageFiles.size()];
 
+                    Gather.init(iterators);
+                    Gather.start();
+                    Gather.join();
+
+                    Monitor.getMsgStart();
                     isFirstGet = false;
                 }
             }
         }
+
         GetItem getItem = getMsgItemThreadLocal.get();
         int messageFileSize = messageFiles.size();
 
         List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);
         getItem.messages = messages;
         for (int i = messageFileSize - 1; i >= 0; i--) {
-            messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem, getItem.tBufs[i]);
+            messageFiles.get(i).get(aMin, aMax, tMin, tMax, getItem);
         }
 
         messages.sort(messageComparator);
@@ -125,15 +119,10 @@ public class DefaultMessageStoreImpl extends MessageStore {
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         Monitor.getAvgStat();
-        GetItem getItem = getAvgItemThreadLocal.get();
-
-        IntervalSum intervalSum = getItem.intervalSum;
-        intervalSum.reset();
-        for (int i = messageFiles.size() - 1; i >= 0; i--) {
-            messageFiles.get(i).getAvgValue(aMin, aMax, tMin, tMax, intervalSum, getItem, getItem.tBufs[i]);
-        }
-
-        return intervalSum.avg();
+        long startTime = System.currentTimeMillis();
+        long avgValue = TAIndex.getAvgValue(aMin, aMax, tMin, tMax);
+        System.out.println("getAvg:" + (System.currentTimeMillis() - startTime));
+        return avgValue;
     }
 
     static {

@@ -1,8 +1,9 @@
 package io.openmessaging;
 
 import java.nio.ByteBuffer;
-import java.util.*;
-
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -25,7 +26,7 @@ public class DemoTester {
         //发送的线程数量
         int sendTsNum = 12;
         //查询的线程数量
-        int checkTsNum = 12;
+        int checkTsNum = 1;
         // 每次查询消息的最大跨度
         int maxMsgCheckSize = 50000;
         // 每次查询求平均的最大跨度
@@ -65,7 +66,7 @@ public class DemoTester {
         AtomicLong msgCheckNum = new AtomicLong(0);
         Thread[] msgChecks = new Thread[checkTsNum];
         for (int i = 0; i < checkTsNum; i++) {
-            msgChecks[i] = new Thread(new MessageChecker(messageStore, maxCheckTime, checkTimes, msgNum, maxMsgCheckSize, msgCheckTimes, msgCheckNum));
+            msgChecks[i] = new Thread(new MessageChecker(messageStore, maxCheckTime, 2, msgNum, maxMsgCheckSize, msgCheckTimes, msgCheckNum));
         }
         for (int i = 0; i < checkTsNum; i++) {
             msgChecks[i].start();
@@ -251,6 +252,38 @@ public class DemoTester {
 
         @Override
         public void run() {
+
+//            List<Message> messages = TAIndex.getMessage(0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+//            for (int i = 0; i < messages.size(); i++) {
+//                Message msg = messages.get(i);
+//                if ((msg.getT() & 1) == 1) {
+//                    if (i > 0 && msg.getT() != messages.get(i - 1).getT() + 1) {
+//                        System.err.println("1.error");
+//                    }
+//
+//                    if (msg.getT() != msg.getA()) {
+//                        System.err.println("4.error");
+//                    }
+//                } else {
+//                    if (msg.getT() != messages.get(i + 1).getT()) {
+//                        System.err.println("2.error");
+//                    }
+//                    if (msg.getT() != msg.getA()) {
+//                        System.err.println("4.error");
+//                    }
+//                    if (messages.get(i + 1).getT() != messages.get(i + 1).getA()) {
+//                        System.err.println("4.error");
+//                    }
+//                    if (i > 0 && msg.getT() != messages.get(i - 1).getT() + 1) {
+//                        System.err.println("3.error");
+//                    }
+//
+//                    i++;
+//                }
+//            }
+//
+//            System.out.println("message size:" + messages.size());
+
             Random random = new Random();
             while (timesCounter.getAndIncrement() < checkTimes && System.currentTimeMillis() <= maxTimeStamp) {
                 try {
@@ -266,10 +299,30 @@ public class DemoTester {
                     }
                     int tIndex2 = random.nextInt(maxCheckSize) + tIndex1;
 
-//                    aIndex1 = 26644;
-//                    aIndex2 = 49999;
-//                    tIndex1 = 29988;
-//                    tIndex2 = 62484;
+//                    List<Message> messages = TAIndex.getMessage(0, Integer.MAX_VALUE, 0, Integer.MAX_VALUE);
+//                    for (int i = 0; i < messages.size(); i++) {
+//                        Message msg = messages.get(i);
+//                        if ((msg.getT() & 1) == 1) {
+//                            if (i > 0 && msg.getT() != messages.get(i - 1).getT() + 1) {
+//                                System.err.println("1.error");
+//                            }
+//                        } else {
+//                            if (msg.getT() != messages.get(i + 1).getT()) {
+//                                System.err.println("2.error");
+//                            }
+//
+//                            if (i > 0 && msg.getT() != messages.get(i - 1).getT() + 1) {
+//                                System.err.println("3.error");
+//                            }
+//
+//                            i++;
+//                        }
+//                    }
+
+//                    aIndex1 = 474568;
+//                    aIndex2 = 524568;
+//                    tIndex1 = 475229;
+//                    tIndex2 = 513884;
 
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);

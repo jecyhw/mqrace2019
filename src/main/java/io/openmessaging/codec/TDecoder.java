@@ -1,7 +1,6 @@
 package io.openmessaging.codec;
 
 import io.openmessaging.Const;
-import io.openmessaging.codec.AbstractDecoder;
 
 import java.nio.ByteBuffer;
 
@@ -14,7 +13,7 @@ public class TDecoder extends AbstractDecoder {
         reset(buf, bitPos);
         int delta = 0;
         //从一个区间里找
-        for (int i = 1; i < Const.INDEX_INTERVAL; i++) {
+        for (int i = 1; i < Const.MERGE_T_INDEX_INTERVAL; i++) {
             delta += getDeltaOfDelta();
             t = t + delta;
             if (t >= destT) {
@@ -30,7 +29,7 @@ public class TDecoder extends AbstractDecoder {
         reset(buf, bitPos);
         int delta = 0;
         //从一个区间里找
-        for (int i = 1; i < Const.INDEX_INTERVAL; i++) {
+        for (int i = 1; i < Const.MERGE_T_INDEX_INTERVAL; i++) {
             delta += getDeltaOfDelta();
             t = t + delta;
             if (t > destT) {

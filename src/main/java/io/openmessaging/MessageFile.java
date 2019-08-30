@@ -1,6 +1,7 @@
 package io.openmessaging;
 
 import io.openmessaging.codec.*;
+import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.Utils;
 
 import java.io.FileNotFoundException;
@@ -20,11 +21,11 @@ public class MessageFile {
     final ByteBuffer buf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE * 2);
 
     private static final AtomicInteger idAllocator = new AtomicInteger(0);
-    final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
+    private final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
     private TEncoder tEncoder = new TEncoder(tBuf);
     private final long[] tArr = new long[Const.INDEX_ELE_LENGTH];
     private final int[] tOffsetArr = new int[Const.INDEX_ELE_LENGTH];
-    private long firstT, lastT;
+    private long lastT;
 
     //直接压缩到这个字节数组上
     private final ByteBuffer msgBuf;
@@ -32,9 +33,6 @@ public class MessageFile {
 
     private final ByteBuffer aBuf;
     private FileChannel aFc;
-    private ByteBuffer aCacheBlockBuf = AMemory.getCacheBuf();
-    private boolean isCacheMode = true;
-    private int aCacheNums = 0;
 
     //put计数
     private int putCount = 0;
@@ -75,10 +73,6 @@ public class MessageFile {
             tOffsetArr[blockNum] = tEncoder.getBitPosition();
             tEncoder.resetDelta();
 
-            if (putCount == 0) {
-                firstT = message.getT();
-            }
-
             blockNums++;
         } else {
             tEncoder.encode((int) (t - lastT));
@@ -103,25 +97,17 @@ public class MessageFile {
     }
 
     private void writeA(long a) {
-        if (isCacheMode) {
-            if (!aCacheBlockBuf.hasRemaining()) {
-                isCacheMode = false;
-                aBuf.putLong(a);
-            } else {
-                aCacheBlockBuf.putLong(a);
-            }
-        } else {
-            if (!aBuf.hasRemaining()) {
-                flush(aFc, aBuf);
-            }
-            aBuf.putLong(a);
+        if (!aBuf.hasRemaining()) {
+            flush(aFc, aBuf);
         }
+        aBuf.putLong(a);
     }
 
-    public final void get(long aMin, long aMax, long tMin, long tMax, GetItem getItem, ByteBuffer tBuf) {
+    public final void get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+        ByteBuffer tBuf = this.tBuf.duplicate();
         if (tMin <= tMax && aMin <= aMax) {
-            int minPos = firstLessInPrimaryIndex(tMin);
-            int maxPos = firstGreatInPrimaryIndex(tMax);
+            int minPos = ArrayUtils.findFirstLessThanIndex(tArr, tMin, 0, blockNums);
+            int maxPos = ArrayUtils.findFirstGreatThanIndex(tArr, tMax, 0, blockNums);
 
             if (minPos >= maxPos) {
                 return;
@@ -131,7 +117,7 @@ public class MessageFile {
             int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem, tBuf);
 
             long[] as = getItem.as;
-            readAArray(minPos * Const.INDEX_INTERVAL, maxPos * Const.INDEX_INTERVAL, tLen, getItem.buf, as);
+            readAArray(minPos * Const.INDEX_INTERVAL, tLen, getItem.buf, as);
             //minPos，maxPos是在主内存索引的位置
             readMsgs(minPos * Const.INDEX_INTERVAL, getItem, as, ts, tLen, aMin, aMax, tMin, tMax);
         }
@@ -193,41 +179,8 @@ public class MessageFile {
         }
     }
 
-
-    public final void getAvgValue(long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem, ByteBuffer tBuf) {
-        if (tMin <= tMax && aMin <= aMax) {
-            int fromPos = findLeftClosedInterval(tMin, getItem, tBuf);
-            int endPos = findRightOpenInterval(tMax, getItem, tBuf);
-            if (fromPos >= endPos) {
-                return;
-            }
-
-            sumAInRangeT(fromPos, endPos, aMin, aMax, tMin, tMax, intervalSum, getItem);
-        }
-    }
-
-    private void readAArray(int fileStartPos, int fileEndPos, int len, ByteBuffer readBuf, long[] as) {
-        if (fileEndPos < aCacheNums) {
-            //全在内存里
-            readAFromMemory(fileStartPos * Const.LONG_BYTES, len, as);
-        } else if (fileStartPos >= aCacheNums) {
-            //全在文件中
-            readAFromFile((fileStartPos - aCacheNums) * Const.LONG_BYTES, len, readBuf, as, 0);
-        } else {
-            int readLen = Math.min(len, aCacheNums - fileStartPos);
-            readAFromMemory(fileStartPos * Const.LONG_BYTES, readLen, as);
-            if (readLen < len) {
-                readAFromFile(0, len - readLen, readBuf, as, readLen);
-            }
-        }
-    }
-
-    private void readAFromMemory(int pos, int len, long[] as) {
-        ByteBuffer readBuf = aCacheBlockBuf.duplicate();
-        readBuf.position(pos);
-        for (int cnt = 0; cnt < len; cnt++) {
-            as[cnt] = readBuf.getLong();
-        }
+    private void readAArray(int fileStartPos, int len, ByteBuffer readBuf, long[] as) {
+        readAFromFile(fileStartPos  * Const.LONG_BYTES, len, readBuf, as, 0);
     }
 
     private void readAFromFile(int filePos, int readLen, ByteBuffer readBuf, long[] as, int aPos) {
@@ -272,133 +225,10 @@ public class MessageFile {
         }
     }
 
-    private void sumAInRangeT(int fromPos, int endPos, long aMin, long aMax, long tMin, long tMax, IntervalSum intervalSum, GetItem getItem) {
-        int len = endPos - fromPos;
-        long[] as = getItem.as;
-
-        readAArray(fromPos, endPos, len, getItem.buf, as);
-
-        StringBuilder sb = new StringBuilder();
-        int sPos = fromPos / Const.INDEX_INTERVAL;
-        int ePos = endPos / Const.INDEX_INTERVAL;
-
-        sb.append("[s:").append(sPos).append("][e:").append(ePos);
-        int begin = fromPos % Const.INDEX_INTERVAL;
-        sb.append("][sL:").append(begin).append("][sE:").append(endPos % Const.INDEX_INTERVAL).append("]");
-        int edge = 0 ;
-        if (begin > 0) {
-            edge += Const.INDEX_INTERVAL - begin;
-            sPos++;
-        }
-        edge += endPos % Const.INDEX_INTERVAL;
-
-        sb.append("[edge:").append(edge).append("]").append("[in:").append(ePos - sPos).append("]");
-
-        int max = 0; int min = 0;
-
-        long sum = 0;
-        int count = 0;
-        for (int i = 0; i < len; i++) {
-            long a = as[i];
-            if (a >= aMin && a <= aMax) {
-                sum += a;
-                count++;
-            } else {
-                if (a > aMax) {
-                    max++;
-                } else {
-                    min++;
-                }
-            }
-        }
-        sb.append("[max:").append(max).append("][min:").append(min).append("]").append("[cnt:").append(count).append("]").append("\n");
-        Utils.print(sb.toString());
-
-        intervalSum.add(sum, count);
-    }
-
-    /**
-     * 找左区间，包含[
-     */
-    private int findLeftClosedInterval(long destT, GetItem getItem, ByteBuffer tBuf) {
-        if (destT <= firstT) {
-            return 0;
-        }
-
-        if (destT > lastT) {
-            return putCount;
-        }
-
-        int minPos = firstLessInPrimaryIndex(destT);
-        long t = tArr[minPos];
-        if (t >= destT) {
-            return minPos * Const.INDEX_INTERVAL;
-        }
-        return getItem.tDecoder.getFirstGreatOrEqual(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, tOffsetArr[minPos]);
-    }
-
-    private int findRightOpenInterval(long destT, GetItem getItem, ByteBuffer tBuf) {
-        if (destT < firstT) {
-            return 0;
-        }
-
-        if (destT >= lastT) {
-            return putCount;
-        }
-        int minPos = firstLessInPrimaryIndex(destT);
-        return findRightOpenIntervalFromMemory(minPos, destT, getItem, tBuf);
-    }
-
-    private int findRightOpenIntervalFromMemory( int minPos, long destT, GetItem getItem, ByteBuffer tBuf) {
-        long t = tArr[minPos];
-        if (t > destT) {
-            return minPos * Const.INDEX_INTERVAL;
-        }
-        int pos = getItem.tDecoder.getFirstGreat(tBuf, t, destT, minPos * Const.INDEX_INTERVAL + 1, tOffsetArr[minPos]);
-        return pos < 0 ? findRightOpenIntervalFromMemory(minPos + 1, destT, getItem, tBuf) : pos;
-    }
-
-    private int firstGreatInPrimaryIndex(long val) {
-        int low = 0, high = blockNums, mid;
-        while(low < high){
-            mid = low + (high - low) / 2;
-
-            if(tArr[mid] > val) {
-                high = mid;
-            }
-            else {
-                low = mid + 1;
-            }
-        }
-        return low;
-    }
-
-    /**
-     * 查找第一个小于val的数字位置，如果没有将返回PrimaryIndex的第一个位置
-     */
-    private int firstLessInPrimaryIndex(long val) {
-        int low = 0, high = blockNums, mid;
-
-        //先找第一个大于等于val的位置，减1就是第一个小于val的位置
-        while (low < high) {
-            mid = low + (high - low) / 2;
-
-            if (val > tArr[mid]) {
-                low = mid + 1;
-            }
-            else {
-                high = mid;
-            }
-        }
-        return low == 0 ? low : low - 1;
-    }
 
     public final void flush() {
         //最后一块进行压缩
         flush(msgFc, msgBuf);
-
-        //最后计算
-        aCacheNums = aCacheBlockBuf.position() / Const.LONG_BYTES;
 
         flush(aFc, aBuf);
         tEncoder.flushAndClear();
@@ -408,11 +238,42 @@ public class MessageFile {
                     + " putCount:" + putCount + " aFilSize:" + aFc.size() + " compressMsgFileSize:" + msgFc.size()
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[blockNums - 1] / 8
-                    + " bufSize:"+ tBuf.limit()
-                    + " aCacheNums:" + aCacheNums);
+                    + " bufSize:"+ tBuf.limit());
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
+    public Iterator iterator() {
+        return new Iterator();
+    }
+
+
+    class Iterator {
+        int readBlockNums = 0;
+        TDecoder tDecoder = new TDecoder();
+
+        boolean hasNext() {
+            return readBlockNums < blockNums;
+        }
+
+        int nextTAndA(long[] t, long[] a, ByteBuffer aBuf) {
+            int readCount = readBlockNums == blockNums - 1 ? (putCount - 1) % Const.INDEX_INTERVAL : Const.INDEX_INTERVAL - 1;
+            t[0] = tArr[readBlockNums];
+            tDecoder.decode(tBuf, t, 1, tOffsetArr[readBlockNums], readCount);
+
+            readCount++;
+
+            aBuf.position(0);
+            aBuf.limit(readCount * Const.LONG_BYTES);
+            readInBuf(readBlockNums * Const.INDEX_INTERVAL * Const.LONG_BYTES, aBuf, aFc);
+            aBuf.position(0);
+            for (int i = 0; i < readCount; i++) {
+                a[i] = aBuf.getLong();
+            }
+
+            readBlockNums++;
+            return readCount;
+        }
+    }
 }

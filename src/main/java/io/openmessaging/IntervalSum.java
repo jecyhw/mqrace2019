@@ -4,15 +4,15 @@ package io.openmessaging;
  * Created by yanghuiwei on 2019-07-28
  */
 public class IntervalSum {
-    long sum;
-    int count;
+    public long sum;
+    public int count;
 
-    void reset() {
+    public void reset() {
         sum = 0;
         count = 0;
     }
 
-    void add(long sum, int count) {
+    public void add(long sum, int count) {
         this.sum += sum;
         this.count += count;
     }
