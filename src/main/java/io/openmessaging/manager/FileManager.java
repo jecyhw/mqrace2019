@@ -18,8 +18,8 @@ public final class FileManager {
     private static FileChannel aFc;
     private static FileChannel aSortFc;
 
-    private static final ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
-    private static final ByteBuffer aSortBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
+    private static final ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.M_PUT_BUFFER_SIZE);
+    private static final ByteBuffer aSortBuf = ByteBuffer.allocateDirect(Const.M_PUT_BUFFER_SIZE);
 
     private static int putAAndMsgCount = 0;
     private static int putASortCount = 0;
