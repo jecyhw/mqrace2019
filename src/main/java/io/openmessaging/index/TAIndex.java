@@ -46,10 +46,14 @@ public class TAIndex {
     }
 
 
+    private static List<GetItem> getItems = new ArrayList<>();
 
     private static ThreadLocal<GetItem> getItemThreadLocal = ThreadLocal.withInitial(() -> {
         GetItem getItem = new GetItem();
         getItem.readBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.MSG_BYTES);
+        synchronized (TAIndex.class) {
+            getItems.add(getItem);
+        }
         return getItem;
     });
 
@@ -125,7 +129,7 @@ public class TAIndex {
         int endTIndexPos = endTPos / Const.MERGE_T_INDEX_INTERVAL;
         int lastChunkNeedReadCount = endTPos % Const.MERGE_T_INDEX_INTERVAL;
 
-        int _beginTIndexPos = beginTIndexPos, _endTIndexPos = endTIndexPos;
+        int _beginTIndexPos = beginTIndexPos;
         int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
         int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
 
@@ -219,8 +223,14 @@ public class TAIndex {
         }
 
         getItem.costTime += (System.currentTimeMillis() - startTime);
+        getItem.readChunkACount += readChunkACount;
+        getItem.readChunkAFileCount += readChunkAFileCount;
+        getItem.readChunkASortCount += readChunkASortCount;
+        getItem.readChunkASortFileCount += readChunkASortFileCount;
+        getItem.sumChunkASortCount += sumChunkASortCount;
+        getItem.sumChunkASortFileCount += sumChunkASortFileCount;
 
-        Utils.print("begin:" + _beginTIndexPos + ",end:" + _endTIndexPos + ",aFileCnt:" + readChunkAFileCount + ",aSortFileCnt:" + readChunkASortFileCount + ",sumASortFileCnt:" + sumChunkASortFileCount
+        Utils.print("begin:" + _beginTIndexPos + ",end:" + endTIndexPos + ",aFileCnt:" + readChunkAFileCount + ",aSortFileCnt:" + readChunkASortFileCount + ",sumASortFileCnt:" + sumChunkASortFileCount
         + ",aCnt:" + readChunkACount + ",aSortCnt:" + readChunkASortCount + ",sumASortCnt:" + sumChunkASortCount + ",cost time:" + (System.currentTimeMillis() - startTime) + ",sum:" + intervalSum.sum
         + ",count:" + intervalSum.count + ",accCostTime:" + getItem.costTime);
 
@@ -374,5 +384,10 @@ public class TAIndex {
         sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
+        for (GetItem getItem : getItems) {
+            sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
+                    .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
+                    .append(getItem.sumChunkASortCount).append(",accCostTime:").append(getItem.costTime).append("\n");
+        }
     }
 }

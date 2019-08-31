@@ -16,4 +16,10 @@ public class GetItem {
     public List<Message> messages;
     public TDecoder tDecoder = new TDecoder();
     public long costTime = 0;
+    public int readChunkAFileCount = 0;
+    public int readChunkASortFileCount = 0;
+    public int sumChunkASortFileCount = 0;
+    public int readChunkACount = 0;
+    public int readChunkASortCount = 0;
+    public int sumChunkASortCount = 0;
 }
