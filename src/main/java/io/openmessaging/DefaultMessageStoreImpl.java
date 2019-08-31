@@ -19,7 +19,7 @@ import static io.openmessaging.util.Utils.print;
 public class DefaultMessageStoreImpl extends MessageStore {
     private static volatile boolean isFirstGet = true;
 
-    private static List<MessageFile> messageFiles = new ArrayList<>();
+    static List<MessageFile> messageFiles = new ArrayList<>();
     private static FastThreadLocal<MessageFile> messageFileThreadLocal = new FastThreadLocal<MessageFile>() {
         @Override
         public MessageFile initialValue()

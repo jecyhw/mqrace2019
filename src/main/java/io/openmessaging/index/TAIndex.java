@@ -172,7 +172,7 @@ public class TAIndex {
             if (beginASortIndexPos + 2 >= endASortIndexPos) {
                 if (beginASortIndexPos == endASortIndexPos + 1) {
                     //只有一块，并且这一块只有部分满足，才需要读取这一块
-                    if (beginASortIndexPos > low || aIndexArr[endASortIndexPos] < aMax) {
+                    if (beginASortIndexPos > low || aIndexArr[endASortIndexPos] > aMax) {
                         FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, buf);
                         sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                         beginTIndexPos++;
@@ -317,21 +317,25 @@ public class TAIndex {
 
 
     public static void flush(long t[], long a[], int len) {
-        long chunkPrevT = t[0];
+        long prevT = t[0];
 
         if (putCount == 0) {
-            firstT = chunkPrevT;
+            firstT = prevT;
         }
 
         //记录块中第一个t的信息：t的值、t在内存编码中的位置
-        addTIndex(chunkPrevT);
+        addTIndex(prevT);
         FileManager.writeA(a[0]);
 
         //第一个消息单独处理，for只处理第一个消息之后的
         for (int i = 1; i < len; i++) {
             long curT = t[i];
-            encodeDeltaT((int) (curT - chunkPrevT));
-            chunkPrevT = curT;
+            if (curT - prevT > 1) {
+                System.out.println("curT:" + curT + ",prevT:" + prevT);
+            }
+            encodeDeltaT((int) (curT - prevT));
+
+            prevT = curT;
             FileManager.writeA(a[i]);
         }
 
@@ -346,7 +350,7 @@ public class TAIndex {
 
     private static void completeASortAndCreateIndex(long[] a, int chunkSize) {
         //按照a进行排序
-        Arrays.sort(a, 0, chunkSize);
+        Arrays.parallelSort(a, 0, chunkSize);
 
         //在t的基础上在建立分区
         for (int i = 0; i < chunkSize; i += Const.A_INDEX_INTERVAL) {
@@ -370,7 +374,7 @@ public class TAIndex {
     }
 
     public static void log(StringBuilder sb) {
-        sb.append("putCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
+        sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
         sb.append(",tBytes:").append(tEncoder.getLongBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
