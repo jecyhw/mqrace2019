@@ -105,6 +105,7 @@ public class TAIndex {
         int beginTPos = findLeftClosedInterval(tMin, getItem.tDecoder, tBufDup);
         int endTPos = findRightOpenInterval(tMax, getItem.tDecoder, tBufDup);
         if (beginTPos >= endTPos) {
+            System.out.println("1.beginTPos:" + beginTPos + ",endTPos" + endTPos);
             return 0;
         }
 
@@ -132,6 +133,7 @@ public class TAIndex {
             FileManager.readChunkA(beginTPos, as, firstChunkNeedReadCount, buf);
             sumChunkA(as, firstChunkNeedReadCount, aMin, aMax, intervalSum);
 
+            System.out.println("2.sum:" + intervalSum.sum + ",count:" + intervalSum.count);
             return intervalSum.avg();
         }
 
@@ -224,7 +226,7 @@ public class TAIndex {
             beginTIndexPos++;
         }
         intervalSum.add(sum, count);
-        System.out.println("sum:" + intervalSum.sum + ",count:" + intervalSum.count);
+        System.out.println("3.sum:" + intervalSum.sum + ",count:" + intervalSum.count);
         return intervalSum.avg();
     }
 

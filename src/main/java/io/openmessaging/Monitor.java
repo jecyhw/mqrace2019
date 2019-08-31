@@ -1,5 +1,7 @@
 package io.openmessaging;
 
+import io.openmessaging.index.TAIndex;
+import io.openmessaging.manager.FileManager;
 import io.openmessaging.util.Utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -40,6 +42,10 @@ public class Monitor {
 
     public static void log() {
         StringBuilder sb = new StringBuilder();
+
+        TAIndex.log(sb);
+        FileManager.log(sb);
+
         sb.append("INDEX_INTERVAL:").append(Const.INDEX_INTERVAL).append(",INDEX_ELE_LENGTH:").append(Const.INDEX_ELE_LENGTH).append("\n");
         sb.append("put cost time:").append(getMsgStartTime - putStartTime)
                 .append(",get msg cost time:").append(getAvgTimes[0] - getMsgStartTime)
