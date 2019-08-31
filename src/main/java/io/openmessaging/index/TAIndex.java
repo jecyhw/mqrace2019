@@ -19,8 +19,8 @@ import java.util.List;
  * Created by yanghuiwei on 2019-08-28
  */
 public class TAIndex {
-    private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_INTERVAL];
-    private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_INTERVAL];
+    private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
+    private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
     private static int tIndexPos = 0;
 
     private static final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.T_MEMORY_SIZE);
