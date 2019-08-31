@@ -21,7 +21,7 @@ import java.util.List;
  */
 public class TAIndex {
     private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
-    private static long[] tMemIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
+    private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
     private static int tIndexPos = 0;
 
     private static final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.T_MEMORY_SIZE);
@@ -37,7 +37,7 @@ public class TAIndex {
         int index = TAIndex.tIndexPos++;
 
         TAIndex.tIndexArr[index] = chunkPrevT;
-        TAIndex.tMemIndexArr[index] =  TAIndex.tEncoder.getLongBitPosition();
+        TAIndex.tMemIndexArr[index] =  TAIndex.tEncoder.getBitPosition();
         TAIndex.tEncoder.resetDelta();
     }
 
@@ -183,7 +183,7 @@ public class TAIndex {
                 if (beginASortIndexPos + 2 >= endASortIndexPos) {
                     if (beginASortIndexPos == endASortIndexPos + 1) {
                         //只有一块，并且这一块只有部分满足，才需要读取这一块
-                        if (beginASortIndexPos > low || aIndexArr[endASortIndexPos] > aMax) {
+                        if (aIndexArr[beginASortIndexPos] < aMin || aIndexArr[endASortIndexPos] > aMax) {
                             FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                             sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                             beginTIndexPos++;
@@ -194,7 +194,7 @@ public class TAIndex {
                         }
                     } else {
                         //有两块
-                        if (beginASortIndexPos == low) {
+                        if (aIndexArr[beginASortIndexPos] >= aMin) {
                             //第一块的全部满足，看第二块
                             if (aIndexArr[endASortIndexPos] > aMax) {
                                 //第二块部分部分满足
@@ -224,8 +224,8 @@ public class TAIndex {
                         }
                     }
                 } else {
-                    if (beginASortIndexPos > low) {
-                        //读取第一个a区间内的的所有a
+                    if (aIndexArr[beginASortIndexPos] < aMin) {
+                        //第一块部分满足，读取第一个a区间内的的所有a
                         FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                         sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                         ++beginASortIndexPos;
@@ -235,7 +235,7 @@ public class TAIndex {
                     }
 
                     if (aIndexArr[endASortIndexPos] > aMax) {
-                        //读取最后一个a区间内的所有a
+                        //最后一块部分满足，读取最后一个a区间内的所有a
                         endASortIndexPos--;
                         FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                         sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
@@ -407,7 +407,7 @@ public class TAIndex {
 
     public static void log(StringBuilder sb) {
         sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
-        sb.append(",tBytes:").append(tEncoder.getLongBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
+        sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
     }

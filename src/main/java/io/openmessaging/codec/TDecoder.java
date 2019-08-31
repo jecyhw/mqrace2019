@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  */
 public class TDecoder extends AbstractDecoder {
 
-    public int getFirstGreatOrEqual(ByteBuffer buf, long t, long destT, int pos, long bitPos) {
+    public int getFirstGreatOrEqual(ByteBuffer buf, long t, long destT, int pos, int bitPos) {
         reset(buf, bitPos);
         int delta = 0;
         //从一个区间里找
@@ -25,7 +25,7 @@ public class TDecoder extends AbstractDecoder {
         return pos;
     }
 
-    public int getFirstGreat(ByteBuffer buf, long t, long destT, int pos, long bitPos) {
+    public int getFirstGreat(ByteBuffer buf, long t, long destT, int pos, int bitPos) {
         reset(buf, bitPos);
         int delta = 0;
         //从一个区间里找
@@ -41,7 +41,7 @@ public class TDecoder extends AbstractDecoder {
         return -1;
     }
 
-    public void decode(ByteBuffer buf, long[] t, int tPos, long bitPos, int readLen) {
+    public void decode(ByteBuffer buf, long[] t, int tPos, int bitPos, int readLen) {
         reset(buf, bitPos);
         int delta = 0;
         for (int i = 1; i <= readLen; i++, tPos++) {
