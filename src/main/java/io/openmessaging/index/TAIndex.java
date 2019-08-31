@@ -309,7 +309,7 @@ public class TAIndex {
 
 
 
-    private static int putCount = 0;
+    public static int putCount = 0;
     private static long firstT;
     private static long lastT;
 

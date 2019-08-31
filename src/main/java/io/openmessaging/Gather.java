@@ -79,7 +79,7 @@ public class Gather {
                     len = 0;
 
                     if (mergeCount++ % 1024 == 0) {
-                        Utils.print("merging, cost time:" + (System.currentTimeMillis() - startTime));
+                        Utils.print("merging, cost time:" + (System.currentTimeMillis() - startTime) + " " + TAIndex.putCount);
                     }
                 }
                 //获取最小元素的下一个值

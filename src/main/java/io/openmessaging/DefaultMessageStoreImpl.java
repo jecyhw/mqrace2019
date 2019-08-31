@@ -9,7 +9,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.openmessaging.util.Utils.print;
 
@@ -33,13 +32,10 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
     };
 
-    private static AtomicInteger getCounter = new AtomicInteger(0);
-
     private static FastThreadLocal<GetItem> getMsgItemThreadLocal = new FastThreadLocal<GetItem>() {
         @Override
         public GetItem initialValue() {
             GetItem item = new GetItem();
-            int index = getCounter.incrementAndGet() - 1;
             item.buf = ByteBuffer.allocateDirect(Const.MAX_GET_AT_SIZE * Const.MSG_BYTES);
             return item;
         }
@@ -90,12 +86,11 @@ public class DefaultMessageStoreImpl extends MessageStore {
                         messageFiles.get(i).flush();
                         iterators[i] = messageFiles.get(i).iterator();
                     }
-
+                    Monitor.getMsgStart();
                     Gather.init(iterators);
                     Gather.start();
                     Gather.join();
 
-                    Monitor.getMsgStart();
                     isFirstGet = false;
                 }
             }

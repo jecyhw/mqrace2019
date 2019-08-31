@@ -19,7 +19,7 @@ public interface Const {
 
 
     //固定成一块
-    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 42;
+    int MEMORY_BUFFER_SIZE = 1024 * 1024 * 45;
 
 
     int INDEX_INTERVAL = 64 * 32;
@@ -47,7 +47,7 @@ public interface Const {
     int A_INDEX_LENGTH = MERGE_T_INDEX_LENGTH * (MERGE_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
     int FILE_STORE_MSG_NUM = MERGE_T_INDEX_INTERVAL * 2000;
 
-    int T_MEMORY_SIZE = 1024*1024*300;  //1g
+    int T_MEMORY_SIZE = 1024*1024*400;  //1g
 
     int DEST = 21000;
 }
