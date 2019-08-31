@@ -28,4 +28,6 @@ public class GetItem {
     public int readFirstOrLastASortCount = 0;
     public int readCount = 0;
     public int readHitCount = 0;
+    public long readAFileTime = 0;
+    public long readASortFileTime = 0;
 }

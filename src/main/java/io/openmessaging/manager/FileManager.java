@@ -1,6 +1,7 @@
 package io.openmessaging.manager;
 
 import io.openmessaging.Const;
+import io.openmessaging.GetItem;
 import io.openmessaging.util.Utils;
 
 import java.io.FileNotFoundException;
@@ -109,14 +110,18 @@ public final class FileManager {
      * @param readCount 需要读取的个数
      * @param buf 缓冲区
      */
-    public static void readChunkA(int beginCount, long[] as, int readCount, ByteBuffer buf) {
+    public static void readChunkA(int beginCount, long[] as, int readCount, ByteBuffer buf, GetItem getItem) {
+        long startTime = System.currentTimeMillis();
         int fileIndex = beginCount / Const.FILE_STORE_MSG_NUM, filePos = (beginCount % Const.FILE_STORE_MSG_NUM) * Const.LONG_BYTES;
         readChunkAOrASort(as, readCount, buf, aFcPool.get(fileIndex), filePos);
+        getItem.readAFileTime += (System.currentTimeMillis() - startTime);
     }
 
-    public static void readChunkASort(int beginCount, long[] as, int readCount, ByteBuffer buf) {
+    public static void readChunkASort(int beginCount, long[] as, int readCount, ByteBuffer buf, GetItem getItem) {
+        long startTime = System.currentTimeMillis();
         int fileIndex = beginCount / Const.FILE_STORE_MSG_NUM, filePos = (beginCount % Const.FILE_STORE_MSG_NUM) * Const.LONG_BYTES;
         readChunkAOrASort(as, readCount, buf, aSortFcPool.get(fileIndex), filePos);
+        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
     }
 
 
