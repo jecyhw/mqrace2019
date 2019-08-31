@@ -112,4 +112,8 @@ public class TEncoder extends AbstractEncoder {
     public void resetDelta() {
         delta = 0;
     }
+
+    public long getLongBitPosition() {
+        return buf.position() * 8L + (Integer.SIZE - bitsAvailable);
+    }
 }

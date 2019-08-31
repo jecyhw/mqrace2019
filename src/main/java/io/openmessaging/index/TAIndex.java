@@ -20,7 +20,7 @@ import java.util.List;
  */
 public class TAIndex {
     private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
-    private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
+    private static long[] tMemIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
     private static int tIndexPos = 0;
 
     private static final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.T_MEMORY_SIZE);
@@ -36,7 +36,7 @@ public class TAIndex {
         int index = TAIndex.tIndexPos++;
 
         TAIndex.tIndexArr[index] = chunkPrevT;
-        TAIndex.tMemIndexArr[index] =  TAIndex.tEncoder.getBitPosition();
+        TAIndex.tMemIndexArr[index] =  TAIndex.tEncoder.getLongBitPosition();
         TAIndex.tEncoder.resetDelta();
     }
 
@@ -371,7 +371,7 @@ public class TAIndex {
 
     public static void log(StringBuilder sb) {
         sb.append("putCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
-        sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
+        sb.append(",tBytes:").append(tEncoder.getLongBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
     }
