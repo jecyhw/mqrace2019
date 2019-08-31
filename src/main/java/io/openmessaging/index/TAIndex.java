@@ -245,15 +245,15 @@ public class TAIndex {
                     }
                 }
 
+                sumChunkASortFileCount += (endASortIndexPos - beginASortIndexPos);
+                sumChunkASortCount += (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
+
                 // 经过上面处理之后，[beginASortIndexPos, endASortIndexPos)都是符合条件的，直接累加
                 while (beginASortIndexPos < endASortIndexPos) {
                     sum += aSumArr[beginASortIndexPos];
                     count += Const.A_INDEX_INTERVAL;
                     beginASortIndexPos++;
                 }
-
-                sumChunkASortFileCount += (endASortIndexPos - beginASortIndexPos);
-                sumChunkASortFileCount += (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
 
                 beginTIndexPos++;
             }
