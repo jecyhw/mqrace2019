@@ -42,7 +42,7 @@ public interface Const {
     int A_INDEX_INTERVAL = 16;
     int A_INDEX_LENGTH = MERGE_T_INDEX_LENGTH * (MERGE_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
 
-    int FILE_NUMS = 16;
+    int FILE_NUMS = 32;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
     int DEST = 26000;
