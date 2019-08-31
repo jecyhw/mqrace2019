@@ -86,7 +86,7 @@ public class Gather {
                 if (!item.hasNext()) {
                     //先减1，再删除
                     --size;
-                    System.arraycopy(items, minIndex+1, items, minIndex, size - minIndex);
+                    System.arraycopy(items, minIndex + 1, items, minIndex, size - minIndex);
                 }
             }
 
@@ -100,8 +100,8 @@ public class Gather {
         MessageFile.Iterator iterator;
         int index = 0;
         int len;
-        long t[] = new long[Const.INDEX_INTERVAL];
-        long a[] = new long[Const.INDEX_INTERVAL];
+        long[] t = new long[Const.INDEX_INTERVAL];
+        long[] a = new long[Const.INDEX_INTERVAL];
 
         void init() {
             len = iterator.nextTAndA(t, a, aBuf);

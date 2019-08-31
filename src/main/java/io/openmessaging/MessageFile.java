@@ -242,6 +242,7 @@ public class MessageFile {
     class Iterator {
         int readBlockNums = 0;
         TDecoder tDecoder = new TDecoder();
+        ByteBuffer tBufBup = tBuf.duplicate();
 
         boolean hasNext() {
             return readBlockNums < blockNums;
@@ -250,7 +251,7 @@ public class MessageFile {
         int nextTAndA(long[] t, long[] a, ByteBuffer aBuf) {
             int readCount = readBlockNums == blockNums - 1 ? (putCount - 1) % Const.INDEX_INTERVAL : Const.INDEX_INTERVAL - 1;
             t[0] = tArr[readBlockNums];
-            tDecoder.decode(tBuf, t, 1, tOffsetArr[readBlockNums], readCount);
+            tDecoder.decode(tBufBup, t, 1, tOffsetArr[readBlockNums], readCount);
 
             readCount++;
 
