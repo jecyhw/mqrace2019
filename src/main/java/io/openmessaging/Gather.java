@@ -47,7 +47,6 @@ public class Gather {
             long startTime = System.currentTimeMillis();
 
             int size = items.length;
-            System.out.println("size:" + size);
             //获取第一个元素进行初始化
             for (int i = 0; i < size; i++) {
                 items[i].init();
@@ -62,7 +61,7 @@ public class Gather {
 
             while (size > 0) {
                 //找最小元素以及对应的下标
-                minT = Integer.MAX_VALUE;
+                minT = Long.MAX_VALUE;
                 for (int i = 0; i < size; i++) {
                     long t = items[i].curT();
                     if (t < minT) {
@@ -72,10 +71,6 @@ public class Gather {
                 }
 
                 Item item = items[minIndex];
-
-                if (mergeCount < 1) {
-                    Utils.print(minT);
-                }
 
                 ts[len] = minT;
                 as[len++] = item.nextA();

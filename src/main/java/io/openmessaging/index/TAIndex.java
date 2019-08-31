@@ -316,8 +316,7 @@ public class TAIndex {
     private static long lastT;
 
 
-    private static boolean isError = true;
-    public static void flush(long t[], long a[], int len) {
+    public static void flush(long[] t, long[] a, int len) {
         long prevT = t[0];
 
         if (putCount == 0) {
@@ -331,12 +330,6 @@ public class TAIndex {
         //第一个消息单独处理，for只处理第一个消息之后的
         for (int i = 1; i < len; i++) {
             long curT = t[i];
-            if (curT - prevT > 1) {
-                if (isError) {
-                    System.out.println("curT:" + curT + ",prevT:" + prevT);
-                    isError = false;
-                }
-            }
             encodeDeltaT((int) (curT - prevT));
 
             prevT = curT;
