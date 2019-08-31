@@ -125,7 +125,7 @@ public class TAIndex {
         int endTIndexPos = endTPos / Const.MERGE_T_INDEX_INTERVAL;
         int lastChunkNeedReadCount = endTPos % Const.MERGE_T_INDEX_INTERVAL;
 
-
+        int _beginTIndexPos = beginTIndexPos, _endTIndexPos = endTIndexPos;
         int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
         int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
 
@@ -260,7 +260,7 @@ public class TAIndex {
             intervalSum.add(sum, count);
         }
 
-        Utils.print("aFileCnt:" + readChunkAFileCount + ",aSortFileCnt:" + readChunkASortFileCount + ",sumASortFileCnt:" + sumChunkASortFileCount
+        Utils.print("begin:" + _beginTIndexPos + ",end:" + _endTIndexPos + ",aFileCnt:" + readChunkAFileCount + ",aSortFileCnt:" + readChunkASortFileCount + ",sumASortFileCnt:" + sumChunkASortFileCount
         + ",aCnt:" + readChunkACount + ",aSortCnt:" + readChunkASortCount + ",sumASortCnt:" + sumChunkASortCount + ",cost time:" + (System.currentTimeMillis() - startTime));
         return intervalSum.avg();
     }
