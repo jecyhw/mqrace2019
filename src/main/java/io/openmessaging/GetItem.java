@@ -15,4 +15,5 @@ public class GetItem {
     public final long[] ts = new long[Const.MAX_GET_AT_SIZE];
     public List<Message> messages;
     public TDecoder tDecoder = new TDecoder();
+    public long costTime = 0;
 }
