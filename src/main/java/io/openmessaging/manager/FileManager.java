@@ -9,85 +9,53 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.List;
 
 public final class FileManager {
-    private static List<FileChannel> aFcPool = new ArrayList<>();
-    private static List<FileChannel> aSortFcPool = new ArrayList<>();
+    private static FileChannel[] aFcPool = new FileChannel[Const.FILE_NUMS];
+    private static FileChannel[] aSortFcPool = new FileChannel[Const.FILE_NUMS];
 
-    private static FileChannel aFc;
-    private static FileChannel aSortFc;
+    private static final ByteBuffer aBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.LONG_BYTES);
+    private static final ByteBuffer aSortBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.LONG_BYTES);
 
-    private static final ByteBuffer aBuf = ByteBuffer.allocate(Const.M_PUT_BUFFER_SIZE);
-    private static final ByteBuffer aSortBuf = ByteBuffer.allocate(Const.M_PUT_BUFFER_SIZE);
-
-    private static int putAAndMsgCount = 0;
-    private static int putASortCount = 0;
-
-    private static int fileIndex = 0;
+    private static int aFileIndex = 0;
+    private static int aSortFileIndex = 0;
 
     public static void init(){
-        newAFc();
-        newASortFc();
-    }
-
-    private static void newAFc() {
         try {
-            aFc = new RandomAccessFile(Const.STORE_PATH + fileIndex + Const.M_A_FILE_SUFFIX, "rw").getChannel();
-            aFcPool.add(aFc);
+            for (int i = 0; i < Const.FILE_NUMS; i++) {
+                aFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_FILE_SUFFIX, "rw").getChannel();
+                aSortFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_SORT_FILE_SUFFIX, "rw").getChannel();
+            }
         } catch (FileNotFoundException e) {
             Utils.print(e.getMessage());
             System.exit(-1);
         }
     }
 
-
-    private static void newASortFc() {
-        try {
-            aSortFc = new RandomAccessFile(Const.STORE_PATH + fileIndex + Const.M_A_SORT_FILE_SUFFIX, "rw").getChannel();
-            aSortFcPool.add(aSortFc);
-        } catch (FileNotFoundException e) {
-            Utils.print(e.getMessage());
-            System.exit(-1);
-        }
-    }
 
     public static void writeA(long a) {
         if (!aBuf.hasRemaining()) {
-            flush(aBuf, aFc);
+            flush(aBuf, aFcPool[aFileIndex++]);
+            if (aFileIndex == Const.FILE_NUMS) {
+                aFileIndex = 0;
+            }
         }
         aBuf.putLong(a);
-
-
-        //如果putAAndMsgCount等于FILE_STORE_MSG_NUM，也要刷盘，因为要切文件
-        if (++putAAndMsgCount == Const.FILE_STORE_MSG_NUM) {
-            flush(aBuf, aFc);
-
-            fileIndex++;
-            newAFc();
-            putAAndMsgCount = 0;
-        }
     }
 
     public static void writeASort(long a) {
         if (!aSortBuf.hasRemaining()) {
-            flush(aSortBuf, aSortFc);
+            flush(aSortBuf, aSortFcPool[aSortFileIndex++]);
+            if (aSortFileIndex == Const.FILE_NUMS) {
+                aSortFileIndex = 0;
+            }
         }
         aSortBuf.putLong(a);
-
-        //如果putAAndMsgCount等于FILE_STORE_MSG_NUM，也要刷盘，因为要切文件
-        if (++putASortCount == Const.FILE_STORE_MSG_NUM) {
-            flush(aSortBuf, aSortFc);
-            newASortFc();
-
-            putASortCount = 0;
-        }
     }
 
     public static void flushEnd() {
-        flush(aBuf, aFc);
-        flush(aSortBuf, aSortFc);
+        flush(aBuf, aFcPool[aFileIndex]);
+        flush(aSortBuf, aSortFcPool[aSortFileIndex]);
     }
 
     private static void flush(ByteBuffer byteBuffer, FileChannel fc){
@@ -112,15 +80,21 @@ public final class FileManager {
      */
     public static void readChunkA(int beginCount, long[] as, int readCount, ByteBuffer buf, GetItem getItem) {
         long startTime = System.currentTimeMillis();
-        int fileIndex = beginCount / Const.FILE_STORE_MSG_NUM, filePos = (beginCount % Const.FILE_STORE_MSG_NUM) * Const.LONG_BYTES;
-        readChunkAOrASort(as, readCount, buf, aFcPool.get(fileIndex), filePos);
+        int chunkNum = beginCount / Const.MERGE_T_INDEX_INTERVAL;
+        int fileIndex = chunkNum % Const.FILE_NUMS;
+        int filePos = ((chunkNum / Const.FILE_NUMS) * Const.MERGE_T_INDEX_INTERVAL + beginCount % Const.MERGE_T_INDEX_INTERVAL) * Const.LONG_BYTES;
+
+        readChunkAOrASort(as, readCount, buf, aFcPool[fileIndex], filePos);
         getItem.readAFileTime += (System.currentTimeMillis() - startTime);
     }
 
     public static void readChunkASort(int beginCount, long[] as, int readCount, ByteBuffer buf, GetItem getItem) {
         long startTime = System.currentTimeMillis();
-        int fileIndex = beginCount / Const.FILE_STORE_MSG_NUM, filePos = (beginCount % Const.FILE_STORE_MSG_NUM) * Const.LONG_BYTES;
-        readChunkAOrASort(as, readCount, buf, aSortFcPool.get(fileIndex), filePos);
+        int chunkNum = beginCount / Const.MERGE_T_INDEX_INTERVAL;
+        int fileIndex = chunkNum % Const.FILE_NUMS;
+        int filePos = ((chunkNum / Const.FILE_NUMS) * Const.MERGE_T_INDEX_INTERVAL + beginCount % Const.MERGE_T_INDEX_INTERVAL) * Const.LONG_BYTES;
+
+        readChunkAOrASort(as, readCount, buf, aSortFcPool[fileIndex], filePos);
         getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
     }
 
@@ -154,16 +128,16 @@ public final class FileManager {
 
     public static void log(StringBuilder sb) {
         long aSize = 0, aSortSize = 0, msgSize = 0;
-        for (int i = 0; i <= fileIndex; i++) {
+        for (int i = 0; i < Const.FILE_NUMS; i++) {
             try {
-                aSize += aFcPool.get(i).size();
-                aSortSize += aSortFcPool.get(i).size();
+                aSize += aFcPool[i].size();
+                aSortSize += aSortFcPool[i].size();
             } catch (IOException e) {
                 Utils.print("FileManager log error " + e.getMessage());
                 System.exit(-1);
             }
         }
-        sb.append("fileNum:").append(fileIndex + 1).append(",aSize:")
+        sb.append("fileNum:").append(Const.FILE_NUMS).append(",aSize:")
                 .append(aSize).append(",aSortSize:").append(aSortSize).append(",msgSize:").append(msgSize);
         sb.append("\n");
     }

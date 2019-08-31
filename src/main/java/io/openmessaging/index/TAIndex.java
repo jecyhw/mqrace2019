@@ -54,45 +54,45 @@ public class TAIndex {
         return getItem;
     });
 
-    public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-        if (aMin > aMax || tMin > tMax) {
-            return Collections.emptyList();
-        }
-
-        GetItem getItem = getItemThreadLocal.get();
-
-        List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);
-
-        int beginTIndexPos = ArrayUtils.findFirstLessThanIndex(tIndexArr, tMin, 0, tIndexPos);
-        int endTIndexPos = ArrayUtils.findFirstGreatThanIndex(tIndexArr, tMax, 0, tIndexPos);
-        if (beginTIndexPos >= endTIndexPos) {
-            return Collections.emptyList();
-        }
-
-        ByteBuffer tBufDup = tBuf.duplicate();
-        while (beginTIndexPos < endTIndexPos) {
-            //一个区间一个区间进行处理
-            long[] ts = getItem.ts, as = getItem.as;
-            //先读取区间里面的t，并返回读取的个数；在读取a、msg
-            int readCount = readChunkT(beginTIndexPos, ts, getItem.tDecoder, tBufDup);
-            //这里a和t的buf用一个
-            ByteBuffer buf = getItem.readBuf;
-            int beginCount = beginTIndexPos * Const.MERGE_T_INDEX_INTERVAL;
-            FileManager.readChunkA(beginCount, as, readCount, buf, getItem);
-
-            for (int i = 0; i < readCount; i++) {
-                long t = ts[i], a = as[i];
-                if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
-                    //readChunkMsg会把buf的position设置为0，所以可以直接读
-                    messages.add(new Message(a, t, null));
-                }
-            }
-            beginTIndexPos++;
-        }
-
-        //t有序，所以不需要排序
-        return messages;
-    }
+//    public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
+//        if (aMin > aMax || tMin > tMax) {
+//            return Collections.emptyList();
+//        }
+//
+//        GetItem getItem = getItemThreadLocal.get();
+//
+//        List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);
+//
+//        int beginTIndexPos = ArrayUtils.findFirstLessThanIndex(tIndexArr, tMin, 0, tIndexPos);
+//        int endTIndexPos = ArrayUtils.findFirstGreatThanIndex(tIndexArr, tMax, 0, tIndexPos);
+//        if (beginTIndexPos >= endTIndexPos) {
+//            return Collections.emptyList();
+//        }
+//
+//        ByteBuffer tBufDup = tBuf.duplicate();
+//        while (beginTIndexPos < endTIndexPos) {
+//            //一个区间一个区间进行处理
+//            long[] ts = getItem.ts, as = getItem.as;
+//            //先读取区间里面的t，并返回读取的个数；在读取a、msg
+//            int readCount = readChunkT(beginTIndexPos, ts, getItem.tDecoder, tBufDup);
+//            //这里a和t的buf用一个
+//            ByteBuffer buf = getItem.readBuf;
+//            int beginCount = beginTIndexPos * Const.MERGE_T_INDEX_INTERVAL;
+//            FileManager.readChunkA(beginCount, as, readCount, buf, getItem);
+//
+//            for (int i = 0; i < readCount; i++) {
+//                long t = ts[i], a = as[i];
+//                if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
+//                    //readChunkMsg会把buf的position设置为0，所以可以直接读
+//                    messages.add(new Message(a, t, null));
+//                }
+//            }
+//            beginTIndexPos++;
+//        }
+//
+//        //t有序，所以不需要排序
+//        return messages;
+//    }
 
 
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
