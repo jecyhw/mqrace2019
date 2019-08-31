@@ -181,78 +181,36 @@ public class TAIndex {
 
                 //只有一块或者首尾相连时 beginASortIndexPos=1,endASortIndexPos=2表示只有1块；beginASortIndexPos=1,endASortIndexPos=3表示只有2块，属于首尾相连
                 if (beginASortIndexPos + 2 >= endASortIndexPos) {
-                    if (beginASortIndexPos == endASortIndexPos + 1) {
-                        //只有一块，并且这一块只有部分满足，才需要读取这一块
-                        if (aIndexArr[beginASortIndexPos] < aMin || aIndexArr[endASortIndexPos] > aMax) {
-                            FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
-                            sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-                            beginTIndexPos++;
+                    //小于等于两块，一次读取
+                    int chunkCount = endASortIndexPos - beginASortIndexPos;
+                    int readCount = Const.A_INDEX_INTERVAL * chunkCount;
+                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, readCount, readBuf);
+                    sumChunkA(as, readCount, aMin, aMax, intervalSum);
 
-                            readChunkASortFileCount++;
-                            readChunkASortCount += Const.A_INDEX_INTERVAL;
-                            continue;
-                        }
-                    } else {
-                        //有两块
-                        if (aIndexArr[beginASortIndexPos] >= aMin) {
-                            //第一块的全部满足，看第二块
-                            if (aIndexArr[endASortIndexPos] > aMax) {
-                                //第二块部分部分满足
-                                endASortIndexPos--;
-                                FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
-                                sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-
-                                readChunkASortFileCount++;
-                                readChunkASortCount += Const.A_INDEX_INTERVAL;
-                            }
-                        } else if (aIndexArr[endASortIndexPos] <= aMax) {
-                            //第一块部分满足，第二块全部满足，读取第一块
-                            FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
-                            sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-
-                            readChunkASortFileCount++;
-                            readChunkASortCount += Const.A_INDEX_INTERVAL;
-                        } else {
-                            //第一块和第二块都是部分满足，读取两块
-                            FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL * 2, readBuf);
-                            sumChunkA(as, Const.A_INDEX_INTERVAL * 2, aMin, aMax, intervalSum);
-                            beginTIndexPos += 2;
-
-                            readChunkASortFileCount++;
-                            readChunkASortCount += Const.A_INDEX_INTERVAL * 2;
-                            continue;
-                        }
-                    }
+                    readChunkASortFileCount++;
+                    readChunkASortCount += readCount;
                 } else {
-                    if (aIndexArr[beginASortIndexPos] < aMin) {
-                        //第一块部分满足，读取第一个a区间内的的所有a
-                        FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
-                        sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-                        ++beginASortIndexPos;
+                    //读取第一个a区间内的的所有a
+                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
+                    sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                    ++beginASortIndexPos;
 
-                        readChunkASortFileCount++;
-                        readChunkASortCount += Const.A_INDEX_INTERVAL;
+                    //读取最后一个a区间内的所有a
+                    endASortIndexPos--;
+                    FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
+                    sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+
+                    readChunkASortFileCount += 2;
+                    readChunkASortCount += Const.A_INDEX_INTERVAL * 2;
+
+                    sumChunkASortFileCount += (endASortIndexPos - beginASortIndexPos);
+                    sumChunkASortCount += (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
+                    // 经过上面处理之后，[beginASortIndexPos, endASortIndexPos)都是符合条件的，直接累加
+                    while (beginASortIndexPos < endASortIndexPos) {
+                        sum += aSumArr[beginASortIndexPos];
+                        count += Const.A_INDEX_INTERVAL;
+                        beginASortIndexPos++;
                     }
-
-                    if (aIndexArr[endASortIndexPos] > aMax) {
-                        //最后一块部分满足，读取最后一个a区间内的所有a
-                        endASortIndexPos--;
-                        FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
-                        sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-
-                        readChunkASortFileCount++;
-                        readChunkASortCount += Const.A_INDEX_INTERVAL;
-                    }
-                }
-
-                sumChunkASortFileCount += (endASortIndexPos - beginASortIndexPos);
-                sumChunkASortCount += (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
-
-                // 经过上面处理之后，[beginASortIndexPos, endASortIndexPos)都是符合条件的，直接累加
-                while (beginASortIndexPos < endASortIndexPos) {
-                    sum += aSumArr[beginASortIndexPos];
-                    count += Const.A_INDEX_INTERVAL;
-                    beginASortIndexPos++;
                 }
 
                 beginTIndexPos++;
@@ -396,6 +354,8 @@ public class TAIndex {
             }
             aIndexPos++;
         }
+        //
+        aIndexArr[aIndexPos] = a[chunkSize - 1];
     }
 
     public static void flushEnd(long t[], long a[], int len) {
