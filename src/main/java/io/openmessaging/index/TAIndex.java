@@ -9,14 +9,11 @@ import io.openmessaging.util.Utils;
 
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * Created by yanghuiwei on 2019-08-28
  */
 public class TAIndex {
-    private Executor executor = Executors.newFixedThreadPool(Const.getThreadNums);
 
     private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
     private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
