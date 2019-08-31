@@ -344,9 +344,9 @@ public class TAIndex {
         lastT = t[len - 1];
     }
 
-    private static void completeASortAndCreateIndex(long a[], int chunkSize) {
+    private static void completeASortAndCreateIndex(long[] a, int chunkSize) {
         //按照a进行排序
-        Arrays.parallelSort(a, 0, chunkSize);
+        Arrays.sort(a, 0, chunkSize);
 
         //在t的基础上在建立分区
         for (int i = 0; i < chunkSize; i += Const.A_INDEX_INTERVAL) {
