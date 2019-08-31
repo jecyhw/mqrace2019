@@ -42,7 +42,6 @@ public class Gather {
         }
         @Override
         public void run() {
-            int mergeCount = 0;
 
             long startTime = System.currentTimeMillis();
 
@@ -55,8 +54,11 @@ public class Gather {
             long minT;
             int minIndex = 0;
 
-            long[] ts = new long[Const.MERGE_T_INDEX_INTERVAL];
-            long[] as = new long[Const.MERGE_T_INDEX_INTERVAL];
+            Ta[] ta = new Ta[Const.MERGE_T_INDEX_LENGTH];
+            for (int i = 0; i < Const.MERGE_T_INDEX_LENGTH; i++) {
+                ta[i] = new Ta();
+            }
+
             int len = 0;
 
             while (size > 0) {
@@ -72,11 +74,11 @@ public class Gather {
 
                 Item item = items[minIndex];
 
-                ts[len] = minT;
-                as[len++] = item.nextA();
+                ta[len].t = minT;
+                ta[len++].a = item.nextA();
 
                 if (len == Const.MERGE_T_INDEX_INTERVAL) {
-                    TAIndex.flush(ts, as, len);
+                    TAIndex.flush(ta, len);
                     len = 0;
                 }
                 //获取最小元素的下一个值
@@ -87,7 +89,7 @@ public class Gather {
                 }
             }
 
-            TAIndex.flushEnd(ts, as, len);
+            TAIndex.flushEnd(ta, len);
 
             Utils.print("merge end, cost time:" + (System.currentTimeMillis() - startTime));
         }

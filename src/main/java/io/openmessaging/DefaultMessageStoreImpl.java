@@ -3,6 +3,7 @@ package io.openmessaging;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.openmessaging.index.TAIndex;
 import io.openmessaging.manager.FileManager;
+import io.openmessaging.util.Utils;
 
 import java.io.File;
 import java.nio.ByteBuffer;
@@ -90,7 +91,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     Gather.init(iterators);
                     Gather.start();
                     Gather.join();
-
+                    Utils.print("get msg start");
                     isFirstGet = false;
                 }
             }

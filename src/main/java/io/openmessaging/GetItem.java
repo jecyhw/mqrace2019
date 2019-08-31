@@ -22,4 +22,7 @@ public class GetItem {
     public int readChunkACount = 0;
     public int readChunkASortCount = 0;
     public int sumChunkASortCount = 0;
+    public int readFirstOrLastASortCount = 0;
+    public int readCount = 0;
+    public int readHitCount = 0;
 }
