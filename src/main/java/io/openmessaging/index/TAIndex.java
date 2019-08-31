@@ -15,11 +15,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Created by yanghuiwei on 2019-08-28
  */
 public class TAIndex {
+    private Executor executor = Executors.newFixedThreadPool(Const.getThreadNums);
+
     private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
     private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
     private static int tIndexPos = 0;
@@ -380,14 +384,29 @@ public class TAIndex {
     }
 
     public static void log(StringBuilder sb) {
+        int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
+        int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
+
         sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
         sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
+
         for (GetItem getItem : getItems) {
+            readChunkAFileCount += getItem.readChunkAFileCount;
+            readChunkASortFileCount += getItem.readChunkASortFileCount;
+            sumChunkASortFileCount += getItem.sumChunkASortFileCount;
+            readChunkACount += getItem.readChunkACount;
+            readChunkASortCount += getItem.readChunkASortCount;
+            sumChunkASortCount += getItem.sumChunkASortCount;
+
             sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
                     .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
                     .append(getItem.sumChunkASortCount).append(",accCostTime:").append(getItem.costTime).append("\n");
         }
+
+        sb.append("aFileCnt:").append(readChunkAFileCount).append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
+                .append(sumChunkASortFileCount).append(",aCnt:").append(readChunkACount).append(",aSortCnt:").append(readChunkASortCount).append(",sumASortCnt:")
+                .append(sumChunkASortCount).append("\n");
     }
 }
