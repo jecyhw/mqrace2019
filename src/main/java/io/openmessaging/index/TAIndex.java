@@ -261,7 +261,8 @@ public class TAIndex {
         }
 
         Utils.print("begin:" + _beginTIndexPos + ",end:" + _endTIndexPos + ",aFileCnt:" + readChunkAFileCount + ",aSortFileCnt:" + readChunkASortFileCount + ",sumASortFileCnt:" + sumChunkASortFileCount
-        + ",aCnt:" + readChunkACount + ",aSortCnt:" + readChunkASortCount + ",sumASortCnt:" + sumChunkASortCount + ",cost time:" + (System.currentTimeMillis() - startTime));
+        + ",aCnt:" + readChunkACount + ",aSortCnt:" + readChunkASortCount + ",sumASortCnt:" + sumChunkASortCount + ",cost time:" + (System.currentTimeMillis() - startTime) + ",sum:" + intervalSum.sum
+        + ",count:" + intervalSum.count);
         return intervalSum.avg();
     }
 
