@@ -386,7 +386,7 @@ public class TAIndex {
     public static void log(StringBuilder sb) {
         int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
         int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
-        int readFirstOrLastASortCount = 0, hitCount = 0;
+        int hitCount = 0;
 
         sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
         sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
@@ -412,6 +412,6 @@ public class TAIndex {
         sb.append("aFileCnt:").append(readChunkAFileCount).append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
                 .append(sumChunkASortFileCount).append(",aCnt:").append(readChunkACount).append(",aSortCnt:").append(readChunkASortCount).append(",sumASortCnt:")
                 .append(sumChunkASortCount).append(",hitCount:").append(hitCount)
-                .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append("\n");
+                .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append(",MERGE_T_INDEX_LENGTH:").append(Const.MERGE_T_INDEX_LENGTH).append("\n");
     }
 }
