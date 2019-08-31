@@ -18,8 +18,6 @@ import static io.openmessaging.util.Utils.print;
  * Created by yanghuiwei on 2019-07-26
  */
 public class MessageFile {
-    final ByteBuffer buf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE * 2);
-
     private static final AtomicInteger idAllocator = new AtomicInteger(0);
     private final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
     private TEncoder tEncoder = new TEncoder(tBuf);
@@ -28,10 +26,10 @@ public class MessageFile {
     private long lastT;
 
     //直接压缩到这个字节数组上
-    private final ByteBuffer msgBuf;
+    private final ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private FileChannel msgFc;
 
-    private final ByteBuffer aBuf;
+    private final ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private FileChannel aFc;
 
     //put计数
@@ -43,14 +41,6 @@ public class MessageFile {
 
 
     public MessageFile() {
-        buf.limit(Const.PUT_BUFFER_SIZE);
-        msgBuf = buf.slice();
-
-        buf.position(Const.PUT_BUFFER_SIZE);
-        buf.limit(Const.PUT_BUFFER_SIZE * 2);
-        aBuf = buf.slice();
-
-
         int fileId = idAllocator.getAndIncrement();
         try {
             msgFc = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw").getChannel();

@@ -5,6 +5,7 @@ import io.openmessaging.index.TAIndex;
 import io.openmessaging.manager.FileManager;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -39,7 +40,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         public GetItem initialValue() {
             GetItem item = new GetItem();
             int index = getCounter.incrementAndGet() - 1;
-            item.buf = messageFiles.get(index).buf;
+            item.buf = ByteBuffer.allocateDirect(Const.MAX_GET_AT_SIZE * Const.MSG_BYTES);
             return item;
         }
     };
