@@ -71,7 +71,7 @@ public class Gather {
                 }
 
                 Item item = items[minIndex];
-                ts[len] = item.curT();
+                ts[len] = minT;
                 as[len++] = item.nextA();
 
                 if (len == Const.MERGE_T_INDEX_INTERVAL) {
