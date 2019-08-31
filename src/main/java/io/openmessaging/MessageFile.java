@@ -107,7 +107,7 @@ public class MessageFile {
             int tLen = rangePosInPrimaryIndex(minPos, maxPos, ts, getItem, tBuf);
 
             long[] as = getItem.as;
-            readAArray(minPos * Const.INDEX_INTERVAL, tLen, getItem.buf, as);
+            readAArray(minPos * Const.INDEX_INTERVAL, tLen, getItem.readBuf, as);
             //minPos，maxPos是在主内存索引的位置
             readMsgs(minPos * Const.INDEX_INTERVAL, getItem, as, ts, tLen, aMin, aMax, tMin, tMax);
         }
@@ -145,7 +145,7 @@ public class MessageFile {
     }
 
     private void readMsgs(long fileStartPos, GetItem getItem, long[] as, long[] ts, int len, long aMin, long aMax, long tMin, long tMax) {
-        ByteBuffer readBuf = getItem.buf;
+        ByteBuffer readBuf = getItem.readBuf;
 
         readBuf.position(0);
         readBuf.limit(len * Const.MSG_BYTES);
@@ -242,7 +242,6 @@ public class MessageFile {
     class Iterator {
         int readBlockNums = 0;
         TDecoder tDecoder = new TDecoder();
-        ByteBuffer tBufBup = tBuf.duplicate();
 
         boolean hasNext() {
             return readBlockNums < blockNums;
@@ -251,7 +250,7 @@ public class MessageFile {
         int nextTAndA(long[] t, long[] a, ByteBuffer aBuf) {
             int readCount = readBlockNums == blockNums - 1 ? (putCount - 1) % Const.INDEX_INTERVAL : Const.INDEX_INTERVAL - 1;
             t[0] = tArr[readBlockNums];
-            tDecoder.decode(tBufBup, t, 1, tOffsetArr[readBlockNums], readCount);
+            tDecoder.decode(tBuf, t, 1, tOffsetArr[readBlockNums], readCount);
 
             readCount++;
 

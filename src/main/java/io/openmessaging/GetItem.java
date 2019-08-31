@@ -9,7 +9,7 @@ import java.util.List;
  * Created by yanghuiwei on 2019-07-28
  */
 public class GetItem {
-    public ByteBuffer buf;
+    public ByteBuffer readBuf;
     public final IntervalSum intervalSum = new IntervalSum();
     public final long[] as = new long[Const.MAX_GET_AT_SIZE];
     public final long[] ts = new long[Const.MAX_GET_AT_SIZE];

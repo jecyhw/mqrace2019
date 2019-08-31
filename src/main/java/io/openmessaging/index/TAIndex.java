@@ -48,7 +48,7 @@ public class TAIndex {
 
     private static ThreadLocal<GetItem> getItemThreadLocal = ThreadLocal.withInitial(() -> {
         GetItem getItem = new GetItem();
-        getItem.buf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.MSG_BYTES);
+        getItem.readBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.MSG_BYTES);
         return getItem;
     });
 
@@ -74,7 +74,7 @@ public class TAIndex {
             //先读取区间里面的t，并返回读取的个数；在读取a、msg
             int readCount = readChunkT(beginTIndexPos, ts, getItem.tDecoder, tBufDup);
             //这里a和t的buf用一个
-            ByteBuffer buf = getItem.buf;
+            ByteBuffer buf = getItem.readBuf;
             int beginCount = beginTIndexPos * Const.MERGE_T_INDEX_INTERVAL;
             FileManager.readChunkA(beginCount, as, readCount, buf);
 
@@ -105,7 +105,7 @@ public class TAIndex {
         int beginTPos = findLeftClosedInterval(tMin, getItem.tDecoder, tBufDup);
         int endTPos = findRightOpenInterval(tMax, getItem.tDecoder, tBufDup);
         if (beginTPos >= endTPos) {
-            System.out.println("1.beginTPos:" + beginTPos + ",endTPos" + endTPos);
+            System.out.println("1.begin[" + beginTPos + "," + tMin + "],end[" + endTPos + "," + tMax + "]");
             return 0;
         }
 
@@ -116,7 +116,7 @@ public class TAIndex {
         int count = 0;
 
         long[] as = getItem.as;
-        ByteBuffer buf = getItem.buf;
+        ByteBuffer readBuf = getItem.readBuf;
 
         //处理首区间
         int beginTIndexPos = beginTPos / Const.MERGE_T_INDEX_INTERVAL;
@@ -130,10 +130,10 @@ public class TAIndex {
         if (beginTIndexPos == endTIndexPos) {
             //读取按t分区的首区间剩下的a的数量
             int firstChunkNeedReadCount = lastChunkNeedReadCount - firstChunkFilterReadCount;
-            FileManager.readChunkA(beginTPos, as, firstChunkNeedReadCount, buf);
+            FileManager.readChunkA(beginTPos, as, firstChunkNeedReadCount, readBuf);
             sumChunkA(as, firstChunkNeedReadCount, aMin, aMax, intervalSum);
 
-            System.out.println("2.sum:" + intervalSum.sum + ",count:" + intervalSum.count);
+            System.out.println("2.sum:" + intervalSum.sum + ",count:" + intervalSum.count + ",avg:" + intervalSum.avg());
             return intervalSum.avg();
         }
 
@@ -141,7 +141,7 @@ public class TAIndex {
         if (firstChunkFilterReadCount > 0) {
             //读取按t分区的首区间剩下的a的数量
             int firstChunkNeedReadCount = Const.MERGE_T_INDEX_INTERVAL - firstChunkFilterReadCount;
-            FileManager.readChunkA(beginTPos, as, firstChunkNeedReadCount, buf);
+            FileManager.readChunkA(beginTPos, as, firstChunkNeedReadCount, readBuf);
             sumChunkA(as, firstChunkNeedReadCount, aMin, aMax, intervalSum);
 
             beginTIndexPos++;
@@ -150,7 +150,7 @@ public class TAIndex {
 
         if (lastChunkNeedReadCount > 0) {
             //读取按t分区的尾区间里面的a
-            FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, as, lastChunkNeedReadCount, buf);
+            FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, as, lastChunkNeedReadCount, readBuf);
             sumChunkA(as, lastChunkNeedReadCount, aMin, aMax, intervalSum);
         }
 
@@ -173,7 +173,7 @@ public class TAIndex {
                 if (beginASortIndexPos == endASortIndexPos + 1) {
                     //只有一块，并且这一块只有部分满足，才需要读取这一块
                     if (beginASortIndexPos > low || aIndexArr[endASortIndexPos] > aMax) {
-                        FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, buf);
+                        FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                         sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                         beginTIndexPos++;
                         continue;
@@ -185,16 +185,16 @@ public class TAIndex {
                         if (aIndexArr[endASortIndexPos] > aMax) {
                             //第二块部分部分满足
                             endASortIndexPos--;
-                            FileManager.readChunkA(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, buf);
+                            FileManager.readChunkA(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                             sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                         }
                     } else if (aIndexArr[endASortIndexPos] <= aMax) {
                         //第一块部分满足，第二块全部满足，读取第一块
-                        FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, buf);
+                        FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                         sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                     } else {
                         //第一块和第二块都是部分满足，读取两块
-                        FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL * 2, buf);
+                        FileManager.readChunkA(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL * 2, readBuf);
                         sumChunkA(as, Const.A_INDEX_INTERVAL * 2, aMin, aMax, intervalSum);
                         beginTIndexPos += 2;
                         continue;
@@ -203,7 +203,7 @@ public class TAIndex {
             } else {
                 if (beginASortIndexPos > low) {
                     //读取第一个a区间内的的所有a
-                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, buf);
+                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                     sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                     ++beginASortIndexPos;
                 }
@@ -211,7 +211,7 @@ public class TAIndex {
                 if (aIndexArr[endASortIndexPos] > aMax) {
                     //读取最后一个a区间内的所有a
                     endASortIndexPos--;
-                    FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, buf);
+                    FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf);
                     sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                 }
             }
@@ -226,7 +226,7 @@ public class TAIndex {
             beginTIndexPos++;
         }
         intervalSum.add(sum, count);
-        System.out.println("3.sum:" + intervalSum.sum + ",count:" + intervalSum.count);
+        System.out.println("3.sum:" + intervalSum.sum + ",count:" + intervalSum.count + ",avg:" + intervalSum.avg());
         return intervalSum.avg();
     }
 

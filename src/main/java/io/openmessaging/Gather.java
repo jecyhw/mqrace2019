@@ -24,7 +24,7 @@ public class Gather {
     }
 
     public static void start() {
-        gatherThread.start();;
+        gatherThread.start();
     }
 
     public static void join() {

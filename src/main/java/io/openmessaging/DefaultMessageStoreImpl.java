@@ -36,7 +36,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         @Override
         public GetItem initialValue() {
             GetItem item = new GetItem();
-            item.buf = ByteBuffer.allocateDirect(Const.MAX_GET_AT_SIZE * Const.MSG_BYTES);
+            item.readBuf = ByteBuffer.allocateDirect(Const.MAX_GET_AT_SIZE * Const.MSG_BYTES);
             return item;
         }
     };
