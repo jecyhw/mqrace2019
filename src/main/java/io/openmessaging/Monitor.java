@@ -59,7 +59,7 @@ public class Monitor {
                 .append(",get avg cost time1:").append(System.currentTimeMillis() - getAvgTimes[0]);
 
         sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum)
-                .append(",getMsgCount:").append(getMsgCount).append(",").append(Const.A_MEMORY_LAST_OUT_HEAP_SIZE).append("\n");
+                .append(",getMsgCount:").append(getMsgCount).append(",").append("\n");
 
 
         long putTime = getMsgStartTime - putStartTime;
