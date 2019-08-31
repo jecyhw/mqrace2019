@@ -131,7 +131,6 @@ public class TAIndex {
         int _beginTIndexPos = beginTIndexPos;
         int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
         int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
-        int readFirstOrLastASortCount = 0;
 
         //只有一个区间
         if (beginTIndexPos == endTIndexPos) {
@@ -231,11 +230,10 @@ public class TAIndex {
         getItem.readChunkASortFileCount += readChunkASortFileCount;
         getItem.sumChunkASortCount += sumChunkASortCount;
         getItem.sumChunkASortFileCount += sumChunkASortFileCount;
-        getItem.readFirstOrLastASortCount += readFirstOrLastASortCount;
 
         Utils.print("count:" + (endTPos - beginTPos) + ",begin:" + _beginTIndexPos + ",end:" + endTIndexPos + ",aFileCnt:" + readChunkAFileCount + ",aSortFileCnt:" + readChunkASortFileCount + ",sumASortFileCnt:" + sumChunkASortFileCount
         + ",aCnt:" + readChunkACount + ",aSortCnt:" + readChunkASortCount + ",sumASortCnt:" + sumChunkASortCount + ",cost time:" + (System.currentTimeMillis() - startTime) + ",sum:" + intervalSum.sum
-        + ",count:" + intervalSum.count + ",accCostTime:" + getItem.costTime + ",readFirstOrLastASortCount:" + readFirstOrLastASortCount);
+        + ",count:" + intervalSum.count + ",accCostTime:" + getItem.costTime);
 
         return intervalSum.avg();
     }
@@ -402,19 +400,18 @@ public class TAIndex {
             readChunkACount += getItem.readChunkACount;
             readChunkASortCount += getItem.readChunkASortCount;
             sumChunkASortCount += getItem.sumChunkASortCount;
-            readFirstOrLastASortCount += getItem.readFirstOrLastASortCount;
             hitCount += getItem.readHitCount;
 
             sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
                     .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
-                    .append(getItem.sumChunkASortCount).append(",readFirstOrLastASortCount:").append(getItem.readFirstOrLastASortCount)
+                    .append(getItem.sumChunkASortCount).append(",readFirstOrLastASortCount:")
                     .append(",hitCount:").append(getItem.readHitCount).append(",accCostTime:").append(getItem.costTime)
                     .append(",readAFileTime:").append(getItem.readAFileTime).append(",readASortFileTime:").append(getItem.readASortFileTime).append("\n");
         }
 
         sb.append("aFileCnt:").append(readChunkAFileCount).append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
                 .append(sumChunkASortFileCount).append(",aCnt:").append(readChunkACount).append(",aSortCnt:").append(readChunkASortCount).append(",sumASortCnt:")
-                .append(sumChunkASortCount).append(",hitCount:").append(hitCount).append(",readFirstOrLastASortCount:").append(readFirstOrLastASortCount)
-                .append("MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append("\n");
+                .append(sumChunkASortCount).append(",hitCount:").append(hitCount)
+                .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append("\n");
     }
 }
