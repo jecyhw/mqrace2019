@@ -115,10 +115,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         Monitor.getAvgStat();
-        long startTime = System.currentTimeMillis();
-        long avgValue = TAIndex.getAvgValue(aMin, aMax, tMin, tMax);
-        System.out.println("getAvg:" + (System.currentTimeMillis() - startTime));
-        return avgValue;
+        return TAIndex.getAvgValue(aMin, aMax, tMin, tMax);
     }
 
     static {
