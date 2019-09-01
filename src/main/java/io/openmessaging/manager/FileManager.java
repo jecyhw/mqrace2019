@@ -1,7 +1,7 @@
 package io.openmessaging.manager;
 
 import io.openmessaging.Const;
-import io.openmessaging.GetItem;
+import io.openmessaging.model.GetAvgItem;
 import io.openmessaging.util.Utils;
 
 import java.io.FileNotFoundException;
@@ -78,7 +78,7 @@ public final class FileManager {
      * @param readCount 需要读取的个数
      * @param buf 缓冲区
      */
-    public static void readChunkA(int beginCount, long[] as, int readCount, ByteBuffer buf, GetItem getItem) {
+    public static void readChunkA(int beginCount, long[] as, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
         int chunkNum = beginCount / Const.MERGE_T_INDEX_INTERVAL;
         int fileIndex = chunkNum % Const.FILE_NUMS;
@@ -88,7 +88,7 @@ public final class FileManager {
         getItem.readAFileTime += (System.currentTimeMillis() - startTime);
     }
 
-    public static void readChunkASort(int beginCount, long[] as, int readCount, ByteBuffer buf, GetItem getItem) {
+    public static void readChunkASort(int beginCount, long[] as, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
         int chunkNum = beginCount / Const.MERGE_T_INDEX_INTERVAL;
         int fileIndex = chunkNum % Const.FILE_NUMS;

@@ -1,6 +1,7 @@
 package io.openmessaging;
 
 import io.openmessaging.index.TAIndex;
+import io.openmessaging.model.Ta;
 import io.openmessaging.util.Utils;
 
 import java.nio.ByteBuffer;

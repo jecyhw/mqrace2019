@@ -3,6 +3,7 @@ package io.openmessaging;
 import io.netty.util.concurrent.FastThreadLocal;
 import io.openmessaging.index.TAIndex;
 import io.openmessaging.manager.FileManager;
+import io.openmessaging.model.GetMsgItem;
 import io.openmessaging.util.Utils;
 
 import java.io.File;
@@ -33,10 +34,10 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
     };
 
-    private static FastThreadLocal<GetItem> getMsgItemThreadLocal = new FastThreadLocal<GetItem>() {
+    private static FastThreadLocal<GetMsgItem> getMsgItemThreadLocal = new FastThreadLocal<GetMsgItem>() {
         @Override
-        public GetItem initialValue() {
-            GetItem item = new GetItem();
+        public GetMsgItem initialValue() {
+            GetMsgItem item = new GetMsgItem();
             item.readBuf = ByteBuffer.allocate(Const.MAX_GET_AT_SIZE * Const.MSG_BYTES);
             return item;
         }
@@ -97,7 +98,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
             }
         }
 
-        GetItem getItem = getMsgItemThreadLocal.get();
+        GetMsgItem getItem = getMsgItemThreadLocal.get();
         int messageFileSize = messageFiles.size();
 
         List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);

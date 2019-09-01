@@ -1,6 +1,7 @@
 package io.openmessaging;
 
 import io.openmessaging.codec.*;
+import io.openmessaging.model.GetMsgItem;
 import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.Utils;
 
@@ -93,7 +94,7 @@ public class MessageFile {
         aBuf.putLong(a);
     }
 
-    public final void get(long aMin, long aMax, long tMin, long tMax, GetItem getItem) {
+    public final void get(long aMin, long aMax, long tMin, long tMax, GetMsgItem getItem) {
         ByteBuffer tBuf = this.tBuf.duplicate();
         if (tMin <= tMax && aMin <= aMax) {
             int minPos = ArrayUtils.findFirstLessThanIndex(tArr, tMin, 0, blockNums);
@@ -120,7 +121,7 @@ public class MessageFile {
      * @param tBuf
      * @return 返回读取的条数
      */
-    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, GetItem getItem, ByteBuffer tBuf) {
+    private int rangePosInPrimaryIndex(int minPos, int maxPos, long[] destT, GetMsgItem getItem, ByteBuffer tBuf) {
         TDecoder decoder = getItem.tDecoder;
         int lastInterval = 0;
         if (maxPos == blockNums) {
@@ -144,7 +145,7 @@ public class MessageFile {
 
     }
 
-    private void readMsgs(long fileStartPos, GetItem getItem, long[] as, long[] ts, int len, long aMin, long aMax, long tMin, long tMax) {
+    private void readMsgs(long fileStartPos, GetMsgItem getItem, long[] as, long[] ts, int len, long aMin, long aMax, long tMin, long tMax) {
         ByteBuffer readBuf = getItem.readBuf;
 
         readBuf.position(0);

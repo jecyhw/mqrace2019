@@ -1,19 +1,31 @@
 package io.openmessaging.index;
 
-import io.openmessaging.*;
+import io.openmessaging.Const;
 import io.openmessaging.codec.TDecoder;
 import io.openmessaging.codec.TEncoder;
 import io.openmessaging.manager.FileManager;
+import io.openmessaging.model.GetAvgItem;
+import io.openmessaging.model.IntervalSum;
+import io.openmessaging.model.Ta;
 import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.Utils;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Created by yanghuiwei on 2019-08-28
  */
 public class TAIndex {
+
+    private static ExecutorService executorService = Executors.newFixedThreadPool(Const.GET_THREAD_NUM);
 
     private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
     private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
@@ -40,11 +52,10 @@ public class TAIndex {
     }
 
 
-    private static List<GetItem> getItems = new ArrayList<>();
+    private static List<GetAvgItem> getItems = new ArrayList<>();
 
-    private static ThreadLocal<GetItem> getItemThreadLocal = ThreadLocal.withInitial(() -> {
-        GetItem getItem = new GetItem();
-        getItem.readBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.MSG_BYTES);
+    private static ThreadLocal<GetAvgItem> getItemThreadLocal = ThreadLocal.withInitial(() -> {
+        GetAvgItem getItem = new GetAvgItem();
         getItem.aIndexArr = aIndexArr.duplicate();
         getItem.aSumArr = aSumArr.duplicate();
 
@@ -54,46 +65,6 @@ public class TAIndex {
         return getItem;
     });
 
-//    public static List<Message> getMessage(long aMin, long aMax, long tMin, long tMax) {
-//        if (aMin > aMax || tMin > tMax) {
-//            return Collections.emptyList();
-//        }
-//
-//        GetItem getItem = getItemThreadLocal.get();
-//
-//        List<Message> messages = new ArrayList<>(Const.MAX_GET_MESSAGE_SIZE);
-//
-//        int beginTIndexPos = ArrayUtils.findFirstLessThanIndex(tIndexArr, tMin, 0, tIndexPos);
-//        int endTIndexPos = ArrayUtils.findFirstGreatThanIndex(tIndexArr, tMax, 0, tIndexPos);
-//        if (beginTIndexPos >= endTIndexPos) {
-//            return Collections.emptyList();
-//        }
-//
-//        ByteBuffer tBufDup = tBuf.duplicate();
-//        while (beginTIndexPos < endTIndexPos) {
-//            //一个区间一个区间进行处理
-//            long[] ts = getItem.ts, as = getItem.as;
-//            //先读取区间里面的t，并返回读取的个数；在读取a、msg
-//            int readCount = readChunkT(beginTIndexPos, ts, getItem.tDecoder, tBufDup);
-//            //这里a和t的buf用一个
-//            ByteBuffer buf = getItem.readBuf;
-//            int beginCount = beginTIndexPos * Const.MERGE_T_INDEX_INTERVAL;
-//            FileManager.readChunkA(beginCount, as, readCount, buf, getItem);
-//
-//            for (int i = 0; i < readCount; i++) {
-//                long t = ts[i], a = as[i];
-//                if (t >= tMin && t <= tMax && a >= aMin && a <= aMax) {
-//                    //readChunkMsg会把buf的position设置为0，所以可以直接读
-//                    messages.add(new Message(a, t, null));
-//                }
-//            }
-//            beginTIndexPos++;
-//        }
-//
-//        //t有序，所以不需要排序
-//        return messages;
-//    }
-
 
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         if (aMin > aMax || tMin > tMax) {
@@ -102,7 +73,7 @@ public class TAIndex {
 
         long startTime = System.currentTimeMillis();
 
-        GetItem getItem = getItemThreadLocal.get();
+        GetAvgItem getItem = getItemThreadLocal.get();
         ByteBuffer tBufDup = tBuf.duplicate();
         //对t进行精确定位，省去不必要的操作，查找的区间是左闭右开
         int beginTPos = findLeftClosedInterval(tMin, getItem.tDecoder, tBufDup);
@@ -145,12 +116,15 @@ public class TAIndex {
         } else {
             long sum = 0;
             int count = 0;
+            int sumTaskCount = 0;
+
+            ExecutorCompletionService<IntervalSum> sumExecutorCompletionService = new ExecutorCompletionService<>(executorService);
             //至少两个分区，先处理首尾分区
             if (firstChunkFilterReadCount > 0) {
                 //读取按t分区的首区间剩下的a的数量
                 int firstChunkNeedReadCount = Const.MERGE_T_INDEX_INTERVAL - firstChunkFilterReadCount;
-                FileManager.readChunkA(beginTPos, as, firstChunkNeedReadCount, readBuf, getItem);
-                sumChunkA(as, firstChunkNeedReadCount, aMin, aMax, intervalSum);
+                subSumTask(sumExecutorCompletionService, beginTPos, firstChunkNeedReadCount, aMin, aMax);
+                sumTaskCount++;
 
                 beginTIndexPos++;
 
@@ -158,11 +132,10 @@ public class TAIndex {
                 readChunkACount += firstChunkNeedReadCount;
             }
 
-
             if (lastChunkNeedReadCount > 0) {
                 //读取按t分区的尾区间里面的a
-                FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, as, lastChunkNeedReadCount, readBuf, getItem);
-                sumChunkA(as, lastChunkNeedReadCount, aMin, aMax, intervalSum);
+                subSumTask(sumExecutorCompletionService, endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, aMin, aMax);
+                sumTaskCount++;
 
                 readChunkAFileCount++;
                 readChunkACount += lastChunkNeedReadCount;
@@ -187,21 +160,23 @@ public class TAIndex {
                     //小于等于两块，一次读取
                     int chunkCount = endASortIndexPos - beginASortIndexPos;
                     int readCount = Const.A_INDEX_INTERVAL * chunkCount;
-                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, readCount, readBuf, getItem);
-                    sumChunkA(as, readCount, aMin, aMax, intervalSum);
+
+                    subSumTask(sumExecutorCompletionService, beginASortIndexPos * Const.A_INDEX_INTERVAL, readCount, aMin, aMax);
+                    sumTaskCount++;
 
                     readChunkASortFileCount++;
                     readChunkASortCount += readCount;
                 } else {
                     //读取第一个a区间内的的所有a
-                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                    sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                    subSumTask(sumExecutorCompletionService, beginASortIndexPos * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, aMin, aMax);
+                    sumTaskCount++;
+
                     ++beginASortIndexPos;
 
                     //读取最后一个a区间内的所有a
                     endASortIndexPos--;
-                    FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                    sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                    subSumTask(sumExecutorCompletionService, endASortIndexPos * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, aMin, aMax);
+                    sumTaskCount++;
 
                     readChunkASortFileCount += 2;
                     readChunkASortCount += Const.A_INDEX_INTERVAL * 2;
@@ -219,6 +194,8 @@ public class TAIndex {
                 beginTIndexPos++;
             }
             intervalSum.add(sum, count);
+
+            addSumSum(sumExecutorCompletionService, intervalSum, sumTaskCount);
         }
 
         getItem.costTime += (System.currentTimeMillis() - startTime);
@@ -236,6 +213,29 @@ public class TAIndex {
         + ",count:" + intervalSum.count + ",accCostTime:" + getItem.costTime);
 
         return intervalSum.avg();
+    }
+
+    private static void addSumSum(ExecutorCompletionService<IntervalSum> sumExecutorCompletionService, IntervalSum intervalSum, int sumTaskCount) {
+        try {
+            while (sumTaskCount > 0) {
+                IntervalSum subSum = sumExecutorCompletionService.take().get();
+                intervalSum.add(subSum.sum, subSum.count);
+                sumTaskCount--;
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            Utils.print("");
+        }
+    }
+
+    private static void subSumTask(ExecutorCompletionService<IntervalSum> sumExecutorCompletionService, int beginTPos, int firstChunkNeedReadCount, long aMin, long aMax) {
+        sumExecutorCompletionService.submit(() -> {
+            GetAvgItem subGetAvgItem =  getItemThreadLocal.get();
+            long[] subAs = subGetAvgItem.as;
+            FileManager.readChunkA(beginTPos, subAs, firstChunkNeedReadCount, subGetAvgItem.readBuf, subGetAvgItem);
+            IntervalSum subSum = new IntervalSum();
+            sumChunkA(subAs, firstChunkNeedReadCount, aMin, aMax, subSum);
+            return subSum;
+        });
     }
 
     private static void sumChunkA(long[] as, int len, long aMin, long aMax, IntervalSum intervalSum) {
@@ -393,7 +393,7 @@ public class TAIndex {
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
 
-        for (GetItem getItem : getItems) {
+        for (GetAvgItem getItem : getItems) {
             readChunkAFileCount += getItem.readChunkAFileCount;
             readChunkASortFileCount += getItem.readChunkASortFileCount;
             sumChunkASortFileCount += getItem.sumChunkASortFileCount;
