@@ -21,13 +21,18 @@ import java.util.concurrent.*;
  * Created by yanghuiwei on 2019-08-28
  */
 public class TAIndex {
+    private static final ExecutorService executorService = Executors.newFixedThreadPool(Const.GET_THREAD_NUM, r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
-    private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
-    private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
+    private static final long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
+    private static final int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
     private static int tIndexPos = 0;
 
     private static final ByteBuffer tBuf = ByteBuffer.allocate(Const.T_MEMORY_SIZE);
-    private static TEncoder tEncoder = new TEncoder(tBuf);
+    private static final TEncoder tEncoder = new TEncoder(tBuf);
 
     private static final ByteBuffer aIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
     private static final ByteBuffer aSumArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
@@ -113,7 +118,7 @@ public class TAIndex {
             int count = 0;
             int sumTaskCount = 0;
 
-            ExecutorCompletionService<IntervalSum> sumExecutorCompletionService = new ExecutorCompletionService<>(getItem.executorService);
+            ExecutorCompletionService<IntervalSum> sumExecutorCompletionService = new ExecutorCompletionService<>(executorService);
             //至少两个分区，先处理首尾分区
             if (firstChunkFilterReadCount > 0) {
                 //读取按t分区的首区间剩下的a的数量

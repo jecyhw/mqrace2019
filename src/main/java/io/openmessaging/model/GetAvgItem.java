@@ -4,8 +4,6 @@ import io.openmessaging.Const;
 import io.openmessaging.codec.TDecoder;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * Created by yanghuiwei on 2019-07-28
@@ -16,11 +14,6 @@ public class GetAvgItem {
     public final long[] as = new long[Const.MAX_GET_AT_SIZE];
     public TDecoder tDecoder = new TDecoder();
 
-    public ExecutorService executorService = Executors.newFixedThreadPool(2, r -> {
-        Thread thread = new Thread(r);
-        thread.setDaemon(true);
-        return thread;
-    });
     public ByteBuffer aIndexArr;
     public ByteBuffer aSumArr;
     public long costTime = 0;
