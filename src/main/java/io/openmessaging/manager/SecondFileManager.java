@@ -6,6 +6,7 @@ import io.openmessaging.util.ByteBufferUtil;
 import io.openmessaging.util.Utils;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -64,5 +65,19 @@ public class SecondFileManager {
             as[i] = buf.getLong();
         }
         getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
+    }
+
+    public static void log(StringBuilder sb) {
+        long aSortSize = 0;
+        for (int i = 0; i < Const.FILE_NUMS; i++) {
+            try {
+                aSortSize += aSortFcPool[i].size();
+            } catch (IOException e) {
+                Utils.print("SecondFileManager log error " + e.getMessage());
+                System.exit(-1);
+            }
+        }
+        sb.append("SecondFileManager fileNum:").append(Const.FILE_NUMS).append(",aSortSize:").append(aSortSize);
+        sb.append("\n");
     }
 }

@@ -31,6 +31,8 @@ public final class FileManager {
             Utils.print(e.getMessage());
             System.exit(-1);
         }
+
+        SecondFileManager.init();
     }
 
 
@@ -57,6 +59,8 @@ public final class FileManager {
     public static void flushEnd() {
         ByteBufferUtil.flush(aBuf, aFcPool[aFileIndex]);
         ByteBufferUtil.flush(aSortBuf, aSortFcPool[aSortFileIndex]);
+
+        SecondFileManager.flushEnd();
     }
 
 
@@ -89,13 +93,9 @@ public final class FileManager {
 
 
     private static void readChunkAOrASort(int readCount, ByteBuffer buf, FileChannel fc, int filePos) {
-
-        //TODO 目前简单实现，一次读完
         buf.position(0);
         buf.limit(readCount * Const.LONG_BYTES);
-
         ByteBufferUtil.readInBuf(filePos, buf, fc);
-
         buf.position(0);
     }
 
@@ -115,5 +115,7 @@ public final class FileManager {
         sb.append("fileNum:").append(Const.FILE_NUMS).append(",aSize:")
                 .append(aSize).append(",aSortSize:").append(aSortSize).append(",msgSize:").append(msgSize);
         sb.append("\n");
+
+        SecondFileManager.log(sb);
     }
 }

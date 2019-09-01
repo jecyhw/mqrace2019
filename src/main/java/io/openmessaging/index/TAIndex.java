@@ -6,16 +6,16 @@ import io.openmessaging.codec.TEncoder;
 import io.openmessaging.manager.FileManager;
 import io.openmessaging.model.GetAvgItem;
 import io.openmessaging.model.IntervalSum;
-import io.openmessaging.model.Ta;
 import io.openmessaging.util.ArrayUtils;
+import io.openmessaging.util.ByteBufferUtil;
 import io.openmessaging.util.Utils;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 
 /**
  * Created by yanghuiwei on 2019-08-28
@@ -103,7 +103,7 @@ public class TAIndex {
             //读取按t分区的首区间剩下的a的数量
             int firstChunkNeedReadCount = lastChunkNeedReadCount - firstChunkFilterReadCount;
             FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, readBuf, getItem);
-            sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
+            ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
 
             readASortByFileCount += statBySortA(beginTIndexPos, aIndexBuf, aMin, aMax);
             readChunkAFileCount++;
@@ -117,7 +117,7 @@ public class TAIndex {
                 //读取按t分区的首区间剩下的a的数量
                 int firstChunkNeedReadCount = Const.MERGE_T_INDEX_INTERVAL - firstChunkFilterReadCount;
                 FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, readBuf, getItem);
-                sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
+                ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
 
 
                 readASortByFileCount += statBySortA(beginTIndexPos, aIndexBuf, aMin, aMax);
@@ -132,7 +132,7 @@ public class TAIndex {
             if (lastChunkNeedReadCount > 0) {
                 //读取按t分区的尾区间里面的a
                 FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
-                sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
+                ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
 
                 readASortByFileCount += statBySortA(endTIndexPos, aIndexBuf, aMin, aMax);
 
@@ -160,20 +160,20 @@ public class TAIndex {
                     int chunkCount = endASortIndexPos - beginASortIndexPos;
                     int readCount = Const.A_INDEX_INTERVAL * chunkCount;
                     FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, readCount, readBuf, getItem);
-                    sumChunkA(readBuf, readCount, aMin, aMax, intervalSum);
+                    ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, intervalSum);
 
                     readChunkASortFileCount++;
                     readChunkASortCount += readCount;
                 } else {
                     //读取第一个a区间内的的所有a
                     FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                    sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                    ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
                     ++beginASortIndexPos;
 
                     //读取最后一个a区间内的所有a
                     endASortIndexPos--;
                     FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                    sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                    ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
 
                     readChunkASortFileCount += 2;
                     readChunkASortCount += Const.A_INDEX_INTERVAL * 2;
@@ -229,7 +229,7 @@ public class TAIndex {
             GetAvgItem subGetAvgItem =  getItemThreadLocal.get();
             FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, subGetAvgItem.readBuf, subGetAvgItem);
             IntervalSum subSum = new IntervalSum();
-            sumChunkA(subGetAvgItem.readBuf, firstChunkNeedReadCount, aMin, aMax, subSum);
+            ByteBufferUtil.sumChunkA(subGetAvgItem.readBuf, firstChunkNeedReadCount, aMin, aMax, subSum);
             return subSum;
         });
     }
@@ -239,7 +239,7 @@ public class TAIndex {
             GetAvgItem subGetAvgItem =  getItemThreadLocal.get();
             FileManager.readChunkASort(beginTPos, firstChunkNeedReadCount, subGetAvgItem.readBuf, subGetAvgItem);
             IntervalSum subSum = new IntervalSum();
-            sumChunkA(subGetAvgItem.readBuf, firstChunkNeedReadCount, aMin, aMax, subSum);
+            ByteBufferUtil.sumChunkA(subGetAvgItem.readBuf, firstChunkNeedReadCount, aMin, aMax, subSum);
             return subSum;
         });
     }
@@ -250,39 +250,6 @@ public class TAIndex {
         int beginASortIndexPos = ArrayUtils.findFirstLessThanIndex(aIndexBuf, aMin, low, high);
         int endASortIndexPos = ArrayUtils.findFirstGreatThanIndex(aIndexBuf, aMax, low, high);
         return (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
-    }
-
-    private static void sumChunkA(ByteBuffer as, int len, long aMin, long aMax, IntervalSum intervalSum) {
-        long sum = 0;
-        int count = 0;
-        for (int i = 0; i < len; i++) {
-            long a = as.getLong();
-            if (aMin <= a && a <= aMax) {
-                count++;
-                sum += a;
-            }
-        }
-        intervalSum.add(sum, count);
-    }
-
-    /**
-     * @param indexPos
-     * @param tDecoder
-     * @param ts
-     * @param tBufDup
-     * @return 返回读取的条数
-     */
-    private static int readChunkT(int indexPos, long[] ts, TDecoder tDecoder, ByteBuffer tBufDup) {
-        ts[0] = tIndexArr[indexPos];
-        if (indexPos == tIndexPos - 1) {
-            //最后一个chunk需要根据putCount来计算
-            int readLen = (putCount - 1) % Const.MERGE_T_INDEX_INTERVAL;
-            tDecoder.decode(tBufDup, ts, 1, tMemIndexArr[indexPos], readLen);
-            return readLen + 1;
-        } else {
-            tDecoder.decode(tBufDup, ts, 1, tMemIndexArr[indexPos], Const.MERGE_T_INDEX_INTERVAL - 1);
-            return Const.MERGE_T_INDEX_INTERVAL;
-        }
     }
 
     /**
@@ -338,8 +305,8 @@ public class TAIndex {
     private static long lastT;
 
 
-    public static void flush(Ta[] ta , int len) {
-        long prevT = ta[0].t;
+    public static void flush(long[] t, long[] a, int len) {
+        long prevT = t[0];
 
         if (putCount == 0) {
             firstT = prevT;
@@ -347,51 +314,52 @@ public class TAIndex {
 
         //记录块中第一个t的信息：t的值、t在内存编码中的位置
         addTIndex(prevT);
-        FileManager.writeA(ta[0].a);
+        FileManager.writeA(a[0]);
 
         //第一个消息单独处理，for只处理第一个消息之后的
         for (int i = 1; i < len; i++) {
-            long curT = ta[i].t;
+            long curT = t[i];
             encodeDeltaT((int) (curT - prevT));
 
             prevT = curT;
-            FileManager.writeA(ta[i].a);
+            FileManager.writeA(a[i]);
         }
 
-        completeASortAndCreateIndex(ta, len);
+        completeASortAndCreateIndex(a, len);
 
         //更新putCount
         putCount += len;
 
         //更新最后一个t
-        lastT = ta[len - 1].t;
+        lastT = t[len - 1];
     }
 
-    private static Comparator<Ta> taComparator = (o1, o2) -> Long.compare(o1.a, o2.a);
-    private static void completeASortAndCreateIndex(Ta[] ta, int chunkSize) {
-        //按照a进行排序
-        Arrays.parallelSort(ta, 0, chunkSize, taComparator);
+    private static void completeASortAndCreateIndex(long[] a, int chunkSize) {
 
+        for (int i = 0; i < chunkSize; i += Const.SECOND_MERGE_T_INDEX_INTERVAL) {
+            SecondTAIndex.completeASortAndCreateIndex(a, i, Math.min(i + Const.SECOND_MERGE_T_INDEX_INTERVAL, chunkSize));
+        }
+
+        //按照a进行排序
+        Arrays.parallelSort(a, 0, chunkSize);
 
         //在t的基础上在建立分区
         for (int i = 0; i < chunkSize; i += Const.A_INDEX_INTERVAL) {
-            aIndexArr.putLong(aIndexPos * Const.LONG_BYTES, ta[i].a);
+            aIndexArr.putLong(aIndexPos * Const.LONG_BYTES, a[i]);
             long sumA = 0;
             int end = Math.min(i + Const.A_INDEX_INTERVAL, chunkSize);
             for (int j = i; j < end; j++) {
-                FileManager.writeASort(ta[j].a);
-                sumA += ta[j].a;
+                FileManager.writeASort(a[j]);
+                sumA += a[j];
             }
             aSumArr.putLong(aIndexPos * Const.LONG_BYTES, sumA);
             aIndexPos++;
         }
-        // TODO 需要验证
-//        aIndexArr[aIndexPos] = ta[chunkSize - 1].a;
     }
 
-    public static void flushEnd(Ta[] ta, int len) {
+    public static void flushEnd(long[] t, long[] a, int len) {
         if (len > 0) {
-            flush(ta, len);
+            flush(t, a, len);
         }
         FileManager.flushEnd();
         tEncoder.flush();
@@ -432,5 +400,7 @@ public class TAIndex {
                 .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append(",MERGE_T_INDEX_LENGTH:").append(Const.MERGE_T_INDEX_LENGTH)
                 .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
                 .append(",readASortByFileCount").append(readASortByFileCount).append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL).append("\n");
+
+        SecondTAIndex.log(sb);
     }
 }

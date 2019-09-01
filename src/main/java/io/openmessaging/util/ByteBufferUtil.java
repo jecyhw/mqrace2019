@@ -1,5 +1,7 @@
 package io.openmessaging.util;
 
+import io.openmessaging.model.IntervalSum;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -32,4 +34,18 @@ public class ByteBufferUtil {
         }
         byteBuffer.clear();
     }
+
+    public static void sumChunkA(ByteBuffer as, int len, long aMin, long aMax, IntervalSum intervalSum) {
+        long sum = 0;
+        int count = 0;
+        for (int i = 0; i < len; i++) {
+            long a = as.getLong();
+            if (aMin <= a && a <= aMax) {
+                count++;
+                sum += a;
+            }
+        }
+        intervalSum.add(sum, count);
+    }
 }
+

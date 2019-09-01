@@ -1,7 +1,6 @@
 package io.openmessaging;
 
 import io.openmessaging.index.TAIndex;
-import io.openmessaging.model.Ta;
 import io.openmessaging.util.Utils;
 
 import java.nio.ByteBuffer;
@@ -55,10 +54,8 @@ public class Gather {
             long minT;
             int minIndex = 0;
 
-            Ta[] ta = new Ta[Const.MERGE_T_INDEX_LENGTH];
-            for (int i = 0; i < Const.MERGE_T_INDEX_LENGTH; i++) {
-                ta[i] = new Ta();
-            }
+            long[] ts = new long[Const.MERGE_T_INDEX_LENGTH];
+            long[] as = new long[Const.MERGE_T_INDEX_LENGTH];
 
             int len = 0;
 
@@ -75,11 +72,11 @@ public class Gather {
 
                 Item item = items[minIndex];
 
-                ta[len].t = minT;
-                ta[len++].a = item.nextA();
+                ts[len] = minT;
+                as[len++] = item.nextA();
 
                 if (len == Const.MERGE_T_INDEX_INTERVAL) {
-                    TAIndex.flush(ta, len);
+                    TAIndex.flush(ts, as, len);
                     len = 0;
                 }
                 //获取最小元素的下一个值
@@ -90,7 +87,7 @@ public class Gather {
                 }
             }
 
-            TAIndex.flushEnd(ta, len);
+            TAIndex.flushEnd(ts, as, len);
 
             Utils.print("merge end, cost time:" + (System.currentTimeMillis() - startTime));
         }
