@@ -15,17 +15,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Created by yanghuiwei on 2019-08-28
  */
 public class TAIndex {
 
-    private static ExecutorService executorService = Executors.newFixedThreadPool(Const.GET_THREAD_NUM);
+    private static ExecutorService executorService = Executors.newFixedThreadPool(Const.GET_THREAD_NUM, r -> {
+        Thread thread = new Thread(r);
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private static long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
     private static int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
@@ -223,7 +224,8 @@ public class TAIndex {
                 sumTaskCount--;
             }
         } catch (InterruptedException | ExecutionException e) {
-            Utils.print("");
+            Utils.print("func=addSumSum error " + e.getMessage());
+            System.exit(-1);
         }
     }
 
