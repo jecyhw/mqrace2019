@@ -26,7 +26,7 @@ public class DemoTester {
         //发送的线程数量
         int sendTsNum = 12;
         //查询的线程数量
-        int checkTsNum = 1;
+        int checkTsNum = 12;
         // 每次查询消息的最大跨度
         int maxMsgCheckSize = 50000;
         // 每次查询求平均的最大跨度
@@ -319,10 +319,10 @@ public class DemoTester {
 //                        }
 //                    }
 
-                    aIndex1 = 1315529;
-                    aIndex2 = 1365529;
-                    tIndex1 = 1346135;
-                    tIndex2 = 1378582;
+//                    aIndex1 = 3829781;
+//                    aIndex2 = 3879781;
+//                    tIndex1 = 3872956;
+//                    tIndex2 = 3890932;
 
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);

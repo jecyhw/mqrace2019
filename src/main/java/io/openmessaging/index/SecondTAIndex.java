@@ -44,9 +44,10 @@ public class SecondTAIndex {
     public static void sumSecondChunkA(int beginIndex, long aMin, long aMax, GetAvgItem getItem) {
         ByteBuffer aIndexBuf = aIndexArr.duplicate();
         //t区间内对a进行二分查询
-        int high = beginIndex + Const.SECOND_MERGE_T_INDEX_INTERVAL / Const.A_INDEX_INTERVAL;
-        int beginASortIndexPos = ArrayUtils.findFirstLessThanIndex(aIndexBuf, aMin, beginIndex, high);
-        int endASortIndexPos = ArrayUtils.findFirstGreatThanIndex(aIndexBuf, aMax, beginIndex, high);
+        int low = beginIndex * (Const.SECOND_MERGE_T_INDEX_INTERVAL / Const.A_INDEX_INTERVAL);
+        int high = low + Const.SECOND_MERGE_T_INDEX_INTERVAL / Const.A_INDEX_INTERVAL;
+        int beginASortIndexPos = ArrayUtils.findFirstLessThanIndex(aIndexBuf, aMin, low, high);
+        int endASortIndexPos = ArrayUtils.findFirstGreatThanIndex(aIndexBuf, aMax, low, high);
 
         //区间内没有符合条件的a
         if (beginASortIndexPos >= endASortIndexPos) {
