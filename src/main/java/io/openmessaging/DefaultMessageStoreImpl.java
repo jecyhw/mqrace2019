@@ -144,7 +144,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     System.out.print(e.getMessage());
                 }
             });
-            thread.setDaemon(true);
             thread.start();
 
             //Process p=new ProcessBuilder(new String[]{"iostat","-xdm","1"}).start();
