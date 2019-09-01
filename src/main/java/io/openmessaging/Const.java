@@ -47,5 +47,5 @@ public interface Const {
 
     int DEST = 26000;
 
-    int GET_THREAD_NUM = 16;
+    int GET_THREAD_NUM = 28;
 }
