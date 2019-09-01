@@ -17,14 +17,14 @@ import java.nio.channels.FileChannel;
 public class SecondFileManager {
     private static FileChannel[] aSortFcPool = new FileChannel[Const.FILE_NUMS];
 
-    private static final ByteBuffer aSortBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.LONG_BYTES);
+    private static final ByteBuffer aSortBuf = ByteBuffer.allocate(Const.SECOND_MERGE_T_INDEX_INTERVAL * Const.LONG_BYTES);
 
     private static int aSortFileIndex = 0;
 
     public static void init(){
         try {
             for (int i = 0; i < Const.FILE_NUMS; i++) {
-                aSortFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_SORT_FILE_SUFFIX, "rw").getChannel();
+                aSortFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_SORT_2_FILE_SUFFIX, "rw").getChannel();
             }
         } catch (FileNotFoundException e) {
             Utils.print(e.getMessage());
@@ -48,11 +48,12 @@ public class SecondFileManager {
     }
 
 
-    public static void readChunkASort(int beginCount, long[] as, int readCount, ByteBuffer buf, GetAvgItem getItem) {
+    public static void readChunkASort(int beginCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
-        int chunkNum = beginCount / Const.MERGE_T_INDEX_INTERVAL;
+
+        int chunkNum = beginCount / Const.SECOND_MERGE_T_INDEX_INTERVAL;
         int fileIndex = chunkNum % Const.FILE_NUMS;
-        int filePos = ((chunkNum / Const.FILE_NUMS) * Const.MERGE_T_INDEX_INTERVAL + beginCount % Const.MERGE_T_INDEX_INTERVAL) * Const.LONG_BYTES;
+        int filePos = ((chunkNum / Const.FILE_NUMS) * Const.SECOND_MERGE_T_INDEX_INTERVAL + beginCount % Const.SECOND_MERGE_T_INDEX_INTERVAL) * Const.LONG_BYTES;
 
 
         buf.position(0);
@@ -61,9 +62,7 @@ public class SecondFileManager {
         ByteBufferUtil.readInBuf(filePos, buf, aSortFcPool[fileIndex]);
 
         buf.position(0);
-        for (int i = 0; i < readCount; i++) {
-            as[i] = buf.getLong();
-        }
+
         getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
     }
 

@@ -25,7 +25,7 @@ public final class FileManager {
         try {
             for (int i = 0; i < Const.FILE_NUMS; i++) {
                 aFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_FILE_SUFFIX, "rw").getChannel();
-                aSortFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_SORT_FILE_SUFFIX, "rw").getChannel();
+                aSortFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + Const.M_A_SORT_1_FILE_SUFFIX, "rw").getChannel();
             }
         } catch (FileNotFoundException e) {
             Utils.print(e.getMessage());

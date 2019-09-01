@@ -15,7 +15,7 @@ public class DemoTester {
     public static void main(String args[]) throws Exception {
         //评测相关配置
         //发送阶段的发送数量，也即发送阶段必须要在规定时间内把这些消息发送完毕方可
-        int msgNum  = 1_000_00000;
+        int msgNum  = 1_000_0000;
         //发送阶段的最大持续时间，也即在该时间内，如果消息依然没有发送完毕，则退出评测
         int sendTime = 10 * 60 * 1000;
         //查询阶段的最大持续时间，也即在该时间内，如果消息依然没有消费完毕，则退出评测
@@ -26,7 +26,7 @@ public class DemoTester {
         //发送的线程数量
         int sendTsNum = 12;
         //查询的线程数量
-        int checkTsNum = 12;
+        int checkTsNum = 1;
         // 每次查询消息的最大跨度
         int maxMsgCheckSize = 50000;
         // 每次查询求平均的最大跨度
@@ -319,10 +319,10 @@ public class DemoTester {
 //                        }
 //                    }
 
-//                    aIndex1 = 474568;
-//                    aIndex2 = 524568;
-//                    tIndex1 = 475229;
-//                    tIndex2 = 513884;
+                    aIndex1 = 1315529;
+                    aIndex2 = 1365529;
+                    tIndex1 = 1346135;
+                    tIndex2 = 1378582;
 
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);

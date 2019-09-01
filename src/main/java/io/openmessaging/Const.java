@@ -8,7 +8,8 @@ public interface Const {
     String MSG_FILE_SUFFIX = ".msg";
     String A_FILE_SUFFIX = ".a";
     String M_A_FILE_SUFFIX = ".ma";
-    String M_A_SORT_FILE_SUFFIX = ".maSort";
+    String M_A_SORT_1_FILE_SUFFIX = ".maSort1";
+    String M_A_SORT_2_FILE_SUFFIX = ".maSort2";
     int GET_AVG_COUNT = 310000;
 
     int MSG_BYTES = 34;
