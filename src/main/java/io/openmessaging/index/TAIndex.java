@@ -434,6 +434,6 @@ public class TAIndex {
                 .append(sumChunkASortCount).append(",hitCount:").append(hitCount)
                 .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append(",MERGE_T_INDEX_LENGTH:").append(Const.MERGE_T_INDEX_LENGTH)
                 .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
-                .append(",readASortByFileCount").append(readASortByFileCount).append("\n");
+                .append(",readASortByFileCount").append(readASortByFileCount).append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL).append("\n");
     }
 }

@@ -44,7 +44,7 @@ public interface Const {
     int FILE_NUMS = 16;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
-    int DEST = 26000;
+    int DEST = 25500;
 
     int GET_THREAD_NUM = 24;
 }
