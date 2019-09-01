@@ -123,7 +123,7 @@ public class TAIndex {
             if (firstChunkFilterReadCount > 0) {
                 //读取按t分区的首区间剩下的a的数量
                 int firstChunkNeedReadCount = Const.MERGE_T_INDEX_INTERVAL - firstChunkFilterReadCount;
-                subSumTask(sumExecutorCompletionService, beginTPos, firstChunkNeedReadCount, aMin, aMax);
+                subSumATask(sumExecutorCompletionService, beginTPos, firstChunkNeedReadCount, aMin, aMax);
                 sumTaskCount++;
 
                 beginTIndexPos++;
@@ -134,7 +134,7 @@ public class TAIndex {
 
             if (lastChunkNeedReadCount > 0) {
                 //读取按t分区的尾区间里面的a
-                subSumTask(sumExecutorCompletionService, endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, aMin, aMax);
+                subSumATask(sumExecutorCompletionService, endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, aMin, aMax);
                 sumTaskCount++;
 
                 readChunkAFileCount++;
@@ -226,11 +226,22 @@ public class TAIndex {
         }
     }
 
-    private static void subSumTask(ExecutorCompletionService<IntervalSum> sumExecutorCompletionService, int beginTPos, int firstChunkNeedReadCount, long aMin, long aMax) {
+    private static void subSumATask(ExecutorCompletionService<IntervalSum> sumExecutorCompletionService, int beginTPos, int firstChunkNeedReadCount, long aMin, long aMax) {
         sumExecutorCompletionService.submit(() -> {
             GetAvgItem subGetAvgItem =  getItemThreadLocal.get();
             long[] subAs = subGetAvgItem.as;
             FileManager.readChunkA(beginTPos, subAs, firstChunkNeedReadCount, subGetAvgItem.readBuf, subGetAvgItem);
+            IntervalSum subSum = new IntervalSum();
+            sumChunkA(subAs, firstChunkNeedReadCount, aMin, aMax, subSum);
+            return subSum;
+        });
+    }
+
+    private static void subSumASortTask(ExecutorCompletionService<IntervalSum> sumExecutorCompletionService, int beginTPos, int firstChunkNeedReadCount, long aMin, long aMax) {
+        sumExecutorCompletionService.submit(() -> {
+            GetAvgItem subGetAvgItem =  getItemThreadLocal.get();
+            long[] subAs = subGetAvgItem.as;
+            FileManager.readChunkASort(beginTPos, subAs, firstChunkNeedReadCount, subGetAvgItem.readBuf, subGetAvgItem);
             IntervalSum subSum = new IntervalSum();
             sumChunkA(subAs, firstChunkNeedReadCount, aMin, aMax, subSum);
             return subSum;

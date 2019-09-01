@@ -4,8 +4,8 @@ package io.openmessaging.model;
  * Created by yanghuiwei on 2019-07-28
  */
 public class IntervalSum {
-    public long sum;
-    public int count;
+    public long sum = 0;
+    public int count = 0;
 
     public void reset() {
         sum = 0;
