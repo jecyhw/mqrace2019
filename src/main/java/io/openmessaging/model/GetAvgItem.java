@@ -26,4 +26,5 @@ public class GetAvgItem {
     public int readHitCount = 0;
     public long readAFileTime = 0;
     public long readASortFileTime = 0;
+    public long readASortByFileCount = 0;
 }

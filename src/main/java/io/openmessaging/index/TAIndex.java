@@ -126,6 +126,8 @@ public class TAIndex {
                 subSumATask(sumExecutorCompletionService, beginTPos, firstChunkNeedReadCount, aMin, aMax);
                 sumTaskCount++;
 
+                getItem.readASortByFileCount += statBySortA(beginTIndexPos, getItem.aIndexArr, aMin, aMax);
+
                 beginTIndexPos++;
 
                 readChunkAFileCount++;
@@ -136,6 +138,8 @@ public class TAIndex {
                 //读取按t分区的尾区间里面的a
                 subSumATask(sumExecutorCompletionService, endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, aMin, aMax);
                 sumTaskCount++;
+
+                getItem.readASortByFileCount += statBySortA(endTIndexPos, getItem.aIndexArr, aMin, aMax);
 
                 readChunkAFileCount++;
                 readChunkACount += lastChunkNeedReadCount;
@@ -249,6 +253,14 @@ public class TAIndex {
             sumChunkA(subAs, firstChunkNeedReadCount, aMin, aMax, subSum);
             return subSum;
         });
+    }
+
+    private static int statBySortA(int beginTIndexPos, ByteBuffer aIndexBuf, long aMin, long aMax) {
+        //t区间内对a进行二分查询
+        int low = beginTIndexPos * (Const.MERGE_T_INDEX_INTERVAL / Const.A_INDEX_INTERVAL), high = low + (Const.MERGE_T_INDEX_INTERVAL / Const.A_INDEX_INTERVAL);
+        int beginASortIndexPos = ArrayUtils.findFirstLessThanIndex(aIndexBuf, aMin, low, high);
+        int endASortIndexPos = ArrayUtils.findFirstGreatThanIndex(aIndexBuf, aMax, low, high);
+        return (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
     }
 
     private static void sumChunkA(long[] as, int len, long aMin, long aMax, IntervalSum intervalSum) {
@@ -400,6 +412,7 @@ public class TAIndex {
         int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
         int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
         int hitCount = 0;
+        int readASortByFileCount = 0;
 
         sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos).append(",aIndexPos:").append(aIndexPos);
         sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
@@ -414,18 +427,21 @@ public class TAIndex {
             readChunkASortCount += getItem.readChunkASortCount;
             sumChunkASortCount += getItem.sumChunkASortCount;
             hitCount += getItem.readHitCount;
+            hitCount += getItem.readASortByFileCount;
 
             sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
                     .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
                     .append(getItem.sumChunkASortCount).append(",readFirstOrLastASortCount:")
                     .append(",hitCount:").append(getItem.readHitCount).append(",accCostTime:").append(getItem.costTime)
-                    .append(",readAFileTime:").append(getItem.readAFileTime).append(",readASortFileTime:").append(getItem.readASortFileTime).append("\n");
+                    .append(",readAFileTime:").append(getItem.readAFileTime).append(",readASortFileTime:").append(getItem.readASortFileTime)
+                    .append(",readASortByFileCount").append(getItem.readASortByFileCount).append("\n");
         }
 
         sb.append("aFileCnt:").append(readChunkAFileCount).append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
                 .append(sumChunkASortFileCount).append(",aCnt:").append(readChunkACount).append(",aSortCnt:").append(readChunkASortCount).append(",sumASortCnt:")
                 .append(sumChunkASortCount).append(",hitCount:").append(hitCount)
                 .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append(",MERGE_T_INDEX_LENGTH:").append(Const.MERGE_T_INDEX_LENGTH)
-                .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM).append("\n");
+                .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
+                .append(",readASortByFileCount").append(readASortByFileCount).append("\n");
     }
 }
