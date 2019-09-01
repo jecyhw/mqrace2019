@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 public class GetAvgItem {
     public ByteBuffer readBuf = ByteBuffer.allocate(Const.MERGE_T_INDEX_INTERVAL * Const.MSG_BYTES);
     public final IntervalSum intervalSum = new IntervalSum();
-    public final long[] as = new long[Const.MAX_GET_AT_SIZE];
     public TDecoder tDecoder = new TDecoder();
 
     public ByteBuffer aIndexArr;
