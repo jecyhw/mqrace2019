@@ -160,21 +160,24 @@ public class TAIndex {
                     //小于等于两块，一次读取
                     int chunkCount = endASortIndexPos - beginASortIndexPos;
                     int readCount = Const.A_INDEX_INTERVAL * chunkCount;
-                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, readCount, readBuf, getItem);
-                    sumChunkA(as, readCount, aMin, aMax, intervalSum);
+
+                    subSumASortTask(sumExecutorCompletionService, beginASortIndexPos * Const.A_INDEX_INTERVAL, readCount, aMin, aMax);
+                    sumTaskCount++;
 
                     readChunkASortFileCount++;
                     readChunkASortCount += readCount;
                 } else {
                     //读取第一个a区间内的的所有a
-                    FileManager.readChunkASort(beginASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                    sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                    subSumASortTask(sumExecutorCompletionService, beginASortIndexPos * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, aMin, aMax);
+                    sumTaskCount++;
+
                     ++beginASortIndexPos;
 
                     //读取最后一个a区间内的所有a
                     endASortIndexPos--;
-                    FileManager.readChunkASort(endASortIndexPos * Const.A_INDEX_INTERVAL, as, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                    sumChunkA(as, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+
+                    subSumASortTask(sumExecutorCompletionService, endASortIndexPos * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, aMin, aMax);
+                    sumTaskCount++;
 
                     readChunkASortFileCount += 2;
                     readChunkASortCount += Const.A_INDEX_INTERVAL * 2;

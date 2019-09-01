@@ -36,16 +36,16 @@ public interface Const {
 
     boolean PRINT_LOG = true;
 
-    int MERGE_T_TIME = 4;
+    int MERGE_T_TIME = 2;
     int MERGE_T_INDEX_INTERVAL = 1024 * 4 * MERGE_T_TIME;
     int MERGE_T_INDEX_LENGTH = 31000 * 16 / MERGE_T_TIME;
     int A_INDEX_INTERVAL = 16;
     int A_INDEX_LENGTH = MERGE_T_INDEX_LENGTH * (MERGE_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
 
-    int FILE_NUMS = 32;
+    int FILE_NUMS = 16;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
     int DEST = 26000;
 
-    int GET_THREAD_NUM = 20;
+    int GET_THREAD_NUM = 24;
 }
