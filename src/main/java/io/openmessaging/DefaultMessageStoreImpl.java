@@ -6,7 +6,10 @@ import io.openmessaging.manager.FileManager;
 import io.openmessaging.model.GetMsgItem;
 import io.openmessaging.util.Utils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -65,6 +68,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
         }
         FileManager.init();
         Monitor.putStart();
+        iostat();
         print("func=init success");
     }
 
@@ -120,7 +124,38 @@ public class DefaultMessageStoreImpl extends MessageStore {
         return TAIndex.getAvgValue(aMin, aMax, tMin, tMax);
     }
 
+    private static void iostat() {
+        try {
+
+            Thread thread = new Thread(() -> {
+                try {
+                    String command = "iostat -xm 1 1000";
+                    Process p = Runtime.getRuntime().exec(command);
+
+                    //p.waitFor();
+                    InputStream is = p.getInputStream();
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                    String s;
+                    while ((s = reader.readLine()) != null) {
+                        System.out.println(s);
+                    }
+
+                } catch (Exception e) {
+                    System.out.print(e.getMessage());
+                }
+            });
+            thread.setDaemon(true);
+            thread.start();
+
+            //Process p=new ProcessBuilder(new String[]{"iostat","-xdm","1"}).start();
+        } catch (Exception e) {
+            System.out.print(e.getMessage());
+        }
+    }
+
+
     static {
+
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Monitor.log();
         }));

@@ -10,6 +10,7 @@ public interface Const {
     String M_A_FILE_SUFFIX = ".ma";
     String M_A_SORT_1_FILE_SUFFIX = ".maSort1";
     String M_A_SORT_2_FILE_SUFFIX = ".maSort2";
+    String M_A_SORT_3_FILE_SUFFIX = ".maSort3";
     int GET_AVG_COUNT = 310000;
 
     int MSG_BYTES = 34;
@@ -40,15 +41,16 @@ public interface Const {
     int MERGE_T_INDEX_INTERVAL = 512 * MERGE_T_TIME;
     int MERGE_T_INDEX_LENGTH = 31000 * 128 / MERGE_T_TIME;
     int SECOND_MERGE_T_INDEX_INTERVAL = MERGE_T_INDEX_INTERVAL / 2;
+    int THREE_MERGE_T_INDEX_INTERVAL = SECOND_MERGE_T_INDEX_INTERVAL / 2;
     int READ_ONCE_MAX_NUM = MERGE_T_INDEX_INTERVAL / 2;
 
-    int A_INDEX_INTERVAL = 32;
+    int A_INDEX_INTERVAL = 48;
     int A_INDEX_LENGTH = MERGE_T_INDEX_LENGTH * (MERGE_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
 
     int FILE_NUMS = 16;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
-    int DEST = 26000;
+    int DEST = 28500;
 
     int GET_THREAD_NUM = 24;
 }
