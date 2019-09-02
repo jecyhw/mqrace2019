@@ -319,10 +319,10 @@ public class DemoTester {
 //                        }
 //                    }
 //
-//                    aIndex1 = 1967744;
-//                    aIndex2 = 2017744;
-//                    tIndex1 = 1972858;
-//                    tIndex2 = 1996878;
+//                    aIndex1 = 143694;
+//                    aIndex2 = 193694;
+//                    tIndex1 = 147502;
+//                    tIndex2 = 157807;
 
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);
