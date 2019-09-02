@@ -25,8 +25,8 @@ public class TAIndex {
     private static final ByteBuffer tBuf = ByteBuffer.allocate(Const.T_MEMORY_SIZE);
     private static final TEncoder tEncoder = new TEncoder(tBuf);
 
-    private static final ByteBuffer aIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
-    private static final ByteBuffer aSumArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
+    private static final ByteBuffer aIndexArr = ByteBuffer.allocate(Const.A_INDEX_LENGTH * 8);
+    private static final ByteBuffer aSumArr = ByteBuffer.allocate(Const.A_INDEX_LENGTH * 8);
     private static int aIndexPos = 0;
 
 

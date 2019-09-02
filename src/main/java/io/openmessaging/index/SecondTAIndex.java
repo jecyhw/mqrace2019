@@ -15,8 +15,8 @@ import java.util.Arrays;
  */
 public class SecondTAIndex {
 
-    private static final ByteBuffer aIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
-    private static final ByteBuffer aSumArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
+    private static final ByteBuffer aIndexArr = ByteBuffer.allocate(Const.A_INDEX_LENGTH * 8);
+    private static final ByteBuffer aSumArr = ByteBuffer.allocate(Const.A_INDEX_LENGTH * 8);
     private static int aIndexPos = 0;
 
     public static void completeASortAndCreateIndex(long[] a, int fromIndex, int toIndex) {
