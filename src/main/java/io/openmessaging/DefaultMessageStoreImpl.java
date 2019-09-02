@@ -129,7 +129,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
             Thread thread = new Thread(() -> {
                 try {
-                    String command = "iostat -xm 1 1000";
+                    String command = "iostat -xm 1";
                     Process p = Runtime.getRuntime().exec(command);
 
                     //p.waitFor();
@@ -144,6 +144,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
                     System.out.print(e.getMessage());
                 }
             });
+            thread.setDaemon(true);
             thread.start();
 
             //Process p=new ProcessBuilder(new String[]{"iostat","-xdm","1"}).start();
