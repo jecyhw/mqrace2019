@@ -12,18 +12,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 public final class PartitionFile {
-    private final FileChannel[] aFcPool = new FileChannel[Const.FILE_NUMS];
+    private FileChannel aFcPool;
     private final ByteBuffer aBuf;
-    private int aFileIndex = 0;
     private final int interval;
 
     public PartitionFile(int interval, String fileSuffix) {
         aBuf = ByteBuffer.allocate(interval * Const.LONG_BYTES);
         this.interval = interval;
         try {
-            for (int i = 0; i < Const.FILE_NUMS; i++) {
-                aFcPool[i] = new RandomAccessFile(Const.STORE_PATH + i + fileSuffix, "rw").getChannel();
-            }
+            aFcPool = new RandomAccessFile(Const.STORE_PATH + "test" + fileSuffix, "rw").getChannel();
         } catch (FileNotFoundException e) {
             Utils.print(e.getMessage());
             System.exit(-1);
@@ -32,16 +29,13 @@ public final class PartitionFile {
 
     public void writeA(long a) {
         if (!aBuf.hasRemaining()) {
-            ByteBufferUtil.flush(aBuf, aFcPool[aFileIndex++]);
-            if (aFileIndex == Const.FILE_NUMS) {
-                aFileIndex = 0;
-            }
+            ByteBufferUtil.flush(aBuf, aFcPool);
         }
         aBuf.putLong(a);
     }
 
     public void flush() {
-        ByteBufferUtil.flush(aBuf, aFcPool[aFileIndex]);
+        ByteBufferUtil.flush(aBuf, aFcPool);
     }
 
 
@@ -53,12 +47,11 @@ public final class PartitionFile {
      */
     public void readPartition(int partition, int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
-        int fileIndex = partition % Const.FILE_NUMS;
-        int filePos = ((partition / Const.FILE_NUMS) * interval + offsetCount) * Const.LONG_BYTES;
+        int filePos = (partition  * interval + offsetCount) * Const.LONG_BYTES;
 
         buf.position(0);
         buf.limit(readCount * Const.LONG_BYTES);
-        ByteBufferUtil.readInBuf(filePos, buf, aFcPool[fileIndex]);
+        ByteBufferUtil.readInBuf(filePos, buf, aFcPool);
         buf.position(0);
 
         getItem.readChunkASortFileCount++;
@@ -71,7 +64,7 @@ public final class PartitionFile {
         long aSize = 0, aSortSize = 0, msgSize = 0;
         for (int i = 0; i < Const.FILE_NUMS; i++) {
             try {
-                aSize += aFcPool[i].size();
+                aSize += aFcPool.size();
             } catch (IOException e) {
                 Utils.print("FileManager log error " + e.getMessage());
                 System.exit(-1);

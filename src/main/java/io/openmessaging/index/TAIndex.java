@@ -104,7 +104,7 @@ public class TAIndex {
         int endPartition = endTPos / interval;
 
         //只有一个区间
-        if (beginPartition == endPartition) {
+        if (beginPartition + 1 >= endPartition) {
             return avgFromOnePartition(beginTPos, endTPos, beginPartition, aMin, aMax, getItem);
         }
 
@@ -202,10 +202,9 @@ public class TAIndex {
 
     private long avgFromOnePartition(int beginTPos, int endTPos, int partition, long aMin, long aMax, GetAvgItem getItem) {
         int partitionFilterCount = beginTPos % interval;
-        int partitionEndCount = endTPos % interval;
         IntervalSum intervalSum = getItem.intervalSum;
 
-        readAndSumFromAPartition(partition, partitionFilterCount, partitionEndCount - partitionFilterCount, aMin, aMax, getItem);
+        readAndSumFromAPartition(partition, partitionFilterCount, endTPos - beginTPos, aMin, aMax, getItem);
 
 //        PartitionIndex nextPartitionIndex = primaryPartitionIndex.getNextPartitionIndex();
 //        int nextInterval = nextPartitionIndex.getInterval();
