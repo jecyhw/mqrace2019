@@ -107,22 +107,7 @@ public class TAIndex {
             int count = 0;
             //至少两个分区，先处理首尾分区
             if (firstChunkFilterReadCount > 0) {
-                int firstChunkNeedReadCount = Const.MERGE_T_INDEX_INTERVAL - firstChunkFilterReadCount;
-
-                if (firstChunkNeedReadCount >= Const.SECOND_MERGE_T_INDEX_INTERVAL) {
-                    firstChunkNeedReadCount -= Const.SECOND_MERGE_T_INDEX_INTERVAL;
-                    //去二层上面读整个区间
-                    SecondTAIndex.sumSecondChunkA(beginTIndexPos * 2 + 1, aMin, aMax, getItem);
-                }
-
-                if (firstChunkNeedReadCount > 0) {
-                    //读取按t分区的首区间剩下的a的数量
-                    FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, readBuf, getItem);
-                    ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
-
-                    getItem.map.put(firstChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
-                }
-
+                int firstChunkNeedReadCount = readAndSumFirstChunk(beginTPos, beginTIndexPos, Const.MERGE_T_INDEX_INTERVAL - firstChunkFilterReadCount, getItem, readBuf, intervalSum, aMin, aMax);
                 beginTIndexPos++;
 
                 readChunkAFileCount++;
@@ -131,24 +116,7 @@ public class TAIndex {
 
 
             if (lastChunkNeedReadCount > 0) {
-
-                if (lastChunkNeedReadCount >= Const.SECOND_MERGE_T_INDEX_INTERVAL) {
-                    lastChunkNeedReadCount -= Const.SECOND_MERGE_T_INDEX_INTERVAL;
-                    SecondTAIndex.sumSecondChunkA(endTIndexPos * 2, aMin, aMax, getItem);
-                    if (lastChunkNeedReadCount > 0) {
-                        //读取按t分区的尾区间里面的a
-                        FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL + Const.SECOND_MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
-                        ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
-
-                        getItem.map.put(lastChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
-                    }
-                } else {
-                    //读取按t分区的尾区间里面的a
-                    FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
-                    ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
-
-                    getItem.map.put(lastChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
-                }
+                lastChunkNeedReadCount = readAndSumLastChunkA(endTIndexPos, lastChunkNeedReadCount, getItem, intervalSum, readBuf, aMin, aMax);
 
                 readChunkAFileCount++;
                 readChunkACount += lastChunkNeedReadCount;
@@ -223,6 +191,48 @@ public class TAIndex {
                 + ",count:" + intervalSum.count + ",accCostTime:" + getItem.costTime);
 
         return intervalSum.avg();
+    }
+
+    private static int readAndSumLastChunkA(int endTIndexPos, int lastChunkNeedReadCount, GetAvgItem getItem, IntervalSum intervalSum, ByteBuffer readBuf, long aMin, long aMax) {
+        if (lastChunkNeedReadCount >= Const.SECOND_MERGE_T_INDEX_INTERVAL) {
+            lastChunkNeedReadCount -= Const.SECOND_MERGE_T_INDEX_INTERVAL;
+            SecondTAIndex.sumSecondChunkA(endTIndexPos * 2, aMin, aMax, getItem);
+            if (lastChunkNeedReadCount > 0) {
+                //读取按t分区的尾区间里面的a
+                FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL + Const.SECOND_MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
+                ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
+
+                getItem.map.put(lastChunkNeedReadCount, getItem.map.getOrDefault(lastChunkNeedReadCount, 0) + 1);
+            }
+        } else {
+            //读取按t分区的尾区间里面的a
+            FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
+            ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
+
+            getItem.map.put(lastChunkNeedReadCount, getItem.map.getOrDefault(lastChunkNeedReadCount, 0) + 1);
+        }
+        return lastChunkNeedReadCount;
+    }
+
+    private static int readAndSumFirstChunk(int beginTPos, int beginTIndexPos, int firstChunkNeedReadCount, GetAvgItem getItem, ByteBuffer readBuf, IntervalSum intervalSum, long aMin, long aMax) {
+        if (firstChunkNeedReadCount >= Const.SECOND_MERGE_T_INDEX_INTERVAL) {
+            firstChunkNeedReadCount -= Const.SECOND_MERGE_T_INDEX_INTERVAL;
+            //去二层上面读整个区间
+            SecondTAIndex.sumSecondChunkA(beginTIndexPos * 2 + 1, aMin, aMax, getItem);
+        }
+
+        if (firstChunkNeedReadCount > 0) {
+            readAndSumChunkA(beginTPos, firstChunkNeedReadCount, getItem, readBuf, intervalSum, aMin, aMax);
+        }
+        return firstChunkNeedReadCount;
+    }
+
+    private static void readAndSumChunkA(int beginTPos, int firstChunkNeedReadCount, GetAvgItem getItem, ByteBuffer readBuf, IntervalSum intervalSum, long aMin, long aMax) {
+        //读取按t分区的首区间剩下的a的数量
+        FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, readBuf, getItem);
+        ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
+
+        getItem.map.put(firstChunkNeedReadCount, getItem.map.getOrDefault(firstChunkNeedReadCount, 0) + 1);
     }
 
     /**
