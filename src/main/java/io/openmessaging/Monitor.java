@@ -1,7 +1,6 @@
 package io.openmessaging;
 
 import io.openmessaging.index.TAIndex;
-import io.openmessaging.manager.FileManager;
 import io.openmessaging.util.Utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,8 +42,7 @@ public class Monitor {
     public static void log() {
         StringBuilder sb = new StringBuilder();
 
-        TAIndex.log(sb);
-        FileManager.log(sb);
+        TAIndex.taIndex.log(sb);
 
         int putCount = 0;
         for (MessageFile messageFile : DefaultMessageStoreImpl.messageFiles) {

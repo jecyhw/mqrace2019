@@ -212,7 +212,7 @@ public class MessageFile {
                 fc.write(buf);
             }
         } catch (Exception e) {
-            Utils.print("func=flush error");
+            Utils.print("func=createIndex error");
         }
     }
 
@@ -225,7 +225,7 @@ public class MessageFile {
         tEncoder.flushAndClear();
 
         try {
-            Utils.print("MemoryIndex func=flush " + " blockNums:" + blockNums
+            Utils.print("MemoryIndex func=createIndex " + " blockNums:" + blockNums
                     + " putCount:" + putCount + " aFilSize:" + aFc.size() + " compressMsgFileSize:" + msgFc.size()
                     + " msgFileSize:" + ((long)putCount * Const.MSG_BYTES)
                     + " bitPos:" + tOffsetArr[blockNums - 1] / 8

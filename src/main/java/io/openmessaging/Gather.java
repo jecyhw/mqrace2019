@@ -35,6 +35,7 @@ public class Gather {
             System.exit(-1);
         }
     }
+
     static class GatherThread extends Thread {
         Item[] items;
         public GatherThread(Item[] items) {
@@ -76,7 +77,8 @@ public class Gather {
                 as[len++] = item.nextA();
 
                 if (len == Const.MERGE_T_INDEX_INTERVAL) {
-                    TAIndex.flush(ts, as, len);
+
+                    TAIndex.taIndex.createIndex(ts, as, len);
                     len = 0;
                 }
                 //获取最小元素的下一个值
@@ -87,7 +89,7 @@ public class Gather {
                 }
             }
 
-            TAIndex.flushEnd(ts, as, len);
+            TAIndex.taIndex.flush(ts, as, len);
 
             Utils.print("merge end, cost time:" + (System.currentTimeMillis() - startTime));
         }

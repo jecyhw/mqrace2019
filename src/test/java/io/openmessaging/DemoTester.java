@@ -318,11 +318,11 @@ public class DemoTester {
 //                            i++;
 //                        }
 //                    }
-
-//                    aIndex1 = 3829781;
-//                    aIndex2 = 3879781;
-//                    tIndex1 = 3872956;
-//                    tIndex2 = 3890932;
+//
+//                    aIndex1 = 3604147;
+//                    aIndex2 = 3654147;
+//                    tIndex1 = 3612265;
+//                    tIndex2 = 3653205;
 
                     int index1 = Math.max(aIndex1, tIndex1);
                     int index2 = Math.min(aIndex2, tIndex2);

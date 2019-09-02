@@ -2,7 +2,6 @@ package io.openmessaging;
 
 import io.netty.util.concurrent.FastThreadLocal;
 import io.openmessaging.index.TAIndex;
-import io.openmessaging.manager.FileManager;
 import io.openmessaging.model.GetMsgItem;
 import io.openmessaging.util.Utils;
 
@@ -66,7 +65,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
                 file.delete();
             }
         }
-        FileManager.init();
         Monitor.putStart();
         iostat();
         print("func=init success");
@@ -121,7 +119,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         Monitor.getAvgStat();
-        return TAIndex.getAvgValue(aMin, aMax, tMin, tMax);
+        return TAIndex.taIndex.getAvgValue(aMin, aMax, tMin, tMax);
     }
 
     private static void iostat() {

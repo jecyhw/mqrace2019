@@ -15,8 +15,6 @@ public class GetAvgItem {
     public final IntervalSum intervalSum = new IntervalSum();
     public TDecoder tDecoder = new TDecoder();
 
-    public ByteBuffer aIndexArr;
-    public ByteBuffer aSumArr;
     public long costTime = 0;
     public int readChunkAFileCount = 0;
     public int readChunkASortFileCount = 0;
