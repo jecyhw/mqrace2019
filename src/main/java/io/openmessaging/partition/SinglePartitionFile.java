@@ -11,13 +11,13 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-public final class PartitionFile {
+public final class SinglePartitionFile {
     private FileChannel aFcPool;
     private final ByteBuffer aBuf;
     private final int interval;
     private final String fileSuffix;
 
-    public PartitionFile(int interval, String fileSuffix) {
+    public SinglePartitionFile(int interval, String fileSuffix) {
         this.fileSuffix = fileSuffix;
         aBuf = ByteBuffer.allocate(interval * Const.LONG_BYTES);
         this.interval = interval;
@@ -47,30 +47,12 @@ public final class PartitionFile {
         }
     }
 
-
-    /**
-     * 读一个chunk中的a的数据，注意只能是一个chunk中连续的数据，不能跨chunk
-     * @param offsetCount 从第几个a开始读取
-     * @param readCount 需要读取的个数
-     * @param buf 缓冲区
-     */
-    public void readPartition(int partition, int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
-        long startTime = System.currentTimeMillis();
-        long filePos = ((long) (partition  * interval + offsetCount)) * Const.LONG_BYTES;
-        _readPartition(readCount, buf, aFcPool, filePos);
-
-        getItem.readChunkASortFileCount++;
-        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
-        getItem.readChunkASortCount += readCount;
-    }
-
-
     public void readPartition(int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
         _readPartition(readCount, buf, aFcPool, offsetCount * ((long) Const.LONG_BYTES));
-        getItem.readChunkASortFileCount++;
-        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
-        getItem.readChunkASortCount += readCount;
+        getItem.readFileACount++;
+        getItem.readFileATime += (System.currentTimeMillis() - startTime);
+        getItem.readACount += readCount;
     }
 
     private void _readPartition(int readCount, ByteBuffer buf, FileChannel fc, long filePos) {

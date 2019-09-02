@@ -18,14 +18,14 @@ public final class PartitionIndex {
     private int aIndexPos = 0;
 
     private final int interval;
-    private final PartitionFile partitionFile;
+    private final MultiPartitionFile partitionFile;
 
     private final long[] as;
     private int asIndex = 0;
 
     public PartitionIndex(int interval) {
         this.interval = interval;
-        partitionFile = new PartitionFile(interval, Const.M_A_FILE_SUFFIX + interval);
+        partitionFile = new MultiPartitionFile(interval, Const.M_A_FILE_SUFFIX + interval);
         as = new long[interval];
     }
 
@@ -53,8 +53,8 @@ public final class PartitionIndex {
             partitionFile.readPartition(partition,  (beginASortIndexPos - low) * Const.A_INDEX_INTERVAL, readCount, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, intervalSum);
 
-            getItem.readChunkASortFileCount++;
-            getItem.readChunkASortCount += readCount;
+            getItem.readASortFileCount++;
+            getItem.readACount += readCount;
         } else {
             //读取第一个a区间内的的所有a
             partitionFile.readPartition(partition, (beginASortIndexPos - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
@@ -65,12 +65,6 @@ public final class PartitionIndex {
             endASortIndexPos--;
             partitionFile.readPartition(partition, (endASortIndexPos - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-
-            getItem.readChunkASortFileCount += 2;
-            getItem.readChunkASortCount += Const.A_INDEX_INTERVAL * 2;
-
-            getItem.sumChunkASortFileCount += (endASortIndexPos - beginASortIndexPos);
-            getItem.sumChunkASortCount += (endASortIndexPos - beginASortIndexPos) * Const.A_INDEX_INTERVAL;
 
             long sum = 0;
             int count = 0;

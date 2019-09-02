@@ -1,7 +1,6 @@
 package io.openmessaging;
 
 
-import io.netty.util.concurrent.FastThreadLocal;
 import io.openmessaging.codec.ADecoder;
 import io.openmessaging.codec.AEncoder;
 import io.openmessaging.codec.TDecoder;

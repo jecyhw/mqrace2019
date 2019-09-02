@@ -16,16 +16,15 @@ public class GetAvgItem {
     public TDecoder tDecoder = new TDecoder();
 
     public long costTime = 0;
-    public int readChunkAFileCount = 0;
-    public int readChunkASortFileCount = 0;
-    public int sumChunkASortFileCount = 0;
-    public int readChunkACount = 0;
-    public int readChunkASortCount = 0;
-    public int sumChunkASortCount = 0;
-    public int readHitCount = 0;
-    public long readAFileTime = 0;
+    public int readASortFileCount = 0;
     public long readASortFileTime = 0;
-    public int readFileCount = 0;
+    public int readASortCount = 0;
+
+    public int readFileACount = 0;
+    public long readFileATime = 0;
+    public int readACount = 0;
+
+    public int readHitCount = 0;
     public Map<Integer, Integer> map = new HashMap<>();
     public Map<Integer, Integer> countMap = new HashMap<>();
 

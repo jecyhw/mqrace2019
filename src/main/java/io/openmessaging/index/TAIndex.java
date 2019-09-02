@@ -5,7 +5,7 @@ import io.openmessaging.codec.TDecoder;
 import io.openmessaging.codec.TEncoder;
 import io.openmessaging.model.GetAvgItem;
 import io.openmessaging.model.IntervalSum;
-import io.openmessaging.partition.PartitionFile;
+import io.openmessaging.partition.SinglePartitionFile;
 import io.openmessaging.partition.PartitionIndex;
 import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.ByteBufferUtil;
@@ -29,11 +29,11 @@ public class TAIndex {
     private final TEncoder tEncoder = new TEncoder(tBuf);
 
     private PartitionIndex[] partitionIndices = new PartitionIndex[Const.T_INDEX_INTERVALS.length];
-    private PartitionFile aFile;
+    private SinglePartitionFile aFile;
 
     public TAIndex() {
         createPartitionIndex();
-        aFile = new PartitionFile(Const.MAX_T_INDEX_INTERVAL, Const.M_A_FILE_SUFFIX);
+        aFile = new SinglePartitionFile(Const.MAX_T_INDEX_INTERVAL, Const.M_A_FILE_SUFFIX);
     }
 
     private void createPartitionIndex() {
@@ -124,7 +124,6 @@ public class TAIndex {
         intervalSum.add(sum, count);
 
         getItem.costTime += (System.currentTimeMillis() - startTime);
-        getItem.readHitCount += count;
 
         return intervalSum.avg();
     }
@@ -149,13 +148,7 @@ public class TAIndex {
     private void readAndSumFromAPartition(int offsetCount, int readCount, long aMin, long aMax, GetAvgItem getItem) {
         ByteBuffer readBuf = getItem.readBuf;
         //读取按t分区的首区间剩下的a的数量
-        long startTime = System.currentTimeMillis();
         aFile.readPartition(offsetCount, readCount, readBuf, getItem);
-
-        getItem.readAFileTime += (System.currentTimeMillis() - startTime);
-        getItem.readChunkAFileCount++;
-        getItem.readChunkACount += readCount;
-
         ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
 
         getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
@@ -260,10 +253,15 @@ public class TAIndex {
     }
 
     public void log(StringBuilder sb) {
-        int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
-        int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
         int hitCount = 0;
         int readFileCount = 0;
+
+        int readASortFileCount = 0;
+        long readASortFileTime = 0;
+        int readASortCount = 0;
+        int readFileACount = 0;
+        long readFileATime = 0;
+        int readACount = 0;
 
         sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos);
         sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
@@ -273,23 +271,23 @@ public class TAIndex {
         Map<Integer, Integer> map = new TreeMap<>();
         Map<Integer, Integer> countMap = new TreeMap<>();
         for (GetAvgItem getItem : getItems) {
-            readChunkAFileCount += getItem.readChunkAFileCount;
-            readChunkASortFileCount += getItem.readChunkASortFileCount;
-            sumChunkASortFileCount += getItem.sumChunkASortFileCount;
-            readChunkACount += getItem.readChunkACount;
-            readChunkASortCount += getItem.readChunkASortCount;
-            sumChunkASortCount += getItem.sumChunkASortCount;
+            readASortFileCount += getItem.readASortFileCount;
+            readASortFileTime += getItem.readASortFileTime;
+            readASortCount += getItem.readASortCount;
+
+            readFileACount += getItem.readFileACount;
+            readFileATime += getItem.readFileATime;
+            readACount += getItem.readACount;
+
             hitCount += getItem.readHitCount;
-            readFileCount += getItem.readFileCount;
 
             getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
             getItem.countMap.forEach((k, v) -> countMap.put(k, countMap.getOrDefault(k, 0) + v));
 
-            sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
-                    .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
-                    .append(getItem.sumChunkASortCount).append(",readFirstOrLastASortCount:")
+            sb.append("readFileACount:").append(getItem.readFileACount).append(",readASortFileCount:").append(getItem.readASortFileCount)
+                    .append(",readACount:").append(getItem.readACount).append(",readASortCount:").append(getItem.readASortCount)
+                    .append(",readFileATime:").append(getItem.readFileATime).append(",readASortFileTime:").append(getItem.readASortFileTime)
                     .append(",hitCount:").append(getItem.readHitCount).append(",accCostTime:").append(getItem.costTime)
-                    .append(",readAFileTime:").append(getItem.readAFileTime).append(",readASortFileTime:").append(getItem.readASortFileTime)
                     .append("\n");
         }
 
@@ -305,13 +303,15 @@ public class TAIndex {
         );
         sb.append("\n");
 
-        sb.append("mapSize:").append(mapSize.get()).append(",readFileCount").append(readFileCount).append(",aFileCnt:").append(readChunkAFileCount)
-                .append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
-                .append(sumChunkASortFileCount).append(",aCnt:").append(readChunkACount).append(",aSortCnt:").append(readChunkASortCount).append(",sumASortCnt:")
-                .append(sumChunkASortCount).append(",hitCount:").append(hitCount)
+        sb.append("mapSize:").append(mapSize.get())
+                .append("readFileACount:").append(readFileACount).append(",readASortFileCount:").append(readASortFileCount)
+                .append(",readACount:").append(readACount).append(",readASortCount:").append(readASortCount)
+                .append(",readFileATime:").append(readFileATime).append(",readASortFileTime:").append(readASortFileTime)
+                .append(",hitCount:").append(hitCount)
                 .append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
                 .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
-                .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL).append("\n");
+                .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
+                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS)).append("\n");
 
 
     }
