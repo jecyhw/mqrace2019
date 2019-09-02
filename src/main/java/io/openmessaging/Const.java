@@ -41,8 +41,9 @@ public interface Const {
             1024 * 20,
             1024 * 16,
             1024 * 12,
+            1024 * 8,
     };
-    int MERGE_T_TIME = 48;
+    int MERGE_T_TIME = 56;
     int MAX_T_INDEX_INTERVAL = 512 * MERGE_T_TIME;
     int MAX_T_INDEX_LENGTH = 31000 * 128 / MERGE_T_TIME;
     int MIN_T_INDEX_INTERVAL = MAX_T_INDEX_INTERVAL / 4;
