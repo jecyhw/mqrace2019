@@ -47,7 +47,7 @@ public final class PartitionFile {
      */
     public void readPartition(int partition, int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
-        int filePos = (partition  * interval + offsetCount) * Const.LONG_BYTES;
+        long filePos = ((long) (partition  * interval + offsetCount)) * Const.LONG_BYTES;
 
         buf.position(0);
         buf.limit(readCount * Const.LONG_BYTES);
