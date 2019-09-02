@@ -28,7 +28,7 @@ public class TAIndex {
     private final ByteBuffer tBuf = ByteBuffer.allocate(Const.T_MEMORY_SIZE);
     private final TEncoder tEncoder = new TEncoder(tBuf);
 
-    private PartitionIndex[] partitionIndices = new PartitionIndex[Const.T_INDEX_INTERVALS_LEN];
+    private PartitionIndex[] partitionIndices = new PartitionIndex[Const.T_INDEX_INTERVALS.length];
     private PartitionFile aFile;
 
     public TAIndex() {
@@ -37,7 +37,7 @@ public class TAIndex {
     }
 
     private void createPartitionIndex() {
-        for (int i = 0; i < Const.T_INDEX_INTERVALS_LEN; i++) {
+        for (int i = 0; i < Const.T_INDEX_INTERVALS.length; i++) {
             partitionIndices[i] = new PartitionIndex(Const.T_INDEX_INTERVALS[i]);
         }
     }
@@ -88,7 +88,7 @@ public class TAIndex {
         intervalSum.reset();
 
         //读取的数量比最小层的间隔还小，直接读取返回
-        if (tCount <= Const.T_INDEX_INTERVALS[Const.T_INDEX_INTERVALS_LEN - 1]) {
+        if (tCount <= Const.T_INDEX_INTERVALS[Const.T_INDEX_INTERVALS.length - 1]) {
             readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
             return intervalSum.avg();
         }
@@ -130,7 +130,7 @@ public class TAIndex {
     }
 
     private PartitionIndex findBestPartitionIndex(int beginTPos, int endTPos) {
-        for (int i = 0; i < Const.T_INDEX_INTERVALS_LEN; i++){
+        for (int i = 0; i < Const.T_INDEX_INTERVALS.length; i++){
             //处理首区间
             int interval = partitionIndices[i].getInterval();
             int beginPartition = beginTPos / interval;

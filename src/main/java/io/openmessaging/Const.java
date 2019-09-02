@@ -34,7 +34,6 @@ public interface Const {
 
     boolean PRINT_LOG = true;
 
-    int T_INDEX_INTERVALS_LEN = 5;
     int[] T_INDEX_INTERVALS = new int[]{
             1024 * 28,
             1024 * 24,
@@ -43,9 +42,9 @@ public interface Const {
             1024 * 12,
             1024 * 8,
     };
-    int MERGE_T_TIME = 56;
-    int MAX_T_INDEX_INTERVAL = 512 * MERGE_T_TIME;
-    int MAX_T_INDEX_LENGTH = 31000 * 128 / MERGE_T_TIME;
+    int MERGE_T_TIME = 28;
+    int MAX_T_INDEX_INTERVAL = 1024 * MERGE_T_TIME;
+    int MAX_T_INDEX_LENGTH = 31000 * 64 / MERGE_T_TIME;
     int MIN_T_INDEX_INTERVAL = MAX_T_INDEX_INTERVAL / 4;
     int MAX_ONCE_READ_COUNT = 1024;
 
