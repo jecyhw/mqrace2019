@@ -92,7 +92,7 @@ public class TAIndex {
         }
 
         int tCount = endTPos - beginTPos;
-        getItem.countMap.put(tCount, getItem.countMap.getOrDefault(tCount, 0));
+        getItem.countMap.put(tCount, getItem.countMap.getOrDefault(tCount, 0) + 1);
 
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
@@ -354,7 +354,7 @@ public class TAIndex {
                 }
         );
         sb.append("\n");
-        sb.append("----------------------------------------------");
+        sb.append("----------------------------------------------\n");
         countMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]")
         );
         sb.append("\n");
