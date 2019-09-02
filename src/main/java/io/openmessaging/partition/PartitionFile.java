@@ -57,17 +57,28 @@ public final class PartitionFile {
     public void readPartition(int partition, int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
         long filePos = ((long) (partition  * interval + offsetCount)) * Const.LONG_BYTES;
-
-        buf.position(0);
-        buf.limit(readCount * Const.LONG_BYTES);
-        ByteBufferUtil.readInBuf(filePos, buf, aFcPool);
-        buf.position(0);
+        _readPartition(readCount, buf, aFcPool, filePos);
 
         getItem.readChunkASortFileCount++;
         getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
         getItem.readChunkASortCount += readCount;
     }
 
+
+    public void readPartition(int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
+        long startTime = System.currentTimeMillis();
+        _readPartition(readCount, buf, aFcPool, offsetCount * ((long) Const.LONG_BYTES));
+        getItem.readChunkASortFileCount++;
+        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
+        getItem.readChunkASortCount += readCount;
+    }
+
+    private void _readPartition(int readCount, ByteBuffer buf, FileChannel fc, long filePos) {
+        buf.position(0);
+        buf.limit(readCount * Const.LONG_BYTES);
+        ByteBufferUtil.readInBuf(filePos, buf, fc);
+        buf.position(0);
+    }
 
     public void log(StringBuilder sb) {
         long aSize = 0, aSortSize = 0, msgSize = 0;

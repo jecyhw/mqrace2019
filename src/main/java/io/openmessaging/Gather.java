@@ -74,10 +74,11 @@ public class Gather {
                 Item item = items[minIndex];
 
                 ts[len] = minT;
-                as[len++] = item.nextA();
+                long a = item.nextA();
+                as[len++] = a;
+                TAIndex.taIndex.putA(a);
 
                 if (len == Const.MAX_T_INDEX_INTERVAL) {
-
                     TAIndex.taIndex.createIndex(ts, as, len);
                     len = 0;
                 }

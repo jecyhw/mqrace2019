@@ -16,22 +16,18 @@ public final class PartitionIndex {
     private final ByteBuffer aIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
     private final ByteBuffer aSumArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
     private int aIndexPos = 0;
+
     private final int interval;
     private final PartitionFile partitionFile;
 
-
-    private final PartitionIndex nextPartitionIndex;
-
-    public PartitionIndex(PartitionIndex nextPartitionIndex, int interval) {
-        this.nextPartitionIndex = nextPartitionIndex;
-        this.interval = interval;
-        partitionFile = new PartitionFile(interval, Const.M_A_FILE_SUFFIX + interval);
-    }
+    private final long[] as;
+    private int asIndex = 0;
 
     public PartitionIndex(int interval) {
-        this(null, interval);
+        this.interval = interval;
+        partitionFile = new PartitionFile(interval, Const.M_A_FILE_SUFFIX + interval);
+        as = new long[interval];
     }
-
 
     public void partitionSum(int partition, long aMin, long aMax, GetAvgItem getItem) {
         ByteBuffer aIndexBuf = aIndexArr.duplicate();
@@ -90,48 +86,42 @@ public final class PartitionIndex {
         }
     }
 
-    public void createPartition(long[] a, int fromIndex, int toIndex) {
-        createNextPartition(a, fromIndex, toIndex);
-
+    public void createPartition(int fromIndex, int toIndex) {
         //按照a进行排序
-        Arrays.parallelSort(a, fromIndex, toIndex);
+        Arrays.parallelSort(as, fromIndex, toIndex);
         //在t的基础上在建立分区
         for (int i = fromIndex; i < toIndex; i += Const.A_INDEX_INTERVAL) {
-            aIndexArr.putLong(aIndexPos * Const.LONG_BYTES, a[i]);
+            aIndexArr.putLong(aIndexPos * Const.LONG_BYTES, as[i]);
             long sumA = 0;
             int end = Math.min(i + Const.A_INDEX_INTERVAL, toIndex);
             for (int j = i; j < end; j++) {
-                partitionFile.writeA(a[j]);
-                sumA += a[j];
+                partitionFile.writeA(as[j]);
+                sumA += as[j];
             }
             aSumArr.putLong(aIndexPos * Const.LONG_BYTES, sumA);
             aIndexPos++;
         }
     }
 
-    private void createNextPartition(long[] a, int fromIndex, int toIndex) {
-        if (nextPartitionIndex != null) {
-            //创建下一层的分区
-            int levelInterval = nextPartitionIndex.interval;
-            for (int i = fromIndex; i < toIndex; i += levelInterval) {
-                nextPartitionIndex.createPartition(a, i, Math.min(i + levelInterval, toIndex));
-            }
-        }
-    }
-
-
     public void flush() {
         partitionFile.flush();
-        if (nextPartitionIndex != null) {
-            nextPartitionIndex.flush();
+        if (asIndex > 0) {
+            createPartition(0, asIndex);
         }
     }
 
-    public PartitionIndex getNextPartitionIndex() {
-        return nextPartitionIndex;
-    }
+
 
     public int getInterval() {
         return interval;
+    }
+
+    public void putA(long a) {
+        as[asIndex++] = a;
+
+        if (asIndex == interval) {
+            createPartition(0, interval);
+            asIndex = 0;
+        }
     }
 }

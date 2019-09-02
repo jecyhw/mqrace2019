@@ -28,28 +28,18 @@ public class TAIndex {
     private final ByteBuffer tBuf = ByteBuffer.allocate(Const.T_MEMORY_SIZE);
     private final TEncoder tEncoder = new TEncoder(tBuf);
 
-    private PartitionIndex primaryPartitionIndex;
+    private PartitionIndex[] partitionIndices = new PartitionIndex[Const.T_INDEX_INTERVALS_LEN];
     private PartitionFile aFile;
-    private final int interval = Const.MAX_T_INDEX_INTERVAL;
 
     public TAIndex() {
-        createPartitionIndex(Const.MIN_T_INDEX_INTERVAL);
-
-        aFile = new PartitionFile(interval, Const.M_A_FILE_SUFFIX);
+        createPartitionIndex();
+        aFile = new PartitionFile(Const.MAX_T_INDEX_INTERVAL, Const.M_A_FILE_SUFFIX);
     }
 
-    private void createPartitionIndex(int interval) {
-        if (primaryPartitionIndex == null) {
-            primaryPartitionIndex = new PartitionIndex(interval);
+    private void createPartitionIndex() {
+        for (int i = 0; i < Const.T_INDEX_INTERVALS_LEN; i++) {
+            partitionIndices[i] = new PartitionIndex(Const.T_INDEX_INTERVALS[i]);
         }
-
-        if (interval == Const.MAX_T_INDEX_INTERVAL) {
-            return;
-        }
-
-        interval = interval << 1;
-        primaryPartitionIndex = new PartitionIndex(primaryPartitionIndex, interval);
-        createPartitionIndex(interval);
     }
 
     public void addTIndex(long chunkPrevT) {
@@ -97,16 +87,20 @@ public class TAIndex {
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
 
-
-        //处理首区间
-        int beginPartition = beginTPos / interval;
-        //处理最后尾区间，最后一个区间如果个数不等于Const.FIXED_CHUNK_SIZE，肯定会在这里处理
-        int endPartition = endTPos / interval;
-
-        //只有一个区间
-        if (beginPartition + 1 >= endPartition) {
-            return avgFromOnePartition(beginTPos, endTPos, beginPartition, aMin, aMax, getItem);
+        //读取的数量比最小层的间隔还小，直接读取返回
+        if (tCount <= Const.T_INDEX_INTERVALS[Const.T_INDEX_INTERVALS_LEN - 1]) {
+            readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
+            return intervalSum.avg();
         }
+
+        PartitionIndex partitionIndex = findBestPartitionIndex(beginTPos, endTPos);
+        if (partitionIndex == null) {
+            readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
+            return intervalSum.avg();
+        }
+
+        int interval = partitionIndex.getInterval();
+        int beginPartition = beginTPos / interval, endPartition = endTPos / interval;
 
         int firstPartitionFilterCount = beginTPos % interval;
         int lastPartitionNeedCount = endTPos % interval;
@@ -114,17 +108,17 @@ public class TAIndex {
         int count = 0;
         //至少两个分区，先处理首尾分区
         if (firstPartitionFilterCount > 0) {
-            sumPartitionRightClosed(beginPartition, beginPartition, firstPartitionFilterCount, primaryPartitionIndex, aMin, aMax, getItem);
+            readAndSumFromAPartition(beginTPos, interval - firstPartitionFilterCount, aMin, aMax, getItem);
             beginPartition++;
         }
 
         if (lastPartitionNeedCount > 0) {
-            sumPartitionLeftClosed(endPartition, endPartition, 0, lastPartitionNeedCount, primaryPartitionIndex, aMin, aMax, getItem);
+            readAndSumFromAPartition(endTPos - lastPartitionNeedCount, lastPartitionNeedCount, aMin, aMax, getItem);
         }
 
         //首尾区间处理之后，[beginPartition, endPartition)中的t都是符合条件，不用再判断
         while (beginPartition < endPartition) {
-            primaryPartitionIndex.partitionSum(beginPartition, aMin, aMax, getItem);
+            partitionIndex.partitionSum(beginPartition, aMin, aMax, getItem);
             beginPartition++;
         }
         intervalSum.add(sum, count);
@@ -135,61 +129,28 @@ public class TAIndex {
         return intervalSum.avg();
     }
 
-    private void sumPartitionRightClosed(int partition, int parentPartition, int partitionFilterCount, PartitionIndex parentPartitionIndex, long aMin, long aMax, GetAvgItem getItem) {
-        int partitionNeedCount = parentPartitionIndex.getInterval() - partitionFilterCount;
-        //读取个数为0
-        if (partitionNeedCount == 0) {
-            return;
-        }
-        PartitionIndex nextPartitionIndex = parentPartitionIndex.getNextPartitionIndex();
-        //分层索引结束
-        if (nextPartitionIndex == null) {
-            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
-            return;
+    private PartitionIndex findBestPartitionIndex(int beginTPos, int endTPos) {
+        for (int i = 0; i < Const.T_INDEX_INTERVALS_LEN; i++){
+            //处理首区间
+            int interval = partitionIndices[i].getInterval();
+            int beginPartition = beginTPos / interval;
+            //处理最后尾区间，最后一个区间如果个数不等于Const.FIXED_CHUNK_SIZE，肯定会在这里处理
+            int endPartition = endTPos / interval;
+
+            if (endPartition - beginPartition > 1) {
+                return partitionIndices[i];
+            }
         }
 
-        //要读取的个数小于分层的区间大小
-        int nextInterval = nextPartitionIndex.getInterval();
-        if (partitionNeedCount < nextInterval) {
-            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
-            return;
-        }
-
-        //去下一层读
-        nextPartitionIndex.partitionSum((parentPartition << 1) + 1, aMin, aMax, getItem);
-        readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount - nextInterval, aMin, aMax, getItem);
+        return null;
     }
 
-    private void sumPartitionLeftClosed(int partition, int parentPartition,  int partitionFilterCount, int partitionNeedCount, PartitionIndex parentPartitionIndex, long aMin, long aMax, GetAvgItem getItem) {
-        //读取个数为0
-        if (partitionNeedCount == 0) {
-            return;
-        }
 
-        PartitionIndex nextPartitionIndex = parentPartitionIndex.getNextPartitionIndex();
-        //分层索引结束
-        if (nextPartitionIndex == null) {
-            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
-            return;
-        }
-
-        //要读取的个数小于分层的区间大小
-        int nextInterval = nextPartitionIndex.getInterval();
-        if (partitionNeedCount < nextInterval) {
-            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
-            return;
-        }
-
-        //去下一层读
-        nextPartitionIndex.partitionSum(parentPartition << 1, aMin, aMax, getItem);
-        readAndSumFromAPartition(partition, partitionFilterCount + nextInterval, partitionNeedCount - nextInterval, aMin, aMax, getItem);
-    }
-
-    private void readAndSumFromAPartition(int partition, int offsetCount, int readCount, long aMin, long aMax, GetAvgItem getItem) {
+    private void readAndSumFromAPartition(int offsetCount, int readCount, long aMin, long aMax, GetAvgItem getItem) {
         ByteBuffer readBuf = getItem.readBuf;
         //读取按t分区的首区间剩下的a的数量
         long startTime = System.currentTimeMillis();
-        aFile.readPartition(partition, offsetCount, readCount, readBuf, getItem);
+        aFile.readPartition(offsetCount, readCount, readBuf, getItem);
 
         getItem.readAFileTime += (System.currentTimeMillis() - startTime);
         getItem.readChunkAFileCount++;
@@ -198,27 +159,6 @@ public class TAIndex {
         ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
 
         getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
-    }
-
-    private long avgFromOnePartition(int beginTPos, int endTPos, int partition, long aMin, long aMax, GetAvgItem getItem) {
-        int partitionFilterCount = beginTPos % interval;
-        IntervalSum intervalSum = getItem.intervalSum;
-
-        readAndSumFromAPartition(partition, partitionFilterCount, endTPos - beginTPos, aMin, aMax, getItem);
-
-//        PartitionIndex nextPartitionIndex = primaryPartitionIndex.getNextPartitionIndex();
-//        int nextInterval = nextPartitionIndex.getInterval();
-//        //读取按t分区的首区间剩下的a的数量
-//        int partitionNeedCount = partitionEndCount - partitionFilterCount;
-//        if (partitionNeedCount < nextInterval) {
-//            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
-//        } else {
-//            //分成左右两个，会跨层，需要特别注意
-//            int nextPartition = partition << 1;
-//            sumPartitionRightClosed(partition, nextPartition, partitionFilterCount, nextPartitionIndex, aMin, aMax, getItem);
-//            sumPartitionLeftClosed(partition, nextPartition + 1, nextInterval, partitionEndCount - nextInterval, nextPartitionIndex, aMin, aMax, getItem);
-//        }
-        return intervalSum.avg();
     }
 
     /**
@@ -292,8 +232,6 @@ public class TAIndex {
             aFile.writeA(a[i]);
         }
 
-        completeASortAndCreateIndex(a, len);
-
         //更新putCount
         putCount += len;
 
@@ -301,17 +239,24 @@ public class TAIndex {
         lastT = t[len - 1];
     }
 
-    private void completeASortAndCreateIndex(long[] a, int chunkSize) {
-        primaryPartitionIndex.createPartition(a, 0, chunkSize);
-    }
+
 
     public void flush(long[] t, long[] a, int len) {
         if (len > 0) {
             createIndex(t, a, len);
         }
+
         aFile.flush();
         tEncoder.flush();
-        primaryPartitionIndex.flush();
+        for (PartitionIndex partitionIndex : partitionIndices) {
+            partitionIndex.flush();
+        }
+    }
+
+    public void putA(long a) {
+        for (PartitionIndex partitionIndex : partitionIndices) {
+            partitionIndex.putA(a);
+        }
     }
 
     public void log(StringBuilder sb) {
