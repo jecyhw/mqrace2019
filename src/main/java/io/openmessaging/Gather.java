@@ -55,8 +55,8 @@ public class Gather {
             long minT;
             int minIndex = 0;
 
-            long[] ts = new long[Const.MERGE_T_INDEX_LENGTH];
-            long[] as = new long[Const.MERGE_T_INDEX_LENGTH];
+            long[] ts = new long[Const.MAX_T_INDEX_LENGTH];
+            long[] as = new long[Const.MAX_T_INDEX_LENGTH];
 
             int len = 0;
 
@@ -76,7 +76,7 @@ public class Gather {
                 ts[len] = minT;
                 as[len++] = item.nextA();
 
-                if (len == Const.MERGE_T_INDEX_INTERVAL) {
+                if (len == Const.MAX_T_INDEX_INTERVAL) {
 
                     TAIndex.taIndex.createIndex(ts, as, len);
                     len = 0;

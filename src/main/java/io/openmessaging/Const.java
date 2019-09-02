@@ -4,13 +4,10 @@ package io.openmessaging;
  * Created by yanghuiwei on 2019-07-26
  */
 public interface Const {
-    String STORE_PATH = "../data/";
+    String STORE_PATH = "./data/";
     String MSG_FILE_SUFFIX = ".msg";
     String A_FILE_SUFFIX = ".a";
     String M_A_FILE_SUFFIX = ".ma";
-    String M_A_SORT_1_FILE_SUFFIX = ".maSort1";
-    String M_A_SORT_2_FILE_SUFFIX = ".maSort2";
-    String M_A_SORT_3_FILE_SUFFIX = ".maSort3";
     int GET_AVG_COUNT = 310000;
 
     int MSG_BYTES = 34;
@@ -38,15 +35,13 @@ public interface Const {
     boolean PRINT_LOG = true;
 
     int MERGE_T_TIME = 48;
-    int MERGE_T_INDEX_INTERVAL = 512 * MERGE_T_TIME;
-    int MERGE_T_INDEX_LENGTH = 31000 * 128 / MERGE_T_TIME;
-    int SECOND_MERGE_T_INDEX_INTERVAL = MERGE_T_INDEX_INTERVAL / 2;
-    int THREE_MERGE_T_INDEX_INTERVAL = SECOND_MERGE_T_INDEX_INTERVAL / 2;
-    int READ_ONCE_MAX_NUM = MERGE_T_INDEX_INTERVAL / 2;
-    int MIN_T_INDEX_INTERVAL = MERGE_T_INDEX_INTERVAL / 2;
+    int MAX_T_INDEX_INTERVAL = 512 * MERGE_T_TIME;
+    int MAX_T_INDEX_LENGTH = 31000 * 128 / MERGE_T_TIME;
+    int MIN_T_INDEX_INTERVAL = MAX_T_INDEX_INTERVAL / 4;
+    int MAX_ONCE_READ_COUNT = 1024;
 
     int A_INDEX_INTERVAL = 128;
-    int A_INDEX_LENGTH = MERGE_T_INDEX_LENGTH * (MERGE_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
+    int A_INDEX_LENGTH = MAX_T_INDEX_LENGTH * (MAX_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
 
     int FILE_NUMS = 16;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;

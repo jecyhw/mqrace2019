@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yanghuiwei on 2019-08-28
@@ -22,24 +23,36 @@ import java.util.Map;
 public class TAIndex {
     public static TAIndex taIndex = new TAIndex();
 
-    private final long[] tIndexArr = new long[Const.MERGE_T_INDEX_LENGTH];
-    private final int[] tMemIndexArr = new int[Const.MERGE_T_INDEX_LENGTH];
+    private final long[] tIndexArr = new long[Const.MAX_T_INDEX_LENGTH];
+    private final int[] tMemIndexArr = new int[Const.MAX_T_INDEX_LENGTH];
     private int tIndexPos = 0;
 
 
     private final ByteBuffer tBuf = ByteBuffer.allocate(Const.T_MEMORY_SIZE);
     private final TEncoder tEncoder = new TEncoder(tBuf);
 
-    private final PartitionIndex primaryPartitionIndex;
+    private PartitionIndex primaryPartitionIndex;
     private PartitionFile aFile;
-    private final int interval = Const.MERGE_T_INDEX_INTERVAL;
+    private final int interval = Const.MAX_T_INDEX_INTERVAL;
 
     public TAIndex() {
-        PartitionIndex minPartitionIndex = new PartitionIndex(Const.MIN_T_INDEX_INTERVAL);
-        int interval = Const.MIN_T_INDEX_INTERVAL * 2;
+        createPartitionIndex(Const.MIN_T_INDEX_INTERVAL);
 
-        primaryPartitionIndex = new PartitionIndex(minPartitionIndex, interval);
         aFile = new PartitionFile(interval, Const.M_A_FILE_SUFFIX);
+    }
+
+    private void createPartitionIndex(int interval) {
+        if (primaryPartitionIndex == null) {
+            primaryPartitionIndex = new PartitionIndex(interval);
+        }
+
+        if (interval == Const.MAX_T_INDEX_INTERVAL) {
+            return;
+        }
+
+        interval = interval << 1;
+        primaryPartitionIndex = new PartitionIndex(primaryPartitionIndex, interval);
+        createPartitionIndex(interval);
     }
 
     public void addTIndex(long chunkPrevT) {
@@ -85,8 +98,6 @@ public class TAIndex {
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
 
-        ByteBuffer readBuf = getItem.readBuf;
-
         //处理首区间
         int beginPartition = beginTPos / interval;
         //处理最后尾区间，最后一个区间如果个数不等于Const.FIXED_CHUNK_SIZE，肯定会在这里处理
@@ -98,7 +109,7 @@ public class TAIndex {
         }
 
         int firstPartitionFilterCount = beginTPos % interval;
-        int lastChunkNeedReadCount = endTPos % interval;
+        int lastPartitionNeedCount = endTPos % interval;
         long sum = 0;
         int count = 0;
         //至少两个分区，先处理首尾分区
@@ -107,8 +118,8 @@ public class TAIndex {
             beginPartition++;
         }
 
-        if (lastChunkNeedReadCount > 0) {
-            sumPartitionLeftClosed(endPartition, lastChunkNeedReadCount, aMin, aMax, getItem);
+        if (lastPartitionNeedCount > 0) {
+            sumPartitionLeftClosed(endPartition, lastPartitionNeedCount, aMin, aMax, getItem);
         }
 
         //首尾区间处理之后，[beginPartition, endPartition)中的t都是符合条件，不用再判断
@@ -170,23 +181,25 @@ public class TAIndex {
 
             //分层索引结束
             if (nextPartitionIndex == null) {
-                readAndSumFromAPartition(partition, offsetCount, partitionNeedCount - offsetCount, aMin, aMax, getItem);
+                readAndSumFromAPartition(partition, offsetCount, partitionNeedCount, aMin, aMax, getItem);
                 return;
             }
 
             //要读取的个数小于分层的区间大小
             int nextInterval = nextPartitionIndex.getInterval();
             if (partitionNeedCount < nextInterval) {
-                readAndSumFromAPartition(partition, offsetCount, partitionNeedCount - offsetCount, aMin, aMax, getItem);
+                readAndSumFromAPartition(partition, offsetCount, partitionNeedCount, aMin, aMax, getItem);
                 return;
             }
 
             levelPartition <<= 1;
             //去下一层读
             nextPartitionIndex.partitionSum(levelPartition, aMin, aMax, getItem);
+            levelPartition += 1;
             nextPartitionIndex = nextPartitionIndex.getNextPartitionIndex();
 
             offsetCount += nextInterval;
+            partitionNeedCount -= nextInterval;
         }
     }
 
@@ -203,15 +216,11 @@ public class TAIndex {
     private long avgFromOnePartition(int beginTPos, int endTPos, int beginPartition, long aMin, long aMax, GetAvgItem getItem) {
         int firstPartitionFilterCount = beginTPos % interval;
         int lastChunkNeedReadCount = endTPos % interval;
-        ByteBuffer readBuf = getItem.readBuf;
         IntervalSum intervalSum = getItem.intervalSum;
 
         //读取按t分区的首区间剩下的a的数量
         int firstChunkNeedReadCount = lastChunkNeedReadCount - firstPartitionFilterCount;
-        aFile.readPartition(beginPartition, firstPartitionFilterCount, firstChunkNeedReadCount, readBuf, getItem);
-        ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
-
-        getItem.map.put(firstChunkNeedReadCount, getItem.map.getOrDefault(firstPartitionFilterCount, 0) + 1);
+        readAndSumFromAPartition(beginPartition, firstPartitionFilterCount, firstChunkNeedReadCount, aMin, aMax, getItem);
         return intervalSum.avg();
     }
 
@@ -230,9 +239,9 @@ public class TAIndex {
         int beginTIndexOffset = ArrayUtils.findFirstLessThanIndex(tIndexArr, destT, 0, tIndexPos);
         long t = tIndexArr[beginTIndexOffset];
         if (t >= destT) {
-            return beginTIndexOffset * Const.MERGE_T_INDEX_INTERVAL;
+            return beginTIndexOffset * Const.MAX_T_INDEX_INTERVAL;
         }
-        return tDecoder.getFirstGreatOrEqual(tBufDup, t, destT, beginTIndexOffset * Const.MERGE_T_INDEX_INTERVAL + 1, tMemIndexArr[beginTIndexOffset]);
+        return tDecoder.getFirstGreatOrEqual(tBufDup, t, destT, beginTIndexOffset * Const.MAX_T_INDEX_INTERVAL + 1, tMemIndexArr[beginTIndexOffset]);
     }
 
     /**
@@ -253,9 +262,9 @@ public class TAIndex {
     private int findRightOpenIntervalFromMemory(int beginTIndexOffset, long destT, TDecoder tDecoder, ByteBuffer tBufDup) {
         long t = tIndexArr[beginTIndexOffset];
         if (t > destT) {
-            return beginTIndexOffset * Const.MERGE_T_INDEX_INTERVAL;
+            return beginTIndexOffset * Const.MAX_T_INDEX_INTERVAL;
         }
-        int pos = tDecoder.getFirstGreat(tBufDup, t, destT, beginTIndexOffset * Const.MERGE_T_INDEX_INTERVAL + 1, tMemIndexArr[beginTIndexOffset]);
+        int pos = tDecoder.getFirstGreat(tBufDup, t, destT, beginTIndexOffset * Const.MAX_T_INDEX_INTERVAL + 1, tMemIndexArr[beginTIndexOffset]);
         return pos < 0 ? findRightOpenIntervalFromMemory(beginTIndexOffset + 1, destT, tDecoder, tBufDup) : pos;
     }
 
@@ -312,6 +321,7 @@ public class TAIndex {
         int readChunkAFileCount = 0, readChunkASortFileCount = 0, sumChunkASortFileCount = 0;
         int readChunkACount = 0, readChunkASortCount = 0, sumChunkASortCount = 0;
         int hitCount = 0;
+        int readFileCount = 0;
 
         sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos);
         sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
@@ -327,6 +337,7 @@ public class TAIndex {
             readChunkASortCount += getItem.readChunkASortCount;
             sumChunkASortCount += getItem.sumChunkASortCount;
             hitCount += getItem.readHitCount;
+            readFileCount += getItem.readFileCount;
 
             getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
 
@@ -338,14 +349,22 @@ public class TAIndex {
                     .append("\n");
         }
 
-        sb.append("aFileCnt:").append(readChunkAFileCount).append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
+        AtomicInteger mapSize = new AtomicInteger();
+        map.forEach((k, v) -> {
+                    sb.append("[").append(k).append(",").append(v).append("]");
+                    mapSize.addAndGet(v);
+                }
+        );
+        sb.append("\n");
+
+        sb.append("mapSize:").append(mapSize.get()).append(",readFileCount").append(readFileCount).append(",aFileCnt:").append(readChunkAFileCount)
+                .append(",aSortFileCnt:").append(readChunkASortFileCount).append(",sumASortFileCnt:")
                 .append(sumChunkASortFileCount).append(",aCnt:").append(readChunkACount).append(",aSortCnt:").append(readChunkASortCount).append(",sumASortCnt:")
                 .append(sumChunkASortCount).append(",hitCount:").append(hitCount)
-                .append(",MERGE_T_INDEX_INTERVAL:").append(Const.MERGE_T_INDEX_INTERVAL).append(",MERGE_T_INDEX_LENGTH:").append(Const.MERGE_T_INDEX_LENGTH)
+                .append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
                 .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
                 .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL).append("\n");
 
-        map.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
-        sb.append("\n");
+
     }
 }

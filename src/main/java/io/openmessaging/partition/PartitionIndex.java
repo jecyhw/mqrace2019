@@ -13,8 +13,8 @@ import java.util.Arrays;
  * Created by yanghuiwei on 2019-09-02
  */
 public final class PartitionIndex {
-    private final ByteBuffer aIndexArr = ByteBuffer.allocate(Const.A_INDEX_LENGTH * 8);
-    private final ByteBuffer aSumArr = ByteBuffer.allocate(Const.A_INDEX_LENGTH * 8);
+    private final ByteBuffer aIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
+    private final ByteBuffer aSumArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
     private int aIndexPos = 0;
     private final int interval;
     private final PartitionFile partitionFile;
