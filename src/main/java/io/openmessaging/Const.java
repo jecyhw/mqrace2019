@@ -34,7 +34,7 @@ public interface Const {
 
     boolean PRINT_LOG = true;
 
-    int MERGE_T_TIME = 64;
+    int MERGE_T_TIME = 48;
     int MAX_T_INDEX_INTERVAL = 512 * MERGE_T_TIME;
     int MAX_T_INDEX_LENGTH = 31000 * 128 / MERGE_T_TIME;
     int MIN_T_INDEX_INTERVAL = MAX_T_INDEX_INTERVAL / 4;

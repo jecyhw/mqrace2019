@@ -205,18 +205,20 @@ public class TAIndex {
         int partitionEndCount = endTPos % interval;
         IntervalSum intervalSum = getItem.intervalSum;
 
-        PartitionIndex nextPartitionIndex = primaryPartitionIndex.getNextPartitionIndex();
-        int nextInterval = nextPartitionIndex.getInterval();
-        //读取按t分区的首区间剩下的a的数量
-        int partitionNeedCount = partitionEndCount - partitionFilterCount;
-        if (partitionNeedCount < nextInterval) {
-            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
-        } else {
-            //分成左右两个，会跨层，需要特别注意
-            int nextPartition = partition << 1;
-            sumPartitionRightClosed(partition, nextPartition, partitionFilterCount, nextPartitionIndex, aMin, aMax, getItem);
-            sumPartitionLeftClosed(partition, nextPartition + 1, nextInterval, partitionEndCount - nextInterval, nextPartitionIndex, aMin, aMax, getItem);
-        }
+        readAndSumFromAPartition(partition, partitionFilterCount, partitionEndCount - partitionFilterCount, aMin, aMax, getItem);
+
+//        PartitionIndex nextPartitionIndex = primaryPartitionIndex.getNextPartitionIndex();
+//        int nextInterval = nextPartitionIndex.getInterval();
+//        //读取按t分区的首区间剩下的a的数量
+//        int partitionNeedCount = partitionEndCount - partitionFilterCount;
+//        if (partitionNeedCount < nextInterval) {
+//            readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
+//        } else {
+//            //分成左右两个，会跨层，需要特别注意
+//            int nextPartition = partition << 1;
+//            sumPartitionRightClosed(partition, nextPartition, partitionFilterCount, nextPartitionIndex, aMin, aMax, getItem);
+//            sumPartitionLeftClosed(partition, nextPartition + 1, nextInterval, partitionEndCount - nextInterval, nextPartitionIndex, aMin, aMax, getItem);
+//        }
         return intervalSum.avg();
     }
 
