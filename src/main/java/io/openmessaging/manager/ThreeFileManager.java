@@ -72,11 +72,11 @@ public class ThreeFileManager {
             try {
                 aSortSize += aSortFcPool[i].size();
             } catch (IOException e) {
-                Utils.print("SecondFileManager log error " + e.getMessage());
+                Utils.print("ThreeFileManager log error " + e.getMessage());
                 System.exit(-1);
             }
         }
-        sb.append("SecondFileManager fileNum:").append(Const.FILE_NUMS).append(",aSortSize:").append(aSortSize);
+        sb.append("ThreeFileManager fileNum:").append(Const.FILE_NUMS).append(",aSortSize:").append(aSortSize);
         sb.append("\n");
     }
 }

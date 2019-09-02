@@ -11,9 +11,7 @@ import io.openmessaging.util.ByteBufferUtil;
 import io.openmessaging.util.Utils;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by yanghuiwei on 2019-08-28
@@ -58,7 +56,6 @@ public class TAIndex {
         return getItem;
     });
 
-
     public static long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         if (aMin > aMax || tMin > tMax) {
             return 0;
@@ -101,6 +98,7 @@ public class TAIndex {
             FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
 
+            getItem.map.put(firstChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
             readChunkAFileCount++;
             readChunkACount += firstChunkNeedReadCount;
 
@@ -121,6 +119,8 @@ public class TAIndex {
                     //读取按t分区的首区间剩下的a的数量
                     FileManager.readChunkA(beginTPos, firstChunkNeedReadCount, readBuf, getItem);
                     ByteBufferUtil.sumChunkA(readBuf, firstChunkNeedReadCount, aMin, aMax, intervalSum);
+
+                    getItem.map.put(firstChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
                 }
 
                 beginTIndexPos++;
@@ -139,11 +139,15 @@ public class TAIndex {
                         //读取按t分区的尾区间里面的a
                         FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL + Const.SECOND_MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
                         ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
+
+                        getItem.map.put(lastChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
                     }
                 } else {
                     //读取按t分区的尾区间里面的a
                     FileManager.readChunkA(endTIndexPos * Const.MERGE_T_INDEX_INTERVAL, lastChunkNeedReadCount, readBuf, getItem);
                     ByteBufferUtil.sumChunkA(readBuf, lastChunkNeedReadCount, aMin, aMax, intervalSum);
+
+                    getItem.map.put(lastChunkNeedReadCount, getItem.map.getOrDefault(firstChunkFilterReadCount, 0) + 1);
                 }
 
                 readChunkAFileCount++;
@@ -344,6 +348,7 @@ public class TAIndex {
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
 
+        Map<Integer, Integer> map = new HashMap<>();
         for (GetAvgItem getItem : getItems) {
             readChunkAFileCount += getItem.readChunkAFileCount;
             readChunkASortFileCount += getItem.readChunkASortFileCount;
@@ -352,6 +357,8 @@ public class TAIndex {
             readChunkASortCount += getItem.readChunkASortCount;
             sumChunkASortCount += getItem.sumChunkASortCount;
             hitCount += getItem.readHitCount;
+
+            getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
 
             sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
                     .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
@@ -368,6 +375,8 @@ public class TAIndex {
                 .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
                 .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL).append("\n");
 
+        map.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
+        sb.append("\n");
         SecondTAIndex.log(sb);
     }
 }

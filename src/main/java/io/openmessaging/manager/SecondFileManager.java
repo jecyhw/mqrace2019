@@ -82,5 +82,7 @@ public class SecondFileManager {
         }
         sb.append("SecondFileManager fileNum:").append(Const.FILE_NUMS).append(",aSortSize:").append(aSortSize);
         sb.append("\n");
+
+        ThreeFileManager.log(sb);
     }
 }

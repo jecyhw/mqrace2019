@@ -4,6 +4,8 @@ import io.openmessaging.Const;
 import io.openmessaging.codec.TDecoder;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by yanghuiwei on 2019-07-28
@@ -25,4 +27,6 @@ public class GetAvgItem {
     public int readHitCount = 0;
     public long readAFileTime = 0;
     public long readASortFileTime = 0;
+    public Map<Integer, Integer> map = new HashMap<>();
+
 }
