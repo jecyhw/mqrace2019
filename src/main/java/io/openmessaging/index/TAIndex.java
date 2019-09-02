@@ -130,7 +130,7 @@ public class TAIndex {
         intervalSum.add(sum, count);
 
         getItem.costTime += (System.currentTimeMillis() - startTime);
-        getItem.readHitCount += intervalSum.count;
+        getItem.readHitCount += count;
 
         return intervalSum.avg();
     }
@@ -188,7 +188,13 @@ public class TAIndex {
     private void readAndSumFromAPartition(int partition, int offsetCount, int readCount, long aMin, long aMax, GetAvgItem getItem) {
         ByteBuffer readBuf = getItem.readBuf;
         //读取按t分区的首区间剩下的a的数量
+        long startTime = System.currentTimeMillis();
         aFile.readPartition(partition, offsetCount, readCount, readBuf, getItem);
+
+        getItem.readAFileTime += (System.currentTimeMillis() - startTime);
+        getItem.readChunkAFileCount++;
+        getItem.readChunkACount += readCount;
+
         ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
 
         getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
@@ -206,7 +212,7 @@ public class TAIndex {
         if (partitionNeedCount < nextInterval) {
             readAndSumFromAPartition(partition, partitionFilterCount, partitionNeedCount, aMin, aMax, getItem);
         } else {
-            //分成左右两个
+            //分成左右两个，会跨层，需要特别注意
             int nextPartition = partition << 1;
             sumPartitionRightClosed(partition, nextPartition, partitionFilterCount, nextPartitionIndex, aMin, aMax, getItem);
             sumPartitionLeftClosed(partition, nextPartition + 1, nextInterval, partitionEndCount - nextInterval, nextPartitionIndex, aMin, aMax, getItem);

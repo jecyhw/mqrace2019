@@ -61,8 +61,9 @@ public final class PartitionFile {
         ByteBufferUtil.readInBuf(filePos, buf, aFcPool[fileIndex]);
         buf.position(0);
 
-        getItem.readFileCount++;
-        getItem.readAFileTime += (System.currentTimeMillis() - startTime);
+        getItem.readChunkASortFileCount++;
+        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
+        getItem.readChunkASortCount += readCount;
     }
 
 

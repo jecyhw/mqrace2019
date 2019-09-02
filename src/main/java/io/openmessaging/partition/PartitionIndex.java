@@ -86,6 +86,7 @@ public final class PartitionIndex {
                 beginASortIndexPos++;
             }
             intervalSum.add(sum, count);
+            getItem.readHitCount += count;
         }
     }
 
