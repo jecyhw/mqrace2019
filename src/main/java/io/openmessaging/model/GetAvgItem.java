@@ -27,5 +27,6 @@ public class GetAvgItem {
     public long readASortFileTime = 0;
     public int readFileCount = 0;
     public Map<Integer, Integer> map = new HashMap<>();
+    public Map<Integer, Integer> countMap = new HashMap<>();
 
 }

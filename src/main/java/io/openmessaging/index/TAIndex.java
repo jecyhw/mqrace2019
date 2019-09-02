@@ -11,10 +11,7 @@ import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.ByteBufferUtil;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -94,9 +91,12 @@ public class TAIndex {
             return 0;
         }
 
+        int tCount = endTPos - beginTPos;
+        getItem.countMap.put(tCount, getItem.countMap.getOrDefault(tCount, 0));
 
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
+
 
         //处理首区间
         int beginPartition = beginTPos / interval;
@@ -324,7 +324,8 @@ public class TAIndex {
         sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
         sb.append("\n");
 
-        Map<Integer, Integer> map = new HashMap<>();
+        Map<Integer, Integer> map = new TreeMap<>();
+        Map<Integer, Integer> countMap = new TreeMap<>();
         for (GetAvgItem getItem : getItems) {
             readChunkAFileCount += getItem.readChunkAFileCount;
             readChunkASortFileCount += getItem.readChunkASortFileCount;
@@ -336,6 +337,7 @@ public class TAIndex {
             readFileCount += getItem.readFileCount;
 
             getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
+            getItem.countMap.forEach((k, v) -> countMap.put(k, countMap.getOrDefault(k, 0) + v));
 
             sb.append("aFileCnt:").append(getItem.readChunkAFileCount).append(",aSortFileCnt:").append(getItem.readChunkASortFileCount).append(",sumASortFileCnt:")
                     .append(getItem.sumChunkASortFileCount).append(",aCnt:").append(getItem.readChunkACount).append(",aSortCnt:").append(getItem.readChunkASortCount).append(",sumASortCnt:")
@@ -350,6 +352,10 @@ public class TAIndex {
                     sb.append("[").append(k).append(",").append(v).append("]");
                     mapSize.addAndGet(v);
                 }
+        );
+        sb.append("\n");
+        sb.append("----------------------------------------------");
+        countMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]")
         );
         sb.append("\n");
 
