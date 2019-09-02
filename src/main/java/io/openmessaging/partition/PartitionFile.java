@@ -15,8 +15,10 @@ public final class PartitionFile {
     private FileChannel aFcPool;
     private final ByteBuffer aBuf;
     private final int interval;
+    private final String fileSuffix;
 
     public PartitionFile(int interval, String fileSuffix) {
+        this.fileSuffix = fileSuffix;
         aBuf = ByteBuffer.allocate(interval * Const.LONG_BYTES);
         this.interval = interval;
         try {
@@ -36,6 +38,13 @@ public final class PartitionFile {
 
     public void flush() {
         ByteBufferUtil.flush(aBuf, aFcPool);
+        try {
+            aFcPool.close();
+            aFcPool = new RandomAccessFile(Const.STORE_PATH + "test" + fileSuffix, "r").getChannel();
+        } catch (IOException e) {
+            Utils.print("PartitionFile flush error " + e.getMessage());
+            System.exit(-1);
+        }
     }
 
 
