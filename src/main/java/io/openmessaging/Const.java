@@ -36,10 +36,9 @@ public interface Const {
 
     int[] T_INDEX_INTERVALS = new int[]{
             1024 * 24,
-            1024 * 18,
             1024 * 12,
     };
-    int MERGE_T_TIME = 32;
+    int MERGE_T_TIME = 24;
     int MAX_T_INDEX_INTERVAL = 1024 * MERGE_T_TIME;
     int MAX_T_INDEX_LENGTH = 31000 * 64 / MERGE_T_TIME;
     int MIN_T_INDEX_INTERVAL = MAX_T_INDEX_INTERVAL / 4;
