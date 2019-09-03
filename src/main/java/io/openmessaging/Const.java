@@ -47,7 +47,7 @@ public interface Const {
     int FILE_NUMS = 12;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
-    int DEST = 29500;
+    int DEST = 30000;
 
     int GET_THREAD_NUM = 24;
     int FILE_STORE_MSG_NUM = MAX_T_INDEX_INTERVAL * 6000;
