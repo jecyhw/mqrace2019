@@ -54,7 +54,7 @@ public final class MultiPartitionFile {
     public void readPartition(int partition, int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
         long startTime = System.currentTimeMillis();
         int fileIndex = partition % Const.FILE_NUMS;
-        int filePos = ((partition / Const.FILE_NUMS) * interval + offsetCount) * Const.LONG_BYTES;
+        long filePos = ((long)(partition / Const.FILE_NUMS) * interval + offsetCount) * Const.LONG_BYTES;
 
         buf.position(0);
         buf.limit(readCount * Const.LONG_BYTES);
