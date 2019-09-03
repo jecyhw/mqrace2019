@@ -67,12 +67,11 @@ public final class PartitionIndex {
                 ++beginPartition;
             }
 
-            if (aIndexBuf.getLong(endPartition * Const.LONG_BYTES) > aMax) {
-                //读取最后一个a区间内的所有a
-                endPartition--;
-                partitionFile.readPartition(partition, (endPartition - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
-                ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-            }
+            //读取最后一个a区间内的所有a
+            endPartition--;
+            partitionFile.readPartition(partition, (endPartition - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
+            ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+
             long sum = 0;
             int count = 0;
             ByteBuffer aSumBuf = aSumArr.duplicate();
@@ -102,8 +101,6 @@ public final class PartitionIndex {
             aSumArr.putLong(aIndexPos * Const.LONG_BYTES, sumA);
             aIndexPos++;
         }
-
-        aSumArr.putLong(aIndexPos * Const.LONG_BYTES, as[toIndex - 1]);
     }
 
     public void flush() {

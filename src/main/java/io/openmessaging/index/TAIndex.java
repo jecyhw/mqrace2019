@@ -108,6 +108,8 @@ public class TAIndex {
         }
 
         int interval = partitionIndex.getInterval();
+        int doubleHalfInterval = interval / 4;
+
         int beginPartition = beginTPos / interval, endPartition = endTPos / interval;
 
         int firstPartitionFilterCount = beginTPos % interval;
@@ -117,12 +119,24 @@ public class TAIndex {
         //至少两个分区，先处理首尾分区
         if (firstPartitionFilterCount > 0) {
             int firstReadCount = interval - firstPartitionFilterCount;
-            sumByPartitionIndex(beginTPos, beginTPos + firstReadCount, firstReadCount, aMin, aMax, getItem);
+            if (firstPartitionFilterCount < doubleHalfInterval) {
+                //求反，先减后加，防止溢出
+                inverseReadAndSumFromAPartition(beginTPos - firstPartitionFilterCount, firstPartitionFilterCount, aMin, aMax, getItem);
+                partitionIndex.partitionSum(beginPartition, aMin, aMax, getItem);
+            } else {
+                sumByPartitionIndex(beginTPos, beginTPos + firstReadCount, firstReadCount, aMin, aMax, getItem);
+            }
             beginPartition++;
         }
 
         if (lastPartitionNeedCount > 0) {
-            sumByPartitionIndex(endTPos - lastPartitionNeedCount, endTPos, lastPartitionNeedCount, aMin, aMax, getItem);
+            if (interval - lastPartitionNeedCount < doubleHalfInterval) {
+                //求反，先减后加，防止溢出
+                inverseReadAndSumFromAPartition(endTPos, interval - lastPartitionNeedCount, aMin, aMax, getItem);
+                partitionIndex.partitionSum(endPartition, aMin, aMax, getItem);
+            } else {
+                sumByPartitionIndex(endTPos - lastPartitionNeedCount, endTPos, lastPartitionNeedCount, aMin, aMax, getItem);
+            }
         }
 
         //首尾区间处理之后，[beginPartition, endPartition)中的t都是符合条件，不用再判断
@@ -155,6 +169,15 @@ public class TAIndex {
         //读取按t分区的首区间剩下的a的数量
         aFile.readPartition(offsetCount, readCount, readBuf, getItem);
         ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
+
+        getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
+    }
+
+    private void inverseReadAndSumFromAPartition(int offsetCount, int readCount, long aMin, long aMax, GetAvgItem getItem) {
+        ByteBuffer readBuf = getItem.readBuf;
+        //读取按t分区的首区间剩下的a的数量
+        aFile.readPartition(offsetCount, readCount, readBuf, getItem);
+        ByteBufferUtil.inverseSumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
 
         getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
     }

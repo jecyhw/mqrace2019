@@ -17,6 +17,11 @@ public class IntervalSum {
         this.count += count;
     }
 
+    public void remove(long sum, int count) {
+        this.sum -= sum;
+        this.count -= count;
+    }
+
     public long avg() {
         return count == 0 ? 0 : sum / count;
     }

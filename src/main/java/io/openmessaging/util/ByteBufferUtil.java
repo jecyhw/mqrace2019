@@ -47,5 +47,18 @@ public class ByteBufferUtil {
         }
         intervalSum.add(sum, count);
     }
+
+    public static void inverseSumChunkA(ByteBuffer as, int len, long aMin, long aMax, IntervalSum intervalSum) {
+        long sum = 0;
+        int count = 0;
+        for (int i = 0; i < len; i++) {
+            long a = as.getLong();
+            if (aMin <= a && a <= aMax) {
+                count++;
+                sum += a;
+            }
+        }
+        intervalSum.remove(sum, count);
+    }
 }
 
