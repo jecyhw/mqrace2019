@@ -1,6 +1,7 @@
 package io.openmessaging.partition;
 
 import io.openmessaging.Const;
+import io.openmessaging.codec.AEncoder;
 import io.openmessaging.model.GetAvgItem;
 import io.openmessaging.model.IntervalSum;
 import io.openmessaging.util.ArrayUtils;
@@ -86,6 +87,9 @@ public final class PartitionIndex {
         }
     }
 
+    public int[] bitsStat = new int[64];
+    public AEncoder aEncoder = new AEncoder(null);
+
     public void createPartition(int fromIndex, int toIndex) {
         //按照a进行排序
         Arrays.parallelSort(as, fromIndex, toIndex);
@@ -97,6 +101,10 @@ public final class PartitionIndex {
             for (int j = i; j < end; j++) {
                 partitionFile.writeA(as[j]);
                 sumA += as[j];
+
+                if (j != i) {
+                    bitsStat[aEncoder.getNumBitsAvailable(as[j] - as[j - 1])]++;
+                }
             }
             aSumArr.putLong(aIndexPos * Const.LONG_BYTES, sumA);
             aIndexPos++;
@@ -127,6 +135,9 @@ public final class PartitionIndex {
 
 
     public void log(StringBuilder sb) {
-        sb.append("interval:").append(interval).append(",hitCount:").append(hitCounter.get()).append("\n");
+        for (int i = 0; i < bitsStat.length; i++) {
+            sb.append("[").append(i).append(",").append(bitsStat[i]).append("]");
+        }
+        sb.append("\n").append("interval:").append(interval).append(",hitCount:").append(hitCounter.get()).append("\n");
     }
 }

@@ -93,7 +93,7 @@ public abstract class AbstractEncoder {
         }
     }
 
-    int getNumBitsAvailable(long num) {
+    public int getNumBitsAvailable(long num) {
         int t = (int) (num >> 32);
         if (t == 0) {
             return 32 - _getNumBitsAvailable((int) num);
