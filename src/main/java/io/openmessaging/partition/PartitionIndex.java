@@ -38,46 +38,49 @@ public final class PartitionIndex {
         //t区间内对a进行二分查询
         int low = partition * (interval / Const.A_INDEX_INTERVAL);
         int high = low + interval / Const.A_INDEX_INTERVAL;
-        int beginASortIndexPos = ArrayUtils.findFirstLessThanIndex(aIndexBuf, aMin, low, high);
-        int endASortIndexPos = ArrayUtils.findFirstGreatThanIndex(aIndexBuf, aMax, low, high);
+        int beginPartition = ArrayUtils.findFirstLessThanIndex(aIndexBuf, aMin, low, high);
+        int endPartition = ArrayUtils.findFirstGreatThanIndex(aIndexBuf, aMax, low, high);
 
         //区间内没有符合条件的a
-        if (beginASortIndexPos >= endASortIndexPos) {
+        if (beginPartition >= endPartition) {
             return;
         }
 
         ByteBuffer readBuf = getItem.readBuf;
         IntervalSum intervalSum = getItem.intervalSum;
 
-        //只有一块或者首尾相连时 beginASortIndexPos=1,endASortIndexPos=2表示只有1块；beginASortIndexPos=1,endASortIndexPos=3表示只有2块，属于首尾相连
-        if (beginASortIndexPos + 2 >= endASortIndexPos) {
+        //只有一块或者首尾相连时 beginPartition=1,endPartition=2表示只有1块；beginPartition=1,endPartition=3表示只有2块，属于首尾相连
+        if (beginPartition + 2 >= endPartition) {
             //小于等于两块，一次读取
-            int chunkCount = endASortIndexPos - beginASortIndexPos;
+            int chunkCount = endPartition - beginPartition;
             int readCount = Const.A_INDEX_INTERVAL * chunkCount;
-            partitionFile.readPartition(partition,  (beginASortIndexPos - low) * Const.A_INDEX_INTERVAL, readCount, readBuf, getItem);
+            partitionFile.readPartition(partition,  (beginPartition - low) * Const.A_INDEX_INTERVAL, readCount, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, intervalSum);
 
             getItem.readASortFileCount++;
             getItem.readACount += readCount;
         } else {
-            //读取第一个a区间内的的所有a
-            partitionFile.readPartition(partition, (beginASortIndexPos - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
-            ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-            ++beginASortIndexPos;
+            if (aIndexBuf.getLong(beginPartition * Const.LONG_BYTES) < aMin) {
+                //读取第一个a区间内的的所有a
+                partitionFile.readPartition(partition, (beginPartition - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
+                ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+                ++beginPartition;
+            }
 
-            //读取最后一个a区间内的所有a
-            endASortIndexPos--;
-            partitionFile.readPartition(partition, (endASortIndexPos - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
-            ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
-
+            if (aIndexBuf.getLong(endPartition * Const.LONG_BYTES) > aMax) {
+                //读取最后一个a区间内的所有a
+                endPartition--;
+                partitionFile.readPartition(partition, (endPartition - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
+                ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
+            }
             long sum = 0;
             int count = 0;
             ByteBuffer aSumBuf = aSumArr.duplicate();
-            // 经过上面处理之后，[beginASortIndexPos, endASortIndexPos)都是符合条件的，直接累加
-            while (beginASortIndexPos < endASortIndexPos) {
-                sum += aSumBuf.getLong(beginASortIndexPos * Const.LONG_BYTES);
+            // 经过上面处理之后，[beginPartition, endPartition)都是符合条件的，直接累加
+            while (beginPartition < endPartition) {
+                sum += aSumBuf.getLong(beginPartition * Const.LONG_BYTES);
                 count += Const.A_INDEX_INTERVAL;
-                beginASortIndexPos++;
+                beginPartition++;
             }
             intervalSum.add(sum, count);
             getItem.readHitCount += count;
@@ -99,6 +102,8 @@ public final class PartitionIndex {
             aSumArr.putLong(aIndexPos * Const.LONG_BYTES, sumA);
             aIndexPos++;
         }
+
+        aSumArr.putLong(aIndexPos * Const.LONG_BYTES, as[toIndex - 1]);
     }
 
     public void flush() {
