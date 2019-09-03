@@ -35,7 +35,6 @@ public interface Const {
     boolean PRINT_LOG = true;
 
     int[] T_INDEX_INTERVALS = new int[]{
-            1024 * 48,
             1024 * 24,
             1024 * 12
     };
