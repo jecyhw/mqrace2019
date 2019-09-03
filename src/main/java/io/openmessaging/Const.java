@@ -48,7 +48,7 @@ public interface Const {
     int A_INDEX_INTERVAL = 128;
     int A_INDEX_LENGTH = MAX_T_INDEX_LENGTH * (MAX_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
 
-    int FILE_NUMS = 4;
+    int FILE_NUMS = 8;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
     int DEST = 28500;
