@@ -254,7 +254,6 @@ public class TAIndex {
 
     public void log(StringBuilder sb) {
         int hitCount = 0;
-        int readFileCount = 0;
 
         int readASortFileCount = 0;
         long readASortFileTime = 0;
@@ -313,6 +312,6 @@ public class TAIndex {
                 .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
                 .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS)).append("\n");
 
-
+        aFile.log(sb);
     }
 }
