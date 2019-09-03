@@ -35,8 +35,8 @@ public interface Const {
     boolean PRINT_LOG = true;
 
     int[] T_INDEX_INTERVALS = new int[]{
-            1024 * 24,
-            1024 * 12
+            1024 * 26,
+            1024 * 13
     };
     int MERGE_T_TIME = 24;
     int MAX_T_INDEX_INTERVAL = 1024 * MERGE_T_TIME;
