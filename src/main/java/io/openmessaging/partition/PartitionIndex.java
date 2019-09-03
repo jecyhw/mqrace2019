@@ -73,6 +73,8 @@ public final class PartitionIndex {
             partitionFile.readPartition(partition, (endPartition - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
 
+            getItem.intervalMap.put(endPartition - beginPartition,
+                    getItem.intervalMap.getOrDefault(endPartition - beginPartition, 0) + 1);
             long sum = 0;
             int count = 0;
             ByteBuffer aSumBuf = aSumArr.duplicate();

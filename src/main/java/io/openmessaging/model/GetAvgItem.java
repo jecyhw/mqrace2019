@@ -27,5 +27,6 @@ public class GetAvgItem {
     public int readHitCount = 0;
     public Map<Integer, Integer> map = new HashMap<>();
     public Map<Integer, Integer> countMap = new HashMap<>();
+    public Map<Integer, Integer> intervalMap = new HashMap<>();
 
 }

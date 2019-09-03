@@ -301,6 +301,7 @@ public class TAIndex {
 
         Map<Integer, Integer> map = new TreeMap<>();
         Map<Integer, Integer> countMap = new TreeMap<>();
+        Map<Integer, Integer> intervalMap = new TreeMap<>();
         for (GetAvgItem getItem : getItems) {
             readASortFileCount += getItem.readASortFileCount;
             readASortFileTime += getItem.readASortFileTime;
@@ -314,6 +315,7 @@ public class TAIndex {
 
             getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
             getItem.countMap.forEach((k, v) -> countMap.put(k, countMap.getOrDefault(k, 0) + v));
+            getItem.intervalMap.forEach((k, v) -> intervalMap.put(k, intervalMap.getOrDefault(k, 0) + v));
 
             sb.append("readFileACount:").append(getItem.readFileACount).append(",readASortFileCount:").append(getItem.readASortFileCount)
                     .append(",readACount:").append(getItem.readACount).append(",readASortCount:").append(getItem.readASortCount)
@@ -329,9 +331,11 @@ public class TAIndex {
                 }
         );
         sb.append("\n");
-        sb.append("----------------------------------------------\n");
-        countMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]")
-        );
+        sb.append("----------------------------------------------countMap\n");
+        countMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
+        sb.append("\n");
+        sb.append("----------------------------------------------intervalMap\n");
+        intervalMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
         sb.append("\n");
 
         sb.append("mapSize:").append(mapSize.get())
