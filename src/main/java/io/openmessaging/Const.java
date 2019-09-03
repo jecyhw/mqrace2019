@@ -51,4 +51,6 @@ public interface Const {
 
     int GET_THREAD_NUM = 24;
     int FILE_STORE_MSG_NUM = MAX_T_INDEX_INTERVAL * 6000;
+    int A_CACHE_BYTES1 = 1024 * 1024 * 1024;
+    int A_CACHE_BYTES2 = 1024 * 1024 * 1024 + 1024 * 1024 * 500;
 }

@@ -134,7 +134,7 @@ public class TAIndex {
         }
 
         if (lastPartitionNeedCount > 0) {
-            if (interval - lastPartitionNeedCount < doubleHalfInterval) {
+            if (interval - lastPartitionNeedCount < doubleHalfInterval && (endTPos - endPartition * interval) >= interval) {
                 //求反，先减后加，防止溢出
                 inverseReadAndSumFromAPartition(endTPos, interval - lastPartitionNeedCount, aMin, aMax, getItem);
                 partitionIndex.partitionSum(endPartition, aMin, aMax, getItem);

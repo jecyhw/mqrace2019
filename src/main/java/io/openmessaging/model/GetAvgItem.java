@@ -11,7 +11,7 @@ import java.util.Map;
  * Created by yanghuiwei on 2019-07-28
  */
 public class GetAvgItem {
-    public ByteBuffer readBuf = ByteBuffer.allocateDirect(Const.MAX_T_INDEX_INTERVAL * Const.MSG_BYTES);
+    public ByteBuffer readBuf = ByteBuffer.allocate(Const.T_INDEX_INTERVALS[0] * Const.MSG_BYTES);
     public final IntervalSum intervalSum = new IntervalSum();
     public TDecoder tDecoder = new TDecoder();
 

@@ -37,6 +37,8 @@ public class Tester {
     }
 
     public static void main(String[] args) {
+        System.out.println(Integer.MAX_VALUE);
+        System.out.println(Integer.MAX_VALUE);
         long a = 0x3ffffffffffffff3L;
         System.out.println(a);
         int  c = (int)a;
