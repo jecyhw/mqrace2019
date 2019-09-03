@@ -65,6 +65,7 @@ public class TAIndex {
         return getItem;
     });
 
+    private AtomicInteger onceCounter = new AtomicInteger(0);
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         if (aMin > aMax || tMin > tMax) {
             return 0;
@@ -89,6 +90,7 @@ public class TAIndex {
 
         //读取的数量比最小层的间隔还小，直接读取返回
         if (tCount <= Const.T_INDEX_INTERVALS[Const.T_INDEX_INTERVALS.length - 1]) {
+            onceCounter.incrementAndGet();
             readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
         } else {
             sumByPartitionIndex(beginTPos, endTPos, tCount, aMin, aMax, getItem);
@@ -313,7 +315,8 @@ public class TAIndex {
                 .append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
                 .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
                 .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
-                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS)).append("\n");
+                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS))
+                .append("onceCount:").append(onceCounter.get()).append("\n");
 
         aFile.log(sb);
         for (PartitionIndex partitionIndex : partitionIndices) {

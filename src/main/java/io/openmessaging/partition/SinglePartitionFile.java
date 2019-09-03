@@ -64,6 +64,8 @@ public final class SinglePartitionFile {
     }
 
     public void readPartition(int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
+        long startTime = System.currentTimeMillis();
+
         int fileIndex = offsetCount / Const.FILE_STORE_MSG_NUM;
         int fileOffsetCount = offsetCount % Const.FILE_STORE_MSG_NUM;
 
@@ -79,8 +81,6 @@ public final class SinglePartitionFile {
             buf.position(0);
         }
 
-
-        long startTime = System.currentTimeMillis();
         getItem.readFileACount++;
         getItem.readFileATime += (System.currentTimeMillis() - startTime);
         getItem.readACount += readCount;
