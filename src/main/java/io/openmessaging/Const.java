@@ -35,8 +35,8 @@ public interface Const {
     boolean PRINT_LOG = true;
 
     int[] T_INDEX_INTERVALS = new int[]{
-            1024 * 24,
-            1024 * 12
+            1024 * 26,
+            1024 * 13
     };
     int MERGE_T_TIME = 24;
     int MAX_T_INDEX_INTERVAL = 1024 * MERGE_T_TIME;
@@ -47,10 +47,10 @@ public interface Const {
     int A_INDEX_INTERVAL = 128;
     int A_INDEX_LENGTH = MAX_T_INDEX_LENGTH * (MAX_T_INDEX_INTERVAL / A_INDEX_INTERVAL); //BLOCK_INDEX_SIZE的倍数
 
-    int FILE_NUMS = 16;
+    int FILE_NUMS = 8;
     int T_MEMORY_SIZE = 1024 * 1024 * 252;
 
-    int DEST = 28500;
+    int DEST = 29000;
 
     int GET_THREAD_NUM = 24;
     int FILE_STORE_MSG_NUM = MAX_T_INDEX_INTERVAL * 6000;
