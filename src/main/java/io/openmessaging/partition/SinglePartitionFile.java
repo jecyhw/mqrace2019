@@ -20,14 +20,9 @@ public final class SinglePartitionFile {
     private int aFileIndex = 0;
     private int putACount = 0;
 
-    private final int interval;
-    private final String fileSuffix;
 
-
-    public SinglePartitionFile(int interval, String fileSuffix) {
-        this.fileSuffix = fileSuffix;
-        aBuf = ByteBuffer.allocate(interval * Const.LONG_BYTES);
-        this.interval = interval;
+    public SinglePartitionFile(int interval) {
+        aBuf = ByteBuffer.allocateDirect(interval * Const.LONG_BYTES);
         newAFc();
     }
 

@@ -1,6 +1,7 @@
 package io.openmessaging;
 
-import io.openmessaging.codec.*;
+import io.openmessaging.codec.TDecoder;
+import io.openmessaging.codec.TEncoder;
 import io.openmessaging.model.GetMsgItem;
 import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.Utils;
@@ -11,7 +12,6 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.openmessaging.util.Utils.print;
 
@@ -19,18 +19,17 @@ import static io.openmessaging.util.Utils.print;
  * Created by yanghuiwei on 2019-07-26
  */
 public class MessageFile {
-    private static final AtomicInteger idAllocator = new AtomicInteger(0);
-    private final ByteBuffer tBuf = ByteBuffer.allocate(Const.MEMORY_BUFFER_SIZE);
+    private static int idAllocator = 0;
+    private final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.MEMORY_BUFFER_SIZE);
     private TEncoder tEncoder = new TEncoder(tBuf);
     private final long[] tArr = new long[Const.INDEX_ELE_LENGTH];
     private final int[] tOffsetArr = new int[Const.INDEX_ELE_LENGTH];
     private long lastT;
 
-    //直接压缩到这个字节数组上
-    private final ByteBuffer msgBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
+    private final ByteBuffer msgBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private FileChannel msgFc;
 
-    private final ByteBuffer aBuf = ByteBuffer.allocate(Const.PUT_BUFFER_SIZE);
+    private final ByteBuffer aBuf = ByteBuffer.allocateDirect(Const.PUT_BUFFER_SIZE);
     private FileChannel aFc;
 
     //put计数
@@ -42,7 +41,11 @@ public class MessageFile {
 
 
     public MessageFile() {
-        int fileId = idAllocator.getAndIncrement();
+        int fileId;
+        synchronized (MessageFile.class) {
+            fileId = idAllocator++;
+        }
+
         try {
             msgFc = new RandomAccessFile(Const.STORE_PATH + fileId + Const.MSG_FILE_SUFFIX, "rw").getChannel();
             aFc = new RandomAccessFile(Const.STORE_PATH + fileId + Const.A_FILE_SUFFIX, "rw").getChannel();

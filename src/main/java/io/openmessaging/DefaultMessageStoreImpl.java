@@ -9,7 +9,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -39,18 +38,11 @@ public class DefaultMessageStoreImpl extends MessageStore {
     private static FastThreadLocal<GetMsgItem> getMsgItemThreadLocal = new FastThreadLocal<GetMsgItem>() {
         @Override
         public GetMsgItem initialValue() {
-            GetMsgItem item = new GetMsgItem();
-            item.readBuf = ByteBuffer.allocate(Const.MAX_GET_AT_SIZE * Const.MSG_BYTES);
-            return item;
+            return new GetMsgItem();
         }
     };
 
-    private static Comparator<Message> messageComparator = new Comparator<Message>() {
-        @Override
-        public int compare(Message o1, Message o2) {
-            return Long.compare(o1.getT(), o2.getT());
-        }
-    };
+    private static Comparator<Message> messageComparator = (o1, o2) -> Long.compare(o1.getT(), o2.getT());
 
     public static void init() {
         //创建存储父目录

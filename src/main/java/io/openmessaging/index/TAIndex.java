@@ -1,12 +1,13 @@
 package io.openmessaging.index;
 
+import io.netty.util.concurrent.FastThreadLocal;
 import io.openmessaging.Const;
 import io.openmessaging.codec.TDecoder;
 import io.openmessaging.codec.TEncoder;
 import io.openmessaging.model.GetAvgItem;
 import io.openmessaging.model.IntervalSum;
-import io.openmessaging.partition.SinglePartitionFile;
 import io.openmessaging.partition.PartitionIndex;
+import io.openmessaging.partition.SinglePartitionFile;
 import io.openmessaging.util.ArrayUtils;
 import io.openmessaging.util.ByteBufferUtil;
 
@@ -25,7 +26,7 @@ public class TAIndex {
     private int tIndexPos = 0;
 
 
-    private final ByteBuffer tBuf = ByteBuffer.allocate(Const.T_MEMORY_SIZE);
+    private final ByteBuffer tBuf = ByteBuffer.allocateDirect(Const.T_MEMORY_SIZE);
     private final TEncoder tEncoder = new TEncoder(tBuf);
 
     private PartitionIndex[] partitionIndices = new PartitionIndex[Const.T_INDEX_INTERVALS.length];
@@ -33,7 +34,7 @@ public class TAIndex {
 
     public TAIndex() {
         createPartitionIndex();
-        aFile = new SinglePartitionFile(Const.MAX_T_INDEX_INTERVAL, Const.M_A_FILE_SUFFIX);
+        aFile = new SinglePartitionFile(Const.MAX_T_INDEX_INTERVAL);
     }
 
     private void createPartitionIndex() {
@@ -57,13 +58,16 @@ public class TAIndex {
 
     private static List<GetAvgItem> getItems = new ArrayList<>();
 
-    private static ThreadLocal<GetAvgItem> getItemThreadLocal = ThreadLocal.withInitial(() -> {
-        GetAvgItem getItem = new GetAvgItem();
-        synchronized (TAIndex.class) {
-            getItems.add(getItem);
+    private static FastThreadLocal<GetAvgItem> getItemThreadLocal = new FastThreadLocal<GetAvgItem>() {
+        @Override
+        public GetAvgItem initialValue() {
+            GetAvgItem getItem = new GetAvgItem();
+            synchronized (TAIndex.class) {
+                getItems.add(getItem);
+            }
+            return getItem;
         }
-        return getItem;
-    });
+    };
 
     private AtomicInteger onceCounter = new AtomicInteger(0);
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {

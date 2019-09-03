@@ -6,7 +6,6 @@ import io.openmessaging.util.ByteBufferUtil;
 import io.openmessaging.util.Utils;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -18,7 +17,7 @@ public final class MultiPartitionFile {
     private final int interval;
 
     public MultiPartitionFile(int interval, String fileSuffix) {
-        aBuf = ByteBuffer.allocate(interval * Const.LONG_BYTES);
+        aBuf = ByteBuffer.allocateDirect(interval * Const.LONG_BYTES);
         this.interval = interval;
         try {
             for (int i = 0; i < Const.FILE_NUMS; i++) {
@@ -64,21 +63,5 @@ public final class MultiPartitionFile {
         getItem.readASortFileCount++;
         getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
         getItem.readASortCount += readCount;
-    }
-
-
-    public void log(StringBuilder sb) {
-        long aSize = 0, aSortSize = 0, msgSize = 0;
-        for (int i = 0; i < Const.FILE_NUMS; i++) {
-            try {
-                aSize += aFcPool[i].size();
-            } catch (IOException e) {
-                Utils.print("FileManager log error " + e.getMessage());
-                System.exit(-1);
-            }
-        }
-        sb.append("fileNum:").append(Const.FILE_NUMS).append(",aSize:")
-                .append(aSize).append(",aSortSize:").append(aSortSize).append(",msgSize:").append(msgSize);
-        sb.append("\n");
     }
 }
