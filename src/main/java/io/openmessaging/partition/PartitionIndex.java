@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class PartitionIndex {
     private final ByteBuffer aIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
     private final ByteBuffer aSumArr = ByteBuffer.allocateDirect(Const.A_INDEX_LENGTH * 8);
+    private final ByteBuffer aCompressIndexArr = ByteBuffer.allocateDirect(Const.A_INDEX_INTERVAL * 8);
     private int aIndexPos = 0;
 
     private final int interval;
