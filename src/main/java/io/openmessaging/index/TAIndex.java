@@ -90,13 +90,19 @@ public class TAIndex {
         //读取的数量比最小层的间隔还小，直接读取返回
         if (tCount <= Const.T_INDEX_INTERVALS[Const.T_INDEX_INTERVALS.length - 1]) {
             readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
-            return intervalSum.avg();
+        } else {
+            sumByPartitionIndex(beginTPos, endTPos, tCount, aMin, aMax, getItem);
         }
+        getItem.costTime += (System.currentTimeMillis() - startTime);
 
+        return intervalSum.avg();
+    }
+
+    private void sumByPartitionIndex(int beginTPos, int endTPos, int tCount, long aMin, long aMax, GetAvgItem getItem) {
         PartitionIndex partitionIndex = findBestPartitionIndex(beginTPos, endTPos);
         if (partitionIndex == null) {
             readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
-            return intervalSum.avg();
+            return;
         }
 
         int interval = partitionIndex.getInterval();
@@ -108,12 +114,13 @@ public class TAIndex {
         int count = 0;
         //至少两个分区，先处理首尾分区
         if (firstPartitionFilterCount > 0) {
-            readAndSumFromAPartition(beginTPos, interval - firstPartitionFilterCount, aMin, aMax, getItem);
+            int firstReadCount = interval - firstPartitionFilterCount;
+            sumByPartitionIndex(beginTPos, beginTPos + firstReadCount, firstReadCount, aMin, aMax, getItem);
             beginPartition++;
         }
 
         if (lastPartitionNeedCount > 0) {
-            readAndSumFromAPartition(endTPos - lastPartitionNeedCount, lastPartitionNeedCount, aMin, aMax, getItem);
+            sumByPartitionIndex(endTPos - lastPartitionNeedCount, endTPos, lastPartitionNeedCount, aMin, aMax, getItem);
         }
 
         //首尾区间处理之后，[beginPartition, endPartition)中的t都是符合条件，不用再判断
@@ -121,11 +128,7 @@ public class TAIndex {
             partitionIndex.partitionSum(beginPartition, aMin, aMax, getItem);
             beginPartition++;
         }
-        intervalSum.add(sum, count);
-
-        getItem.costTime += (System.currentTimeMillis() - startTime);
-
-        return intervalSum.avg();
+        getItem.intervalSum.add(sum, count);
     }
 
     private PartitionIndex findBestPartitionIndex(int beginTPos, int endTPos) {
