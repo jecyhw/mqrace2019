@@ -316,5 +316,8 @@ public class TAIndex {
                 .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS)).append("\n");
 
         aFile.log(sb);
+        for (PartitionIndex partitionIndex : partitionIndices) {
+            partitionIndex.log(sb);
+        }
     }
 }

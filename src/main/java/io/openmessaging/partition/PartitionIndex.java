@@ -8,6 +8,7 @@ import io.openmessaging.util.ByteBufferUtil;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by yanghuiwei on 2019-09-02
@@ -22,6 +23,7 @@ public final class PartitionIndex {
 
     private final long[] as;
     private int asIndex = 0;
+    private AtomicInteger hitCounter = new AtomicInteger(0);
 
     public PartitionIndex(int interval) {
         this.interval = interval;
@@ -30,6 +32,8 @@ public final class PartitionIndex {
     }
 
     public void partitionSum(int partition, long aMin, long aMax, GetAvgItem getItem) {
+        hitCounter.incrementAndGet();
+
         ByteBuffer aIndexBuf = aIndexArr.duplicate();
         //t区间内对a进行二分查询
         int low = partition * (interval / Const.A_INDEX_INTERVAL);
@@ -117,5 +121,10 @@ public final class PartitionIndex {
             createPartition(0, interval);
             asIndex = 0;
         }
+    }
+
+
+    public void log(StringBuilder sb) {
+        sb.append("interval:").append(interval).append(",hitCount:").append(hitCounter.get()).append("\n");
     }
 }
