@@ -58,7 +58,7 @@ public class DefaultMessageStoreImpl extends MessageStore {
             }
         }
         Monitor.putStart();
-        iostat();
+//        iostat();
         print("func=init success");
     }
 
