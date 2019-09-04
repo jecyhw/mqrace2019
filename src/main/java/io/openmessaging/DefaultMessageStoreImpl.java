@@ -110,7 +110,6 @@ public class DefaultMessageStoreImpl extends MessageStore {
 
     @Override
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
-        Monitor.getAvgStat();
         return TAIndex.taIndex.getAvgValue(aMin, aMax, tMin, tMax);
     }
 

@@ -1,7 +1,6 @@
 package io.openmessaging;
 
 import io.openmessaging.index.TAIndex;
-import io.openmessaging.util.Utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -59,21 +58,5 @@ public class Monitor {
 //        sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum)
 //                .append(",getMsgCount:").append(getMsgCount).append(",").append("\n");
 //
-
-        long putTime = getMsgStartTime - putStartTime;
-        long putScore = putTime == 0 ? 0 : 2013641393/putTime;
-        long getMsgTime = getAvgTimes[0] - getMsgStartTime;
-        long getMsgScore = getMsgTime == 0 ? 0 : 291466139 / getMsgTime;
-        long getAvgTime = getAvgTimes[getAvgCounter.get()] - getAvgTimes[0];
-        long getAvgScore = getAvgTime == 0? 0 : 292627460 / getAvgTime;
-        long score = putScore + getMsgScore + getAvgScore;
-        sb.append("[log] score:").append(score).append(" putScore:").append(putScore).append(" getMsgScore:")
-                .append(getMsgScore).append(" getAvgScore:").append(getAvgScore).append("\n");
-
-        Utils.print(sb.toString());
-
-        if (score <= Const.DEST) {
-            System.err.println("func=shutdownHook stop");
-        }
     }
 }
