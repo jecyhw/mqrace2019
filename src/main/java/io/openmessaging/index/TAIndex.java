@@ -343,11 +343,11 @@ public class TAIndex {
 //                .append(",readACount:").append(readACount).append(",readASortCount:").append(readASortCount)
 //                .append(",readFileATime:").append(readFileATime).append(",readASortFileTime:").append(readASortFileTime)
 //                .append(",hitCount:").append(hitCount)
-//                .append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
-//                .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
-//                .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
-//                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS))
-//                .append("onceCount:").append(onceCounter.get()).append("\n");
+                sb.append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
+                .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
+                .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
+                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS))
+                .append("onceCount:").append(onceCounter.get()).append("\n");
 //
 //        aFile.log(sb);
 //        for (PartitionIndex partitionIndex : partitionIndices) {
