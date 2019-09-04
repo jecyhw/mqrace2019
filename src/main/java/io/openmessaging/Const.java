@@ -37,7 +37,7 @@ public interface Const {
     int[] T_INDEX_INTERVALS = new int[]{
             1024 * 30,
             1024 * 20,
-            1024 * 12
+            1024 * 10
 
     };
     int MAX_T_INDEX_INTERVAL = 1024 * 24;
