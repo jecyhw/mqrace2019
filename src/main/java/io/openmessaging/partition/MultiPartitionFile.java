@@ -51,7 +51,7 @@ public final class MultiPartitionFile {
      * @param buf 缓冲区
      */
     public void readPartition(int partition, int offsetCount, int readCount, ByteBuffer buf, GetAvgItem getItem) {
-        long startTime = System.currentTimeMillis();
+//        long startTime = System.currentTimeMillis();
         int fileIndex = partition % Const.FILE_NUMS;
         long filePos = ((long)(partition / Const.FILE_NUMS) * interval + offsetCount) * Const.LONG_BYTES;
 
@@ -60,8 +60,8 @@ public final class MultiPartitionFile {
         ByteBufferUtil.readInBuf(filePos, buf, aFcPool[fileIndex]);
         buf.position(0);
 
-        getItem.readASortFileCount++;
-        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
-        getItem.readASortCount += readCount;
+//        getItem.readASortFileCount++;
+//        getItem.readASortFileTime += (System.currentTimeMillis() - startTime);
+//        getItem.readASortCount += readCount;
     }
 }

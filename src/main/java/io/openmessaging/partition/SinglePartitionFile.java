@@ -110,9 +110,9 @@ public final class SinglePartitionFile {
             ByteBufferUtil.readInBuf(0, recvBuf, aFcPool.get(fileIndex + 1));
         }
 
-        getItem.readFileACount++;
-        getItem.readFileATime += (System.currentTimeMillis() - startTime);
-        getItem.readACount += readCount;
+//        getItem.readFileACount++;
+//        getItem.readFileATime += (System.currentTimeMillis() - startTime);
+//        getItem.readACount += readCount;
     }
 
     public void readFromCache(ByteBuffer aCacheBuf, int startCount, int readCount, ByteBuffer recvBuf, int recvStartCount) {

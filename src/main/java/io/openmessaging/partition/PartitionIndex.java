@@ -58,8 +58,8 @@ public final class PartitionIndex {
             partitionFile.readPartition(partition,  (beginPartition - low) * Const.A_INDEX_INTERVAL, readCount, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, intervalSum);
 
-            getItem.readASortFileCount++;
-            getItem.readACount += readCount;
+//            getItem.readASortFileCount++;
+//            getItem.readACount += readCount;
         } else {
             if (aIndexBuf.getLong(beginPartition * Const.LONG_BYTES) < aMin) {
                 //读取第一个a区间内的的所有a
@@ -73,8 +73,8 @@ public final class PartitionIndex {
             partitionFile.readPartition(partition, (endPartition - low) * Const.A_INDEX_INTERVAL, Const.A_INDEX_INTERVAL, readBuf, getItem);
             ByteBufferUtil.sumChunkA(readBuf, Const.A_INDEX_INTERVAL, aMin, aMax, intervalSum);
 
-            getItem.intervalMap.put(endPartition - beginPartition,
-                    getItem.intervalMap.getOrDefault(endPartition - beginPartition, 0) + 1);
+//            getItem.intervalMap.put(endPartition - beginPartition,
+//                    getItem.intervalMap.getOrDefault(endPartition - beginPartition, 0) + 1);
             long sum = 0;
             int count = 0;
             ByteBuffer aSumBuf = aSumArr.duplicate();
@@ -85,7 +85,7 @@ public final class PartitionIndex {
                 beginPartition++;
             }
             intervalSum.add(sum, count);
-            getItem.readHitCount += count;
+//            getItem.readHitCount += count;
         }
     }
 

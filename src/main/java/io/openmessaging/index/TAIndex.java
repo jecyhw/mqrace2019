@@ -87,7 +87,7 @@ public class TAIndex {
         }
 
         int tCount = endTPos - beginTPos;
-        getItem.countMap.put(tCount, getItem.countMap.getOrDefault(tCount, 0) + 1);
+//        getItem.countMap.put(tCount, getItem.countMap.getOrDefault(tCount, 0) + 1);
 
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
@@ -99,7 +99,7 @@ public class TAIndex {
         } else {
             sumByPartitionIndex(beginTPos, endTPos, tCount, aMin, aMax, getItem);
         }
-        getItem.costTime += (System.currentTimeMillis() - startTime);
+//        getItem.costTime += (System.currentTimeMillis() - startTime);
 
         return intervalSum.avg();
     }
@@ -174,7 +174,7 @@ public class TAIndex {
         aFile.readPartition(offsetCount, readCount, readBuf, getItem);
         ByteBufferUtil.sumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
 
-        getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
+//        getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
     }
 
     private void inverseReadAndSumFromAPartition(int offsetCount, int readCount, long aMin, long aMax, GetAvgItem getItem) {
@@ -183,7 +183,7 @@ public class TAIndex {
         aFile.readPartition(offsetCount, readCount, readBuf, getItem);
         ByteBufferUtil.inverseSumChunkA(readBuf, readCount, aMin, aMax, getItem.intervalSum);
 
-        getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
+//        getItem.map.put(readCount, getItem.map.getOrDefault(readCount, 0) + 1);
     }
 
     /**
@@ -285,73 +285,73 @@ public class TAIndex {
     }
 
     public void log(StringBuilder sb) {
-        int hitCount = 0;
-
-        int readASortFileCount = 0;
-        long readASortFileTime = 0;
-        int readASortCount = 0;
-        int readFileACount = 0;
-        long readFileATime = 0;
-        int readACount = 0;
-
-        sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos);
-        sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
-        sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
-        sb.append("\n");
-
-        Map<Integer, Integer> map = new TreeMap<>();
-        Map<Integer, Integer> countMap = new TreeMap<>();
-        Map<Integer, Integer> intervalMap = new TreeMap<>();
-        for (GetAvgItem getItem : getItems) {
-            readASortFileCount += getItem.readASortFileCount;
-            readASortFileTime += getItem.readASortFileTime;
-            readASortCount += getItem.readASortCount;
-
-            readFileACount += getItem.readFileACount;
-            readFileATime += getItem.readFileATime;
-            readACount += getItem.readACount;
-
-            hitCount += getItem.readHitCount;
-
-            getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
-            getItem.countMap.forEach((k, v) -> countMap.put(k, countMap.getOrDefault(k, 0) + v));
-            getItem.intervalMap.forEach((k, v) -> intervalMap.put(k, intervalMap.getOrDefault(k, 0) + v));
-
-            sb.append("readFileACount:").append(getItem.readFileACount).append(",readASortFileCount:").append(getItem.readASortFileCount)
-                    .append(",readACount:").append(getItem.readACount).append(",readASortCount:").append(getItem.readASortCount)
-                    .append(",readFileATime:").append(getItem.readFileATime).append(",readASortFileTime:").append(getItem.readASortFileTime)
-                    .append(",hitCount:").append(getItem.readHitCount).append(",accCostTime:").append(getItem.costTime)
-                    .append("\n");
-        }
-
-        AtomicInteger mapSize = new AtomicInteger();
-        map.forEach((k, v) -> {
-                    sb.append("[").append(k).append(",").append(v).append("]");
-                    mapSize.addAndGet(v);
-                }
-        );
-        sb.append("\n");
-        sb.append("----------------------------------------------countMap\n");
-        countMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
-        sb.append("\n");
-        sb.append("----------------------------------------------intervalMap\n");
-        intervalMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
-        sb.append("\n");
-
-        sb.append("mapSize:").append(mapSize.get())
-                .append("readFileACount:").append(readFileACount).append(",readASortFileCount:").append(readASortFileCount)
-                .append(",readACount:").append(readACount).append(",readASortCount:").append(readASortCount)
-                .append(",readFileATime:").append(readFileATime).append(",readASortFileTime:").append(readASortFileTime)
-                .append(",hitCount:").append(hitCount)
-                .append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
-                .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
-                .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
-                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS))
-                .append("onceCount:").append(onceCounter.get()).append("\n");
-
-        aFile.log(sb);
-        for (PartitionIndex partitionIndex : partitionIndices) {
-            partitionIndex.log(sb);
-        }
+//        int hitCount = 0;
+//
+//        int readASortFileCount = 0;
+//        long readASortFileTime = 0;
+//        int readASortCount = 0;
+//        int readFileACount = 0;
+//        long readFileATime = 0;
+//        int readACount = 0;
+//
+//        sb.append("mergeCount:").append(putCount).append(",tIndexPos:").append(tIndexPos);
+//        sb.append(",tBytes:").append(tEncoder.getBitPosition() / 8).append(",tAllocMem:").append(tBuf.capacity());
+//        sb.append(",firstT:").append(firstT).append(",lastT:").append(lastT);
+//        sb.append("\n");
+//
+//        Map<Integer, Integer> map = new TreeMap<>();
+//        Map<Integer, Integer> countMap = new TreeMap<>();
+//        Map<Integer, Integer> intervalMap = new TreeMap<>();
+//        for (GetAvgItem getItem : getItems) {
+//            readASortFileCount += getItem.readASortFileCount;
+//            readASortFileTime += getItem.readASortFileTime;
+//            readASortCount += getItem.readASortCount;
+//
+//            readFileACount += getItem.readFileACount;
+//            readFileATime += getItem.readFileATime;
+//            readACount += getItem.readACount;
+//
+//            hitCount += getItem.readHitCount;
+//
+//            getItem.map.forEach((k, v) -> map.put(k, map.getOrDefault(k, 0) + v));
+//            getItem.countMap.forEach((k, v) -> countMap.put(k, countMap.getOrDefault(k, 0) + v));
+//            getItem.intervalMap.forEach((k, v) -> intervalMap.put(k, intervalMap.getOrDefault(k, 0) + v));
+//
+//            sb.append("readFileACount:").append(getItem.readFileACount).append(",readASortFileCount:").append(getItem.readASortFileCount)
+//                    .append(",readACount:").append(getItem.readACount).append(",readASortCount:").append(getItem.readASortCount)
+//                    .append(",readFileATime:").append(getItem.readFileATime).append(",readASortFileTime:").append(getItem.readASortFileTime)
+//                    .append(",hitCount:").append(getItem.readHitCount).append(",accCostTime:").append(getItem.costTime)
+//                    .append("\n");
+//        }
+//
+//        AtomicInteger mapSize = new AtomicInteger();
+//        map.forEach((k, v) -> {
+//                    sb.append("[").append(k).append(",").append(v).append("]");
+//                    mapSize.addAndGet(v);
+//                }
+//        );
+//        sb.append("\n");
+//        sb.append("----------------------------------------------countMap\n");
+//        countMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
+//        sb.append("\n");
+//        sb.append("----------------------------------------------intervalMap\n");
+//        intervalMap.forEach((k, v) -> sb.append("[").append(k).append(",").append(v).append("]"));
+//        sb.append("\n");
+//
+//        sb.append("mapSize:").append(mapSize.get())
+//                .append("readFileACount:").append(readFileACount).append(",readASortFileCount:").append(readASortFileCount)
+//                .append(",readACount:").append(readACount).append(",readASortCount:").append(readASortCount)
+//                .append(",readFileATime:").append(readFileATime).append(",readASortFileTime:").append(readASortFileTime)
+//                .append(",hitCount:").append(hitCount)
+//                .append(",MAX_T_INDEX_INTERVAL:").append(Const.MAX_T_INDEX_INTERVAL).append(",MAX_T_INDEX_LENGTH:").append(Const.MAX_T_INDEX_LENGTH)
+//                .append(",FILE_NUMS:").append(Const.FILE_NUMS).append(",GET_THREAD_NUM:").append(Const.GET_THREAD_NUM)
+//                .append(",A_INDEX_INTERVAL:").append(Const.A_INDEX_INTERVAL)
+//                .append(",T_INDEX_INTERVALS:").append(Arrays.toString(Const.T_INDEX_INTERVALS))
+//                .append("onceCount:").append(onceCounter.get()).append("\n");
+//
+//        aFile.log(sb);
+//        for (PartitionIndex partitionIndex : partitionIndices) {
+//            partitionIndex.log(sb);
+//        }
     }
 }

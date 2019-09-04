@@ -1,6 +1,5 @@
 package io.openmessaging;
 
-import io.openmessaging.index.TAIndex;
 import io.openmessaging.util.Utils;
 
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,23 +41,23 @@ public class Monitor {
     public static void log() {
         StringBuilder sb = new StringBuilder();
 
-        TAIndex.taIndex.log(sb);
-
-        int putCount = 0;
-        for (MessageFile messageFile : DefaultMessageStoreImpl.messageFiles) {
-            putCount += messageFile.putCount;
-        }
-
-
-        sb.append("putCount:").append(putCount).append(" INDEX_INTERVAL:").append(Const.INDEX_INTERVAL).append(",INDEX_ELE_LENGTH:").append(Const.INDEX_ELE_LENGTH).append("\n");
-        sb.append("put cost time:").append(getMsgStartTime - putStartTime)
-                .append(",get msg cost time:").append(getAvgTimes[0] - getMsgStartTime)
-                .append(",get avg cost time:").append(getAvgTimes[getAvgCounter.get()] - getAvgTimes[0])
-                .append(",get avg cost time1:").append(System.currentTimeMillis() - getAvgTimes[0]);
-
-        sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum)
-                .append(",getMsgCount:").append(getMsgCount).append(",").append("\n");
-
+//        TAIndex.taIndex.log(sb);
+//
+//        int putCount = 0;
+//        for (MessageFile messageFile : DefaultMessageStoreImpl.messageFiles) {
+//            putCount += messageFile.putCount;
+//        }
+//
+//
+//        sb.append("putCount:").append(putCount).append(" INDEX_INTERVAL:").append(Const.INDEX_INTERVAL).append(",INDEX_ELE_LENGTH:").append(Const.INDEX_ELE_LENGTH).append("\n");
+//        sb.append("put cost time:").append(getMsgStartTime - putStartTime)
+//                .append(",get msg cost time:").append(getAvgTimes[0] - getMsgStartTime)
+//                .append(",get avg cost time:").append(getAvgTimes[getAvgCounter.get()] - getAvgTimes[0])
+//                .append(",get avg cost time1:").append(System.currentTimeMillis() - getAvgTimes[0]);
+//
+//        sb.append(",getAvgCounter:").append(getAvgCounter.get()).append(",getMaxMsgNum:").append(getMaxMsgNum)
+//                .append(",getMsgCount:").append(getMsgCount).append(",").append("\n");
+//
 
         long putTime = getMsgStartTime - putStartTime;
         long putScore = putTime == 0 ? 0 : 2013641393/putTime;
