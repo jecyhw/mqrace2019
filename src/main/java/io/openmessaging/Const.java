@@ -35,8 +35,8 @@ public interface Const {
     boolean PRINT_LOG = true;
 
     int[] T_INDEX_INTERVALS = new int[]{
-            1024 * 25,
-            1024 * 12 + 512
+            1024 * 24,
+            1024 * 12
 
     };
     int MAX_T_INDEX_INTERVAL = 1024 * 24;
