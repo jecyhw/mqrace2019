@@ -156,7 +156,6 @@ public class TAIndex {
             //处理首区间
             int interval = partitionIndices[i].getInterval();
             int beginPartition = beginTPos / interval;
-            //处理最后尾区间，最后一个区间如果个数不等于Const.FIXED_CHUNK_SIZE，肯定会在这里处理
             int endPartition = endTPos / interval;
 
             if (endPartition - beginPartition > 1) {
