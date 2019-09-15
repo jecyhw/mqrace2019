@@ -70,12 +70,11 @@ public class TAIndex {
     };
 
     private AtomicInteger onceCounter = new AtomicInteger(0);
+
     public long getAvgValue(long aMin, long aMax, long tMin, long tMax) {
         if (aMin > aMax || tMin > tMax) {
             return 0;
         }
-
-        long startTime = System.currentTimeMillis();
 
         GetAvgItem getItem = getItemThreadLocal.get();
         ByteBuffer tBufDup = tBuf.duplicate();
@@ -86,42 +85,36 @@ public class TAIndex {
             return 0;
         }
 
+        //t符合提交的个数
         int tCount = endTPos - beginTPos;
-//        getItem.countMap.put(tCount, getItem.countMap.getOrDefault(tCount, 0) + 1);
-
         IntervalSum intervalSum = getItem.intervalSum;
         intervalSum.reset();
 
-        //读取的数量比最小层的间隔还小，直接读取返回
         if (tCount <= Const.T_INDEX_INTERVALS[Const.T_INDEX_INTERVALS.length - 1]) {
-            onceCounter.incrementAndGet();
+            //读取的数量比最小层的间隔还小，直接从排序后的t对应的a文件读取过滤a求平均值返回
             readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
         } else {
+            //走分层索引查询
             sumByPartitionIndex(beginTPos, endTPos, tCount, aMin, aMax, getItem);
         }
-//        getItem.costTime += (System.currentTimeMillis() - startTime);
-
         return intervalSum.avg();
     }
 
     private void sumByPartitionIndex(int beginTPos, int endTPos, int tCount, long aMin, long aMax, GetAvgItem getItem) {
         PartitionIndex partitionIndex = findBestPartitionIndex(beginTPos, endTPos);
-        if (partitionIndex == null) {
+        if (partitionIndex == null) { //没有找到最合适的索引，直接从排序后的t对应的a文件读取过滤a求平均值返回
             readAndSumFromAPartition(beginTPos, tCount, aMin, aMax, getItem);
             return;
         }
 
         int interval = partitionIndex.getInterval();
-        int doubleHalfInterval = interval / 4;
-
-        int beginPartition = beginTPos / interval, endPartition = endTPos / interval;
-
-        int firstPartitionFilterCount = beginTPos % interval;
-        int lastPartitionNeedCount = endTPos % interval;
+        int doubleHalfInterval = interval / 4; //4分1的分区大小
+        int beginPartition = beginTPos / interval, endPartition = endTPos / interval;//求首尾所在分区
+        int firstPartitionFilterCount = beginTPos % interval, lastPartitionNeedCount = endTPos % interval;//求首分区需要过滤的个数，尾分区需要读取的个数
         long sum = 0;
         int count = 0;
-        //至少两个分区，先处理首尾分区
-        if (firstPartitionFilterCount > 0) {
+
+        if (firstPartitionFilterCount > 0) {//处理首分区
             int firstReadCount = interval - firstPartitionFilterCount;
             if (firstPartitionFilterCount < doubleHalfInterval) {
                 //求反，先减后加，防止溢出
@@ -133,7 +126,7 @@ public class TAIndex {
             beginPartition++;
         }
 
-        if (lastPartitionNeedCount > 0) {
+        if (lastPartitionNeedCount > 0) {//处理首分区
             if (interval - lastPartitionNeedCount < doubleHalfInterval && (endTPos - endPartition * interval) >= interval) {
                 //求反，先减后加，防止溢出
                 inverseReadAndSumFromAPartition(endTPos, interval - lastPartitionNeedCount, aMin, aMax, getItem);
@@ -153,16 +146,14 @@ public class TAIndex {
 
     private PartitionIndex findBestPartitionIndex(int beginTPos, int endTPos) {
         for (int i = 0; i < Const.T_INDEX_INTERVALS.length; i++){
-            //处理首区间
             int interval = partitionIndices[i].getInterval();
             int beginPartition = beginTPos / interval;
             int endPartition = endTPos / interval;
 
-            if (endPartition - beginPartition > 1) {
+            if (endPartition - beginPartition > 1) {//找到了最合适的分区
                 return partitionIndices[i];
             }
         }
-
         return null;
     }
 
