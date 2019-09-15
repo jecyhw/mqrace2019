@@ -126,7 +126,7 @@ public class TAIndex {
             beginPartition++;
         }
 
-        if (lastPartitionNeedCount > 0) {//处理首分区
+        if (lastPartitionNeedCount > 0) {//处理尾分区
             if (interval - lastPartitionNeedCount < doubleHalfInterval && (endTPos - endPartition * interval) >= interval) {
                 //求反，先减后加，防止溢出
                 inverseReadAndSumFromAPartition(endTPos, interval - lastPartitionNeedCount, aMin, aMax, getItem);
